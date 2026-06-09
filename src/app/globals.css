@@ -1,26 +1,143 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Niger State Government Open Data Portal — Design Tokens
+  Brand: Niger State Green (#1B5E35) · Teal accent · WCAG AA targets.
+  See docs/Frontend_PRD_v1.0.md §4.1.
+*/
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+
+  /* shadcn core tokens */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Government brand + semantic tokens (PRD §4.1) */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-teal: var(--teal);
+  --color-teal-foreground: var(--teal-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-admin: var(--admin);
+  --color-admin-foreground: var(--admin-foreground);
+
+  /* charts (analytics) */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* sidebar (admin shell) */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --radius: 0.5rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.205 0.01 160);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0.01 160);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.205 0.01 160);
+
+  /* Primary = Niger State Green (#1B5E35) */
+  --primary: oklch(0.43 0.087 158);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.97 0.005 160);
+  --secondary-foreground: oklch(0.3 0.02 160);
+  --muted: oklch(0.97 0.005 160);
+  --muted-foreground: oklch(0.52 0.015 160);
+  --accent: oklch(0.95 0.02 175);
+  --accent-foreground: oklch(0.3 0.04 175);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.91 0.006 160);
+  --input: oklch(0.91 0.006 160);
+  --ring: oklch(0.43 0.087 158);
+
+  /* Brand + semantic */
+  --brand: oklch(0.43 0.087 158);
+  --brand-foreground: oklch(0.985 0 0);
+  --teal: oklch(0.6 0.1 185);
+  --teal-foreground: oklch(0.985 0 0);
+  --success: oklch(0.58 0.13 150);        /* PUBLIC */
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.78 0.16 78);         /* RESTRICTED */
+  --warning-foreground: oklch(0.28 0.05 78);
+  --info: oklch(0.6 0.13 250);            /* Submitted / under review */
+  --info-foreground: oklch(0.985 0 0);
+  --admin: oklch(0.27 0.02 160);          /* admin shell */
+  --admin-foreground: oklch(0.985 0 0);
+
+  /* charts: green, teal, amber, blue, red */
+  --chart-1: oklch(0.43 0.087 158);
+  --chart-2: oklch(0.6 0.1 185);
+  --chart-3: oklch(0.78 0.16 78);
+  --chart-4: oklch(0.6 0.13 250);
+  --chart-5: oklch(0.577 0.245 27.325);
+
+  /* sidebar = admin shell (dark) */
+  --sidebar: oklch(0.27 0.02 160);
+  --sidebar-foreground: oklch(0.95 0.005 160);
+  --sidebar-primary: oklch(0.6 0.1 185);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.34 0.025 160);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.34 0.025 160);
+  --sidebar-ring: oklch(0.6 0.1 185);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }

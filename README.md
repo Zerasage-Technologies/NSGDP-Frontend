@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Niger State Open Data Portal — Frontend
 
-## Getting Started
+Frontend application for the Niger State Government Open Data Portal.
+See [`../docs/Frontend_PRD_v1.0.md`](../docs/Frontend_PRD_v1.0.md) for the full build spec.
 
-First, run the development server:
+## Stack
+
+- **Next.js 15** (App Router) + **React 19** + **TypeScript** (strict)
+- **Tailwind CSS v4** + **shadcn/ui** (Radix primitives, owned in-repo)
+- **Lucide** icons · **TanStack Query** (server state) · **React Hook Form + Zod** (forms)
+- **Leaflet** (maps, added per screen) · **Recharts** (analytics, added per screen)
+- Self-hosted **Inter** font
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # set NEXT_PUBLIC_API_URL
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run start` | Serve production build |
+| `npm run lint` | ESLint |
+| `npx tsc --noEmit` | Type-check |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Structure
 
-## Learn More
+```
+src/
+├── app/            # Routes (App Router)
+├── components/
+│   ├── ui/         # shadcn/ui primitives
+│   └── data/       # Domain components (badges, cards, …)
+├── lib/
+│   ├── api/        # Typed API client
+│   ├── constants.ts
+│   └── utils.ts
+└── types/          # Shared domain types
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Theme
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Government brand tokens live in [`src/app/globals.css`](src/app/globals.css):
+Niger State Green primary, teal accent, and semantic tokens
+(`success`/PUBLIC, `warning`/RESTRICTED, `info`, `admin` shell). All target WCAG AA.
