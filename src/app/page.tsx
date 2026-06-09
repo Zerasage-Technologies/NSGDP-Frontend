@@ -1,23 +1,22 @@
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { VisibilityBadge } from "@/components/data/visibility-badge";
-import { StatusBadge } from "@/components/data/status-badge";
-import { RoleBadge } from "@/components/data/role-badge";
+import { Container } from "@/components/layout/container";
+import { DatasetCard } from "@/components/data/dataset-card";
+import { GroupTile } from "@/components/data/group-tile";
+import { getDatasets, getGroups, getStatistics } from "@/lib/mock";
 
-const STATS = [
-  { label: "Datasets", value: "—" },
-  { label: "Organisations", value: "—" },
-  { label: "Downloads", value: "—" },
-  { label: "LGAs Covered", value: "25" },
-];
+export default async function HomePage() {
+  // Fetch data
+  const stats = await getStatistics();
+  const { data: featuredDatasets } = await getDatasets({ sort: "popular", pageSize: 6 });
+  const groups = await getGroups();
 
-export default function HomePage() {
   return (
     <main className="flex-1">
       {/* Hero (PUB-01) */}
       <section className="bg-primary text-primary-foreground">
-        <div className="mx-auto max-w-5xl px-4 py-20 text-center">
+        <Container className="py-20 text-center">
           <p className="text-sm font-medium uppercase tracking-wide text-primary-foreground/80">
             Niger State Government
           </p>
@@ -43,54 +42,70 @@ export default function HomePage() {
               Search
             </Button>
           </form>
-        </div>
+        </Container>
       </section>
 
       {/* Topline stats */}
       <section className="border-b bg-secondary/40">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4 px-4 py-8 sm:grid-cols-4">
-          {STATS.map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-3xl font-bold text-primary">{s.value}</div>
-              <div className="text-sm text-muted-foreground">{s.label}</div>
+        <Container size="wide">
+          <div className="grid grid-cols-2 gap-4 py-8 sm:grid-cols-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">{stats.datasets}</div>
+              <div className="text-sm text-muted-foreground">Datasets</div>
             </div>
-          ))}
-        </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">{stats.organisations}</div>
+              <div className="text-sm text-muted-foreground">Organisations</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">{stats.downloads.toLocaleString()}</div>
+              <div className="text-sm text-muted-foreground">Downloads</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">{stats.lgasCovered}</div>
+              <div className="text-sm text-muted-foreground">LGAs Covered</div>
+            </div>
+          </div>
+        </Container>
       </section>
 
-      {/* Design-system proof (temporary baseline marker) */}
-      <section className="mx-auto max-w-5xl px-4 py-12">
-        <h2 className="text-lg font-semibold">Design system — baseline check</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Foundation scaffolded. Temporary section verifying tokens &amp;
-          components render correctly.
-        </p>
+      {/* Featured Datasets */}
+      <section className="py-12">
+        <Container size="wide">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Popular Datasets</h2>
+            <Button variant="outline">
+              <a href="/datasets">View All</a>
+            </Button>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredDatasets.map((dataset) => (
+              <DatasetCard key={dataset.id} dataset={dataset} />
+            ))}
+          </div>
+        </Container>
+      </section>
 
-        <div className="mt-6 flex flex-wrap items-center gap-2">
-          <VisibilityBadge visibility="public" />
-          <VisibilityBadge visibility="restricted" />
-          <VisibilityBadge visibility="private" />
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <StatusBadge status="draft" />
-          <StatusBadge status="under_review" />
-          <StatusBadge status="needs_revision" />
-          <StatusBadge status="published" />
-          <StatusBadge status="rejected" />
-          <StatusBadge status="archived" />
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <RoleBadge role="registered" />
-          <RoleBadge role="contributor" />
-          <RoleBadge role="org_admin" />
-          <RoleBadge role="super_admin" />
-        </div>
-        <div className="mt-6 flex flex-wrap gap-2">
-          <Button>Primary</Button>
-          <Button variant="secondary">Secondary</Button>
-          <Button variant="destructive">Danger</Button>
-          <Button variant="outline">Outline</Button>
-        </div>
+      {/* Browse by Topic */}
+      <section className="py-12 bg-muted/40">
+        <Container size="wide">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Browse by Topic</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Explore datasets organized by thematic areas
+              </p>
+            </div>
+            <Button variant="outline">
+              <a href="/groups">All Topics</a>
+            </Button>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {groups.slice(0, 10).map((group) => (
+              <GroupTile key={group.id} group={group} />
+            ))}
+          </div>
+        </Container>
       </section>
     </main>
   );
