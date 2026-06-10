@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Database } from "lucide-react";
 import type { Organisation } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,10 +24,12 @@ export function OrgCard({ organisation, className }: OrgCardProps) {
           <div className="flex items-center gap-3">
             {/* Logo or Initials */}
             {organisation.logoUrl ? (
-              <img
+              <Image
                 src={organisation.logoUrl}
                 alt=""
-                className="size-12 rounded-lg object-cover"
+                width={48}
+                height={48}
+                className="rounded-lg object-cover"
               />
             ) : (
               <div

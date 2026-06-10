@@ -3,8 +3,6 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { RoleSwitcher } from "@/components/dev/role-switcher";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 import "./globals.css";
 
 const inter = Inter({
@@ -40,9 +38,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Providers>
-          <Navbar />
           {children}
-          <Footer />
           <RoleSwitcher />
         </Providers>
         <Toaster />

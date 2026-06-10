@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Database } from "lucide-react";
 import type { Group } from "@/types";
 import { cn } from "@/lib/utils";
@@ -37,10 +38,11 @@ export function GroupTile({ group, className }: GroupTileProps) {
       >
         {/* Background: Cover Image or Gradient */}
         {group.coverImageUrl ? (
-          <img
+          <Image
             src={group.coverImageUrl}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
+            fill
+            className="object-cover transition-transform group-hover:scale-105"
           />
         ) : (
           <div

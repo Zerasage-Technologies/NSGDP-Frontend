@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Download, Calendar } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { Dataset } from "@/types";
@@ -30,10 +31,12 @@ export function DatasetCard({ dataset, className }: DatasetCardProps) {
           {/* Organisation */}
           <div className="flex items-center gap-2 mb-2">
             {dataset.organisation.logoUrl ? (
-              <img
+              <Image
                 src={dataset.organisation.logoUrl}
                 alt=""
-                className="size-6 rounded object-cover"
+                width={24}
+                height={24}
+                className="rounded object-cover"
               />
             ) : (
               <div className="flex size-6 items-center justify-center rounded bg-primary/10 text-primary text-xs font-semibold">

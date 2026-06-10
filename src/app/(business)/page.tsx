@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,9 +75,9 @@ export default async function HomePage() {
         <Container size="wide">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Popular Datasets</h2>
-            <Button variant="outline">
-              <a href="/datasets">View All</a>
-            </Button>
+            <Link href="/datasets">
+              <Button variant="outline">View All</Button>
+            </Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featuredDatasets.map((dataset) => (
@@ -96,9 +97,9 @@ export default async function HomePage() {
                 Explore datasets organized by thematic areas
               </p>
             </div>
-            <Button variant="outline">
-              <a href="/groups">All Topics</a>
-            </Button>
+            <Link href="/groups">
+              <Button variant="outline">All Topics</Button>
+            </Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {groups.slice(0, 10).map((group) => (
