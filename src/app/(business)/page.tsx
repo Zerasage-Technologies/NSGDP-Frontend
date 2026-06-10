@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, TrendingUp, Lock, FileText, BarChart3 } from "lucide-react";
+import { Search, Lock, FileText, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Container } from "@/components/layout/container";

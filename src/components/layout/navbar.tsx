@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Upload, LogOut, Settings as SettingsIcon, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { Search, Upload, LogOut, Settings as SettingsIcon, LayoutDashboard, ShieldCheck, Map } from "lucide-react";
 import { useMockSession } from "@/lib/auth/mock-session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,14 @@ export function Navbar() {
 
         {/* Navigation */}
         <nav className="navbar-nav flex items-center gap-2">
+          {/* Map Explorer Link */}
+          <Link href="/map">
+            <Button variant="ghost" size="sm">
+              <Map className="size-4" />
+              <span className="hidden sm:inline ml-2">Map</span>
+            </Button>
+          </Link>
+
           {/* Upload CTA (Contributor+) */}
           {canUpload && (
             <Link href="/datasets/new">
