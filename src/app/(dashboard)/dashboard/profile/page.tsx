@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Save } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
@@ -8,8 +10,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PasswordStrengthMeter } from "@/components/forms/password-strength-meter";
+import { FormError } from "@/components/forms/form-error";
 import { useMockSession } from "@/lib/auth/mock-session";
+import {
+  profileSchema,
+  changePasswordSchema,
+} from "@/lib/schemas/auth";
 import { toast } from "sonner";
+import { z } from "zod";
+
+type ProfileFormData = z.infer<typeof profileSchema>;
+type PasswordFormData = z.infer<typeof changePasswordSchema>;
 
 export default function ProfilePage() {
   const { currentUser } = useMockSession();
@@ -35,7 +47,6 @@ export default function ProfilePage() {
               <TabsTrigger value="preferences">Preferences</TabsTrigger>
             </TabsList>
 
-            {/* Profile Tab */}
             <TabsContent value="profile" className="space-y-6">
               <Card>
                 <CardHeader>
@@ -50,7 +61,6 @@ export default function ProfilePage() {
               </Card>
             </TabsContent>
 
-            {/* Security Tab */}
             <TabsContent value="security" className="space-y-6">
               <Card>
                 <CardHeader>
@@ -89,14 +99,11 @@ export default function ProfilePage() {
               </Card>
             </TabsContent>
 
-            {/* Preferences Tab */}
             <TabsContent value="preferences" className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Notification Preferences</CardTitle>
-                  <CardDescription>
-                    Choose how you want to be notified
-                  </CardDescription>
+                  <CardDescription>Choose how you want to be notified</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <NotificationToggle
@@ -121,28 +128,34 @@ export default function ProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Display Preferences</CardTitle>
-                  <CardDescription>
-                    Customize how you view the portal
-                  </CardDescription>
+                  <CardDescription>Customize how you view the portal</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">
+                    <label htmlFor="defaultView" className="block text-sm font-medium mb-2">
                       Default View
                     </label>
-                    <select className="w-full rounded-lg border border-input bg-background px-3 py-2">
-                      <option>Grid View</option>
-                      <option>List View</option>
+                    <select
+                      id="defaultView"
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2"
+                      defaultValue="grid"
+                    >
+                      <option value="grid">Grid View</option>
+                      <option value="list">List View</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">
+                    <label htmlFor="itemsPerPage" className="block text-sm font-medium mb-2">
                       Items Per Page
                     </label>
-                    <select className="w-full rounded-lg border border-input bg-background px-3 py-2">
-                      <option>10</option>
-                      <option selected>20</option>
-                      <option>50</option>
+                    <select
+                      id="itemsPerPage"
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2"
+                      defaultValue="20"
+                    >
+                      <option value="10">10</option>
+                      <option value="20">20</option>
+                      <option value="50">50</option>
                     </select>
                   </div>
                 </CardContent>
@@ -155,7 +168,6 @@ export default function ProfilePage() {
   );
 }
 
-// Profile Form Component
 function ProfileForm({
   currentUser,
   setSaving,
@@ -165,8 +177,22 @@ function ProfileForm({
   setSaving: (v: boolean) => void;
   saving: boolean;
 }) {
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      fullName: currentUser.fullName,
+      email: currentUser.email,
+      bio: "",
+      phone: "",
+      organization: "",
+    },
+  });
+
+  const onSubmit = async () => {
     setSaving(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     toast.success("Profile updated successfully");
@@ -174,30 +200,21 @@ function ProfileForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="fullName" className="block text-sm font-medium mb-1.5">
             Full Name
           </label>
-          <Input
-            id="fullName"
-            name="fullName"
-            defaultValue={currentUser.fullName}
-            required
-          />
+          <Input id="fullName" {...register("fullName")} />
+          <FormError message={errors.fullName?.message} />
         </div>
         <div>
           <label htmlFor="email" className="block text-sm font-medium mb-1.5">
             Email Address
           </label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            defaultValue={currentUser.email}
-            required
-          />
+          <Input id="email" type="email" {...register("email")} />
+          <FormError message={errors.email?.message} />
         </div>
       </div>
 
@@ -206,22 +223,13 @@ function ProfileForm({
           <label htmlFor="phone" className="block text-sm font-medium mb-1.5">
             Phone Number
           </label>
-          <Input
-            id="phone"
-            name="phone"
-            type="tel"
-            placeholder="+234 XXX XXX XXXX"
-          />
+          <Input id="phone" type="tel" placeholder="+234 XXX XXX XXXX" {...register("phone")} />
         </div>
         <div>
           <label htmlFor="organization" className="block text-sm font-medium mb-1.5">
             Organization
           </label>
-          <Input
-            id="organization"
-            name="organization"
-            placeholder="Your organization"
-          />
+          <Input id="organization" placeholder="Your organization" {...register("organization")} />
         </div>
       </div>
 
@@ -231,10 +239,11 @@ function ProfileForm({
         </label>
         <Textarea
           id="bio"
-          name="bio"
           rows={3}
           placeholder="Tell us about yourself and your work..."
+          {...register("bio")}
         />
+        <FormError message={errors.bio?.message} />
       </div>
 
       <Button type="submit" disabled={saving}>
@@ -245,7 +254,6 @@ function ProfileForm({
   );
 }
 
-// Password Form Component
 function PasswordForm({
   setSaving,
   saving,
@@ -257,17 +265,28 @@ function PasswordForm({
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<PasswordFormData>({
+    resolver: zodResolver(changePasswordSchema),
+  });
+
+  const newPassword = watch("newPassword", "");
+
+  const onSubmit = async () => {
     setSaving(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     toast.success("Password changed successfully");
+    reset();
     setSaving(false);
-    (e.target as HTMLFormElement).reset();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <div>
         <label htmlFor="currentPassword" className="block text-sm font-medium mb-1.5">
           Current Password
@@ -275,18 +294,19 @@ function PasswordForm({
         <div className="relative">
           <Input
             id="currentPassword"
-            name="currentPassword"
             type={showCurrentPassword ? "text" : "password"}
-            required
+            {...register("currentPassword")}
           />
           <button
             type="button"
             onClick={() => setShowCurrentPassword(!showCurrentPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label={showCurrentPassword ? "Hide password" : "Show password"}
           >
             {showCurrentPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
+        <FormError message={errors.currentPassword?.message} />
       </div>
 
       <div>
@@ -296,19 +316,20 @@ function PasswordForm({
         <div className="relative">
           <Input
             id="newPassword"
-            name="newPassword"
             type={showNewPassword ? "text" : "password"}
-            required
-            minLength={8}
+            {...register("newPassword")}
           />
           <button
             type="button"
             onClick={() => setShowNewPassword(!showNewPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label={showNewPassword ? "Hide password" : "Show password"}
           >
             {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
+        <PasswordStrengthMeter password={newPassword} />
+        <FormError message={errors.newPassword?.message} />
       </div>
 
       <div>
@@ -318,18 +339,19 @@ function PasswordForm({
         <div className="relative">
           <Input
             id="confirmPassword"
-            name="confirmPassword"
             type={showConfirmPassword ? "text" : "password"}
-            required
+            {...register("confirmPassword")}
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
           >
             {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
+        <FormError message={errors.confirmPassword?.message} />
       </div>
 
       <Button type="submit" disabled={saving}>
@@ -339,7 +361,6 @@ function PasswordForm({
   );
 }
 
-// Notification Toggle Component
 function NotificationToggle({
   label,
   description,
@@ -355,6 +376,9 @@ function NotificationToggle({
       </div>
       <button
         type="button"
+        role="switch"
+        aria-checked="true"
+        aria-label={`Toggle ${label}`}
         className="relative inline-flex h-6 w-11 items-center rounded-full bg-primary"
       >
         <span className="translate-x-6 inline-block size-4 transform rounded-full bg-white transition" />

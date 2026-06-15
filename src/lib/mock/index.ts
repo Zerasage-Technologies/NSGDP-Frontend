@@ -2,10 +2,26 @@
 // These will be replaced with real API calls when backend is ready
 
 import type { Dataset, Organisation, Group, Visibility, DatasetStatus } from "@/types";
+import type { AuditAction } from "@/types/admin";
 import { mockDatasets } from "./datasets";
 import { mockOrganisations } from "./organisations";
 import { mockGroups } from "./groups";
 import { simulateDelay } from "./delay";
+import {
+  mockActivityFeed,
+  mockAuditLog,
+  mockAccessRequests,
+  mockAdminUsers,
+  mockSystemHealth,
+  mockNotifications,
+  generateActivityData,
+} from "./activity";
+import {
+  mockPlatformKPIs,
+  mockUploadsOverTime,
+  mockDownloadsByDataset,
+  mockNewUsersOverTime,
+} from "./analytics";
 
 // ============================================================================
 // DATASETS
@@ -22,12 +38,18 @@ export interface DatasetFilters {
   sort?: "recent" | "popular" | "name";
   page?: number;
   pageSize?: number;
+  /** When true, includes private datasets (dashboard/admin). Public catalogue omits them. */
+  includePrivate?: boolean;
 }
 
 export async function getDatasets(filters: DatasetFilters = {}) {
   await simulateDelay();
 
   let results = [...mockDatasets];
+
+  if (!filters.includePrivate) {
+    results = results.filter((d) => d.visibility !== "private");
+  }
 
   // Apply filters
   if (filters.query) {
@@ -177,12 +199,13 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
   const q = query.toLowerCase();
   const results: SearchResult[] = [];
 
-  // Search datasets
+  // Search datasets (published/public/restricted only)
   mockDatasets
     .filter(
       (d) =>
-        d.title.toLowerCase().includes(q) ||
-        d.description?.toLowerCase().includes(q)
+        d.visibility !== "private" &&
+        (d.title.toLowerCase().includes(q) ||
+        d.description?.toLowerCase().includes(q))
     )
     .slice(0, 10)
     .forEach((item) => results.push({ type: "dataset", item }));
@@ -224,3 +247,126 @@ export async function getStatistics() {
     lgasCovered: 25,
   };
 }
+
+// ============================================================================
+// ADMIN & ACTIVITY (Phase A)
+// ============================================================================
+
+export async function getActivityFeed() {
+  await simulateDelay();
+  return mockActivityFeed;
+}
+
+export async function getNotifications() {
+  await simulateDelay();
+  return mockNotifications;
+}
+
+export async function getAuditLog(filters?: {
+  action?: AuditAction;
+  query?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  await simulateDelay();
+
+  let results = [...mockAuditLog];
+
+  if (filters?.action) {
+    results = results.filter((e) => e.action === filters.action);
+  }
+
+  if (filters?.query) {
+    const q = filters.query.toLowerCase();
+    results = results.filter(
+      (e) =>
+        e.userName.toLowerCase().includes(q) ||
+        e.resource.toLowerCase().includes(q)
+    );
+  }
+
+  const page = filters?.page ?? 1;
+  const pageSize = filters?.pageSize ?? 20;
+  const total = results.length;
+
+  return {
+    data: results.slice((page - 1) * pageSize, page * pageSize),
+    meta: { total, page, pageSize, totalPages: Math.ceil(total / pageSize) },
+  };
+}
+
+export async function getAccessRequests(status?: "pending" | "approved" | "denied") {
+  await simulateDelay();
+  if (!status) return mockAccessRequests;
+  return mockAccessRequests.filter((r) => r.status === status);
+}
+
+export async function getAdminUsers() {
+  await simulateDelay();
+  return mockAdminUsers;
+}
+
+export async function getSystemHealth() {
+  await simulateDelay();
+  return mockSystemHealth;
+}
+
+export async function getPlatformKPIs() {
+  await simulateDelay();
+  return mockPlatformKPIs;
+}
+
+export async function getAdminAnalytics() {
+  await simulateDelay();
+  return {
+    kpis: mockPlatformKPIs,
+    uploadsOverTime: mockUploadsOverTime,
+    downloadsByDataset: mockDownloadsByDataset,
+    newUsersOverTime: mockNewUsersOverTime,
+    activity7d: generateActivityData(7),
+    activity30d: generateActivityData(30),
+  };
+}
+
+export async function getReviewQueue(filters?: {
+  status?: DatasetStatus | "all";
+  query?: string;
+}) {
+  await simulateDelay();
+
+  const reviewStatuses: DatasetStatus[] = [
+    "submitted",
+    "under_review",
+    "needs_revision",
+  ];
+
+  let results = mockDatasets.filter((d) => reviewStatuses.includes(d.status));
+
+  if (filters?.status && filters.status !== "all") {
+    results = results.filter((d) => d.status === filters.status);
+  }
+
+  if (filters?.query) {
+    const q = filters.query.toLowerCase();
+    results = results.filter(
+      (d) =>
+        d.title.toLowerCase().includes(q) ||
+        d.organisation.name.toLowerCase().includes(q)
+    );
+  }
+
+  results.sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+
+  return results;
+}
+
+export async function getDatasetActivity() {
+  await simulateDelay();
+  return {
+    activity7d: generateActivityData(7),
+    activity30d: generateActivityData(30),
+  };
+}
+

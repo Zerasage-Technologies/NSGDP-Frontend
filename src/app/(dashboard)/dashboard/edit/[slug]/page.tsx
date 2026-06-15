@@ -2,8 +2,12 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileText, Settings, CheckCircle, X, HelpCircle, Loader2 } from "lucide-react";
+import { Upload, FileText, Settings, X, Loader2 } from "lucide-react";
 import { Container } from "@/components/layout/container";
+import { Stepper } from "@/components/forms/stepper";
+import { FileUploadArea, type UploadedFile } from "@/components/forms/file-upload-area";
+import { FieldLabelTooltip } from "@/components/forms/field-label-tooltip";
+import { FormError } from "@/components/forms/form-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +15,13 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { getDatasets } from "@/lib/mock";
 import { NIGER_STATE_LGAS } from "@/lib/constants";
+import { UPLOAD_FIELD_TOOLTIPS } from "@/lib/constants/upload-tooltips";
+import { useDraftAutoSave } from "@/lib/hooks/useDraftAutoSave";
+import {
+  uploadStep1Schema,
+  uploadStep2Schema,
+  uploadStep3Schema,
+} from "@/lib/schemas/auth";
 import type { Dataset, Visibility } from "@/types";
 
 const steps = [
@@ -30,8 +41,8 @@ export default function EditDatasetPage({
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
 
-  // Form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState<string[]>([]);
@@ -39,13 +50,19 @@ export default function EditDatasetPage({
   const [selectedLGAs, setSelectedLGAs] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<Visibility>("public");
   const [existingFiles, setExistingFiles] = useState<Array<{ name: string; size: number }>>([]);
+  const [newFiles, setNewFiles] = useState<UploadedFile[]>([]);
+
+  useDraftAutoSave(
+    !loading && Boolean(title || description || newFiles.length > 0),
+    [title, description, newFiles.length, loading]
+  );
 
   useEffect(() => {
     const loadDataset = async () => {
       setLoading(true);
-      const result = await getDatasets({});
+      const result = await getDatasets({ includePrivate: true });
       const found = result.data.find((d) => d.slug === resolvedParams.slug);
-      
+
       if (found) {
         setDataset(found);
         setTitle(found.title);
@@ -60,7 +77,7 @@ export default function EditDatasetPage({
         toast.error("Dataset not found");
         router.push("/dashboard/my-datasets");
       }
-      
+
       setLoading(false);
     };
 
@@ -82,10 +99,51 @@ export default function EditDatasetPage({
     setExistingFiles((prev) => prev.filter((f) => f.name !== fileName));
   };
 
+  const validateStep1 = () => {
+    const result = uploadStep1Schema.safeParse({ title, description, tags });
+    const lgaResult = uploadStep2Schema.safeParse({ lgas: selectedLGAs });
+    const errors: Record<string, string> = {};
+    if (!result.success) {
+      result.error.issues.forEach((i) => {
+        errors[i.path[0] as string] = i.message;
+      });
+    }
+    if (!lgaResult.success) {
+      lgaResult.error.issues.forEach((i) => {
+        errors[i.path[0] as string] = i.message;
+      });
+    }
+    setStepErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateStep2 = () => {
+    if (existingFiles.length === 0 && newFiles.length === 0) {
+      setStepErrors({ files: "Keep at least one file or upload a replacement" });
+      return false;
+    }
+    setStepErrors({});
+    return true;
+  };
+
+  const validateStep3 = () => {
+    const result = uploadStep3Schema.safeParse({ visibility });
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((i) => {
+        errors[i.path[0] as string] = i.message;
+      });
+      setStepErrors(errors);
+      return false;
+    }
+    setStepErrors({});
+    return true;
+  };
+
   const handleSave = async (isDraft: boolean) => {
+    if (!validateStep1() || !validateStep2() || !validateStep3()) return;
     setSaving(true);
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    
     toast.success(isDraft ? "Changes saved as draft" : "Dataset updated successfully!");
     router.push("/dashboard/my-datasets");
   };
@@ -103,9 +161,7 @@ export default function EditDatasetPage({
     );
   }
 
-  if (!dataset) {
-    return null;
-  }
+  if (!dataset) return null;
 
   return (
     <main className="flex-1 bg-muted/40">
@@ -117,49 +173,14 @@ export default function EditDatasetPage({
       </div>
 
       <Container size="wide" className="py-8">
-        {/* Stepper */}
-        <div className="mb-8">
-          <div className="flex items-center justify-center">
-            {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <button
-                    onClick={() => setCurrentStep(step.id)}
-                    className={`flex items-center justify-center size-12 rounded-full border-2 transition-colors ${
-                      currentStep >= step.id
-                        ? "bg-primary border-primary text-primary-foreground"
-                        : "border-muted-foreground/30 text-muted-foreground hover:border-muted-foreground/50"
-                    }`}
-                  >
-                    {currentStep > step.id ? (
-                      <CheckCircle className="size-6" />
-                    ) : (
-                      <step.icon className="size-6" />
-                    )}
-                  </button>
-                  <span
-                    className={`mt-2 text-sm font-medium ${
-                      currentStep >= step.id ? "text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    {step.name}
-                  </span>
-                </div>
-                {index < steps.length - 1 && (
-                  <div
-                    className={`w-24 h-0.5 mx-4 transition-colors ${
-                      currentStep > step.id ? "bg-primary" : "bg-muted-foreground/30"
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <Stepper
+          steps={steps}
+          currentStep={currentStep}
+          onStepClick={(step) => step < currentStep && setCurrentStep(step)}
+          className="mb-8"
+        />
 
-        {/* Step Content */}
-        <Card className="max-w-3xl mx-auto p-8">
-          {/* Step 1: Basic Info */}
+        <Card className="max-w-3xl mx-auto p-4 sm:p-8">
           {currentStep === 1 && (
             <div className="space-y-6">
               <div>
@@ -170,45 +191,42 @@ export default function EditDatasetPage({
               </div>
 
               <div>
-                <label htmlFor="title" className="block text-sm font-medium mb-1.5">
-                  Dataset Title <span className="text-destructive">*</span>
-                </label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                <FieldLabelTooltip
+                  htmlFor="title"
+                  label="Dataset Title"
                   required
+                  tooltip={UPLOAD_FIELD_TOOLTIPS.title}
                 />
+                <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
+                <FormError message={stepErrors.title} />
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium mb-1.5">
-                  Description <span className="text-destructive">*</span>
-                  <button
-                    type="button"
-                    className="ml-1 text-muted-foreground hover:text-foreground"
-                    title="Provide a clear description"
-                  >
-                    <HelpCircle className="size-3 inline" />
-                  </button>
-                </label>
+                <FieldLabelTooltip
+                  htmlFor="description"
+                  label="Description"
+                  required
+                  tooltip={UPLOAD_FIELD_TOOLTIPS.description}
+                />
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
-                  required
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   {description.length} / 500 characters
                 </p>
+                <FormError message={stepErrors.description} />
               </div>
 
               <div>
-                <label htmlFor="tags" className="block text-sm font-medium mb-1.5">
-                  Tags (Keywords)
-                </label>
-                <div className="flex gap-2 mb-2">
+                <FieldLabelTooltip
+                  htmlFor="tags"
+                  label="Tags (Keywords)"
+                  tooltip={UPLOAD_FIELD_TOOLTIPS.tags}
+                />
+                <div className="flex flex-col sm:flex-row gap-2 mb-2">
                   <Input
                     id="tags"
                     value={tagInput}
@@ -216,7 +234,7 @@ export default function EditDatasetPage({
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
                     placeholder="Add tags"
                   />
-                  <Button type="button" onClick={addTag} variant="outline">
+                  <Button type="button" onClick={addTag} variant="outline" className="shrink-0">
                     Add
                   </Button>
                 </div>
@@ -232,6 +250,7 @@ export default function EditDatasetPage({
                           type="button"
                           onClick={() => removeTag(tag)}
                           className="hover:text-primary/80"
+                          aria-label={`Remove tag ${tag}`}
                         >
                           <X className="size-3" />
                         </button>
@@ -242,8 +261,8 @@ export default function EditDatasetPage({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">LGA Coverage</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-4 rounded-lg border">
+                <FieldLabelTooltip label="LGA Coverage" tooltip={UPLOAD_FIELD_TOOLTIPS.lgas} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-4 rounded-lg border">
                   {NIGER_STATE_LGAS.map((lga) => (
                     <label key={lga} className="flex items-center gap-2 text-sm">
                       <input
@@ -262,25 +281,24 @@ export default function EditDatasetPage({
                     </label>
                   ))}
                 </div>
+                <FormError message={stepErrors.lgas} />
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
-                <Button onClick={() => setCurrentStep(2)}>Next: Manage Files</Button>
+                <Button onClick={() => validateStep1() && setCurrentStep(2)}>
+                  Next: Manage Files
+                </Button>
               </div>
             </div>
           )}
 
-          {/* Step 2: Manage Files */}
           {currentStep === 2 && (
             <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-bold mb-4">Manage Files</h2>
-                <p className="text-muted-foreground">
-                  Add, remove, or replace dataset files
-                </p>
+                <p className="text-muted-foreground">{UPLOAD_FIELD_TOOLTIPS.files}</p>
               </div>
 
-              {/* Existing Files */}
               {existingFiles.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="font-medium">Current Files ({existingFiles.length})</h3>
@@ -300,6 +318,7 @@ export default function EditDatasetPage({
                         type="button"
                         onClick={() => removeFile(file.name)}
                         className="text-destructive hover:text-destructive/80"
+                        aria-label={`Remove file ${file.name}`}
                       >
                         <X className="size-5" />
                       </button>
@@ -308,29 +327,20 @@ export default function EditDatasetPage({
                 </div>
               )}
 
-              {/* Upload New Files */}
-              <div
-                className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => document.getElementById("file-input")?.click()}
-              >
-                <Upload className="size-10 text-muted-foreground mx-auto mb-3" />
-                <p className="font-medium mb-1">Add more files</p>
-                <p className="text-sm text-muted-foreground">
-                  Click to browse or drag and drop
-                </p>
-                <input id="file-input" type="file" multiple className="hidden" />
-              </div>
+              <FileUploadArea files={newFiles} onFilesChange={setNewFiles} />
+              <FormError message={stepErrors.files} />
 
-              <div className="flex justify-between gap-3 pt-4">
+              <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4">
                 <Button variant="outline" onClick={() => setCurrentStep(1)}>
                   Back
                 </Button>
-                <Button onClick={() => setCurrentStep(3)}>Next: Settings</Button>
+                <Button onClick={() => validateStep2() && setCurrentStep(3)}>
+                  Next: Settings
+                </Button>
               </div>
             </div>
           )}
 
-          {/* Step 3: Settings */}
           {currentStep === 3 && (
             <div className="space-y-6">
               <div>
@@ -341,15 +351,18 @@ export default function EditDatasetPage({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-3">
-                  Visibility <span className="text-destructive">*</span>
-                </label>
+                <FieldLabelTooltip
+                  label="Visibility"
+                  required
+                  tooltip={UPLOAD_FIELD_TOOLTIPS.visibility}
+                />
                 <div className="grid gap-3">
                   {(["public", "restricted", "private"] as Visibility[]).map((vis) => (
                     <button
                       key={vis}
                       type="button"
                       onClick={() => setVisibility(vis)}
+                      aria-pressed={visibility === vis}
                       className={`p-4 rounded-lg border-2 text-left transition-colors ${
                         visibility === vis
                           ? "border-primary bg-primary/5"
@@ -361,6 +374,7 @@ export default function EditDatasetPage({
                           className={`size-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
                             visibility === vis ? "border-primary" : "border-muted-foreground/30"
                           }`}
+                          aria-hidden
                         >
                           {visibility === vis && (
                             <div className="size-2.5 rounded-full bg-primary" />
@@ -378,18 +392,15 @@ export default function EditDatasetPage({
                     </button>
                   ))}
                 </div>
+                <FormError message={stepErrors.visibility} />
               </div>
 
-              <div className="flex justify-between gap-3 pt-4">
+              <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4">
                 <Button variant="outline" onClick={() => setCurrentStep(2)}>
                   Back
                 </Button>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleSave(true)}
-                    disabled={saving}
-                  >
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button variant="outline" onClick={() => handleSave(true)} disabled={saving}>
                     Save as Draft
                   </Button>
                   <Button onClick={() => handleSave(false)} disabled={saving}>

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { StatusBadge } from "@/components/data/status-badge";
+import { DatasetActivityPanel } from "@/components/data/dataset-activity-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMockSession } from "@/lib/auth/mock-session";
@@ -34,7 +35,7 @@ export default function DashboardPage() {
       
       // Get datasets for contributors and org admins
       if (["contributor", "org_admin", "super_admin"].includes(currentUser.role)) {
-        const result = await getDatasets({ pageSize: 6 });
+        const result = await getDatasets({ pageSize: 6, includePrivate: true });
         setMyDatasets(result.data.slice(0, 6));
       }
 
@@ -65,6 +66,18 @@ export default function DashboardPage() {
       <Container size="wide" className="py-8">
         {/* Stats Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+          {loading ? (
+            [...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <div className="h-12 w-12 rounded-lg bg-muted animate-pulse mb-4" />
+                  <div className="h-8 w-16 bg-muted animate-pulse rounded mb-2" />
+                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <>
           {/* All Users */}
           <StatsCard
             icon={Download}
@@ -111,15 +124,15 @@ export default function DashboardPage() {
 
           {/* Super Admin */}
           {currentUser.role === "super_admin" && (
-            <>
-              <StatsCard
-                icon={FileText}
-                label="Review Queue"
-                value="15"
-                trend="4 aging items"
-                iconColor="text-red-600"
-                bgColor="bg-red-50 dark:bg-red-950"
-              />
+            <StatsCard
+              icon={FileText}
+              label="Review Queue"
+              value="15"
+              trend="4 aging items"
+              iconColor="text-red-600"
+              bgColor="bg-red-50 dark:bg-red-950"
+            />
+          )}
             </>
           )}
         </div>
@@ -295,6 +308,11 @@ export default function DashboardPage() {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Portal Activity */}
+            {["contributor", "org_admin", "super_admin"].includes(currentUser.role) && (
+              <DatasetActivityPanel />
+            )}
 
             {/* My Organizations (Org Admin+) */}
             {["org_admin", "super_admin"].includes(currentUser.role) && (

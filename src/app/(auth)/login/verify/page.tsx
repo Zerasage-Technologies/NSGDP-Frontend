@@ -121,7 +121,7 @@ export default function VerifyOTPPage() {
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={index === 0 ? handlePaste : undefined}
-                  className="size-12 text-center text-lg font-semibold rounded-lg border border-input bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="min-h-11 min-w-11 size-11 text-center text-lg font-semibold rounded-lg border border-input bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   disabled={loading}
                 />
               ))}

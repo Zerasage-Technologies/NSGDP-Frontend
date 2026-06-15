@@ -6,16 +6,19 @@ import type { FeatureCollection, Feature } from "geojson";
 import { Loader2, Maximize2, Minimize2, Layers, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import L from "leaflet";
 
-// Fix Leaflet marker icons in Next.js
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+function configureLeafletIcons() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const L = require("leaflet") as typeof import("leaflet");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  });
+  return L;
+}
 
 // Dynamically import Leaflet to avoid SSR issues
 const MapContainer = dynamic(
@@ -50,7 +53,7 @@ const MIN_ZOOM = 7; // Prevent zooming out too far
 const MAX_ZOOM = 18; // Allow detailed view
 
 // Niger State approximate boundary (simplified polygon)
-const NIGER_STATE_BOUNDS: L.LatLngBoundsExpression = [
+const NIGER_STATE_BOUNDS: [[number, number], [number, number]] = [
   [8.5, 3.5],  // Southwest corner
   [11.5, 8.5], // Northeast corner
 ];
@@ -81,7 +84,7 @@ export function DatasetMap({
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    // Mark map as ready after component mounts
+    configureLeafletIcons();
     setMapReady(true);
     setLoading(false);
   }, []);

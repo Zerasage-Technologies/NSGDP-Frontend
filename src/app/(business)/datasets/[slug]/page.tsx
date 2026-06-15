@@ -1,13 +1,15 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Download, Calendar, FileText, ChevronRight } from "lucide-react";
+import { FileText, ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Container } from "@/components/layout/container";
 import { VisibilityBadge } from "@/components/data/visibility-badge";
 import { StatusBadge } from "@/components/data/status-badge";
+import { DatasetDownloadActions } from "@/components/data/dataset-download-actions";
+import { DatasetMapSection } from "@/components/data/dataset-map-section";
+import { DatasetActivityPanel } from "@/components/data/dataset-activity-panel";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDatasetBySlug, getDatasets } from "@/lib/mock";
 
@@ -151,16 +153,24 @@ export default async function DatasetPage({ params }: DatasetPageProps) {
                             </p>
                           </div>
                         </div>
-                        <Button size="sm">
-                          <Download className="size-4" />
-                          Download
-                        </Button>
+                        <DatasetDownloadActions
+                          datasetId={dataset.id}
+                          datasetSlug={dataset.slug}
+                          datasetTitle={dataset.title}
+                          visibility={dataset.visibility}
+                        />
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
             )}
+
+            {/* Spatial preview for geo datasets */}
+            <DatasetMapSection
+              formats={dataset.formats}
+              lgaCoverage={dataset.lgaCoverage}
+            />
 
             {/* Metadata */}
             <Card>
@@ -198,34 +208,21 @@ export default async function DatasetPage({ params }: DatasetPageProps) {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Stats */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Dataset Activity</CardTitle>
+                <CardTitle className="text-base">Download</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Download className="size-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {dataset.downloadCount.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Downloads</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="size-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">
-                      {formatDistanceToNow(new Date(dataset.updatedAt), {
-                        addSuffix: true,
-                      })}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Last updated</p>
-                  </div>
-                </div>
+              <CardContent>
+                <DatasetDownloadActions
+                  datasetId={dataset.id}
+                  datasetSlug={dataset.slug}
+                  datasetTitle={dataset.title}
+                  visibility={dataset.visibility}
+                />
               </CardContent>
             </Card>
+
+            <DatasetActivityPanel />
 
             {/* Related Datasets */}
             {relatedDatasets.length > 0 && (

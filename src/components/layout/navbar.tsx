@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Upload, LogOut, Settings as SettingsIcon, LayoutDashboard, ShieldCheck, Map } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Upload, LogOut, Settings as SettingsIcon, LayoutDashboard, ShieldCheck, Map, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useMockSession } from "@/lib/auth/mock-session";
+import { NavbarSearch } from "@/components/layout/navbar-search";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,17 +15,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 export function Navbar() {
-  const { currentUser, isAuthenticated } = useMockSession();
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const { currentUser, isAuthenticated, logout } = useMockSession();
 
   const canUpload = ["contributor", "org_admin", "super_admin"].includes(currentUser.role);
   const isAdmin = currentUser.role === "super_admin";
 
+  const handleLogout = () => {
+    logout();
+    toast.success("Logged out successfully");
+    router.push("/");
+  };
+
   return (
     <header className="navbar sticky top-0 z-40 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="navbar-container mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4">
-        {/* Logo */}
         <Link href="/" className="navbar-logo flex items-center gap-2 flex-shrink-0">
           <div className="logo-icon flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm font-semibold">
             NS
@@ -34,20 +44,20 @@ export function Navbar() {
           </div>
         </Link>
 
-        {/* Search Bar */}
-        <div className="navbar-search relative hidden flex-1 max-w-md md:flex">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <Input
-            type="search"
-            placeholder="Search datasets..."
-            className="w-full pl-10 pr-3 h-9 text-sm bg-accent/50 border-primary/20 focus:border-primary/50 focus:bg-background"
-            aria-label="Search datasets"
-          />
-        </div>
+        <NavbarSearch />
 
-        {/* Navigation */}
-        <nav className="navbar-nav flex items-center gap-2">
-          {/* Map Explorer Link */}
+        <nav className="navbar-nav flex items-center gap-2" aria-label="Main navigation">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label="Toggle theme"
+          >
+            <Sun className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          </Button>
+
           <Link href="/map">
             <Button variant="ghost" size="sm">
               <Map className="size-4" />
@@ -55,9 +65,8 @@ export function Navbar() {
             </Button>
           </Link>
 
-          {/* Upload CTA (Contributor+) */}
           {canUpload && (
-            <Link href="/datasets/new">
+            <Link href="/dashboard/upload">
               <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <Upload className="size-4" />
                 <span className="hidden sm:inline">Upload</span>
@@ -65,7 +74,6 @@ export function Navbar() {
             </Link>
           )}
 
-          {/* Admin Badge (Super Admin only) */}
           {isAdmin && (
             <Link href="/admin">
               <Button variant="outline" size="sm">
@@ -78,14 +86,15 @@ export function Navbar() {
             </Link>
           )}
 
-          {/* Auth Actions */}
           {!isAuthenticated ? (
             <>
               <Link href="/login">
-                <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent">Log In</Button>
+                <Button variant="ghost" size="sm">Log In</Button>
               </Link>
               <Link href="/register">
-                <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">Register</Button>
+                <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  Register
+                </Button>
               </Link>
             </>
           ) : (
@@ -109,20 +118,22 @@ export function Navbar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Link href="/dashboard" className="flex items-center gap-2 w-full">
-                    <LayoutDashboard className="size-4" />
-                    Dashboard
-                  </Link>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => router.push("/dashboard")}
+                >
+                  <LayoutDashboard className="size-4" />
+                  Dashboard
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Link href="/settings" className="flex items-center gap-2 w-full">
-                    <SettingsIcon className="size-4" />
-                    Settings
-                  </Link>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => router.push("/dashboard/profile")}
+                >
+                  <SettingsIcon className="size-4" />
+                  Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                   <LogOut className="size-4" />
                   Log Out
                 </DropdownMenuItem>

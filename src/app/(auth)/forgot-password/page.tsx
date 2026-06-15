@@ -2,26 +2,35 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { KeyRound, ArrowLeft } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { FormError } from "@/components/forms/form-error";
+import { forgotPasswordSchema } from "@/lib/schemas/auth";
 
-// Force dynamic rendering
 export const dynamic = "force-dynamic";
+
+type ForgotFormData = { email: string };
 
 export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ForgotFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+  });
+
+  const onSubmit = async () => {
     setLoading(true);
-
-    // Simulate password reset request
     await new Promise((resolve) => setTimeout(resolve, 1000));
-
     setSubmitted(true);
     setLoading(false);
   };
@@ -75,18 +84,18 @@ export default function ForgotPasswordPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium mb-1.5">
                   Email Address
                 </label>
                 <Input
                   id="email"
-                  name="email"
                   type="email"
-                  required
                   placeholder="your.email@example.com"
+                  {...register("email")}
                 />
+                <FormError message={errors.email?.message} />
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>

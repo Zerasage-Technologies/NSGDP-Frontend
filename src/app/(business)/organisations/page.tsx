@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { OrgCard } from "@/components/data/org-card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { OrgCardSkeleton } from "@/components/feedback/skeletons";
 import { getOrganisations } from "@/lib/mock";
 import type { Organisation } from "@/types";
 import { SECTORS } from "@/lib/constants";
@@ -120,7 +120,7 @@ export default function OrganisationsPage() {
         {loading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-48" />
+              <OrgCardSkeleton key={i} />
             ))}
           </div>
         ) : filteredOrgs.length === 0 ? (

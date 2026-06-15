@@ -69,7 +69,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/datasets/new" className="hover:text-foreground">
+                <Link href="/dashboard/upload" className="hover:text-foreground">
                   Upload Dataset
                 </Link>
               </li>

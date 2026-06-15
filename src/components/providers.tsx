@@ -1,5 +1,6 @@
 "use client";
 
+import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MockSessionProvider } from "@/lib/auth/mock-session";
@@ -10,7 +11,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Low-resource: serve cached data, revalidate in background.
             staleTime: 60 * 1000,
             retry: 1,
             refetchOnWindowFocus: false,
@@ -20,8 +20,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <MockSessionProvider>{children}</MockSessionProvider>
-    </QueryClientProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <QueryClientProvider client={queryClient}>
+        <MockSessionProvider>{children}</MockSessionProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

@@ -38,7 +38,7 @@ export default function MyDatasetsPage() {
       setLoading(true);
       
       // Mock user's datasets
-      const result = await getDatasets({ pageSize: 50 });
+      const result = await getDatasets({ pageSize: 50, includePrivate: true });
       setDatasets(result.data);
       setFilteredDatasets(result.data);
       

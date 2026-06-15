@@ -6,9 +6,9 @@ import { Grid3x3, List, Database } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { DatasetCard } from "@/components/data/dataset-card";
 import { FilterSidebar } from "@/components/filters/filter-sidebar";
+import { MobileFilterDrawer } from "@/components/filters/mobile-filter-drawer";
 import { ActiveFilterChips } from "@/components/filters/active-filter-chips";
 import { EmptyState } from "@/components/feedback/empty-state";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -16,7 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Pagination } from "@/components/data/pagination";
+import { DatasetCardSkeleton } from "@/components/feedback/skeletons";
 import { getDatasets, getGroups, getOrganisations } from "@/lib/mock";
 import type { Dataset } from "@/types";
 import { NIGER_STATE_LGAS, FILE_FORMATS } from "@/lib/constants";
@@ -44,6 +45,8 @@ function DatasetsContent() {
 
   const [sort, setSort] = useState<SortOption>("recent");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Sync filters from URL on mount
   useEffect(() => {
@@ -56,6 +59,7 @@ function DatasetsContent() {
       });
       setSort((searchParams.get("sort") as SortOption) || "recent");
       setPage(Number(searchParams.get("page")) || 1);
+      setPageSize(Number(searchParams.get("limit")) || 20);
     }
   }, [searchParams]);
 
@@ -93,15 +97,16 @@ function DatasetsContent() {
         formats: filters.formats,
         sort,
         page,
-        pageSize: 20,
+        pageSize,
       });
       setDatasets(result.data);
       setTotal(result.meta.total);
+      setTotalPages(result.meta.totalPages);
       setLoading(false);
     };
 
     fetchDatasets();
-  }, [filters, sort, page]);
+  }, [filters, sort, page, pageSize]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -115,10 +120,11 @@ function DatasetsContent() {
     });
     if (sort !== "recent") params.set("sort", sort);
     if (page > 1) params.set("page", String(page));
+    if (pageSize !== 20) params.set("limit", String(pageSize));
 
     const newUrl = params.toString() ? `?${params.toString()}` : "/datasets";
     router.replace(newUrl, { scroll: false });
-  }, [filters, sort, page, router]);
+  }, [filters, sort, page, pageSize, router]);
 
   const handleFilterChange = (filterId: string, values: string[]) => {
     setFilters((prev) => ({ ...prev, [filterId]: values }));
@@ -203,14 +209,19 @@ function DatasetsContent() {
             />
 
             {/* Toolbar */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 gap-4">
               <p className="text-sm text-muted-foreground">
                 {loading ? "Loading..." : `${total} datasets found`}
               </p>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <MobileFilterDrawer
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  sections={filterSections}
+                />
                 {/* Sort */}
-                <Select value={sort} onValueChange={(v) => setSort(v as SortOption)}>
+                <Select value={sort} onValueChange={(v) => v && setSort(v as SortOption)}>
                   <SelectTrigger className="w-40">
                     <SelectValue />
                   </SelectTrigger>
@@ -260,7 +271,7 @@ function DatasetsContent() {
                 )}
               >
                 {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-64" />
+                  <DatasetCardSkeleton key={i} />
                 ))}
               </div>
             ) : datasets.length === 0 ? (
@@ -286,28 +297,18 @@ function DatasetsContent() {
                   ))}
                 </div>
 
-                {/* Pagination */}
-                {total > 20 && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
-                    <Button
-                      variant="outline"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                    >
-                      Previous
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                      Page {page} of {Math.ceil(total / 20)}
-                    </span>
-                    <Button
-                      variant="outline"
-                      onClick={() => setPage((p) => p + 1)}
-                      disabled={page >= Math.ceil(total / 20)}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                )}
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  total={total}
+                  onPageChange={setPage}
+                  onPageSizeChange={(s) => {
+                    setPageSize(s);
+                    setPage(1);
+                  }}
+                  className="mt-8"
+                />
               </>
             )}
           </div>

@@ -1,62 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, XCircle } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PasswordStrengthMeter } from "@/components/forms/password-strength-meter";
+import { FormError } from "@/components/forms/form-error";
+import { resetPasswordSchema } from "@/lib/schemas/auth";
 import { toast } from "sonner";
 
-// Force dynamic rendering
 export const dynamic = "force-dynamic";
 
-interface ResetPasswordPageProps {
-  params: Promise<{ token: string }>;
-}
+type ResetFormData = { password: string; confirmPassword: string };
 
-export default function ResetPasswordPage({}: ResetPasswordPageProps) {
+function ResetPasswordContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tokenExpired =
+    searchParams.get("expired") === "1" || searchParams.get("expired") === "true";
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [password, setPassword] = useState("");
-  const [tokenExpired] = useState(false); // Mock: set to true to test expired token
 
-  // Password strength calculation
-  const getPasswordStrength = (pwd: string) => {
-    let strength = 0;
-    if (pwd.length >= 8) strength++;
-    if (pwd.length >= 12) strength++;
-    if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) strength++;
-    if (/\d/.test(pwd)) strength++;
-    if (/[^a-zA-Z0-9]/.test(pwd)) strength++;
-    return strength;
-  };
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<ResetFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+  });
 
-  const passwordStrength = getPasswordStrength(password);
-  const strengthLabels = ["Very Weak", "Weak", "Fair", "Good", "Strong"];
-  const strengthColors = [
-    "bg-red-500",
-    "bg-orange-500",
-    "bg-yellow-500",
-    "bg-blue-500",
-    "bg-green-500",
-  ];
+  const password = watch("password", "");
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmit = async () => {
     setLoading(true);
-
-    // Simulate password reset
     await new Promise((resolve) => setTimeout(resolve, 1000));
-
     toast.success("Password reset successful! You can now log in with your new password.");
     router.push("/login");
   };
 
-  // Token expired state
   if (tokenExpired) {
     return (
       <main className="flex-1 bg-muted/40">
@@ -94,8 +82,7 @@ export default function ResetPasswordPage({}: ResetPasswordPageProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* New Password */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium mb-1.5">
                   New Password
@@ -103,44 +90,23 @@ export default function ResetPasswordPage({}: ResetPasswordPageProps) {
                 <div className="relative">
                   <Input
                     id="password"
-                    name="password"
                     type={showPassword ? "text" : "password"}
-                    required
-                    minLength={8}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="Create a strong password"
+                    {...register("password")}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
                 </div>
-                {password && (
-                  <div className="mt-2">
-                    <div className="flex gap-1 mb-1">
-                      {[...Array(5)].map((_, i) => (
-                        <div
-                          key={i}
-                          className={`h-1 flex-1 rounded ${
-                            i < passwordStrength
-                              ? strengthColors[passwordStrength - 1]
-                              : "bg-muted"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Password strength: {strengthLabels[passwordStrength - 1] || "Very Weak"}
-                    </p>
-                  </div>
-                )}
+                <PasswordStrengthMeter password={password} />
+                <FormError message={errors.password?.message} />
               </div>
 
-              {/* Confirm Password */}
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1.5">
                   Confirm New Password
@@ -148,23 +114,20 @@ export default function ResetPasswordPage({}: ResetPasswordPageProps) {
                 <div className="relative">
                   <Input
                     id="confirmPassword"
-                    name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
-                    required
                     placeholder="Re-enter your new password"
+                    {...register("confirmPassword")}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff className="size-4" />
-                    ) : (
-                      <Eye className="size-4" />
-                    )}
+                    {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
                 </div>
+                <FormError message={errors.confirmPassword?.message} />
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
@@ -175,5 +138,13 @@ export default function ResetPasswordPage({}: ResetPasswordPageProps) {
         </Card>
       </Container>
     </main>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
