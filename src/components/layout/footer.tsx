@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { GeoHealthLogo } from "@/components/layout/geohealth-logo";
+import { BRAND } from "@/lib/brand";
 
 export function Footer() {
   return (
@@ -8,10 +9,10 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
-            <GeoHealthLogo className="[&_div]:text-primary-foreground [&_span]:text-[#E8A020]" />
+            <GeoHealthLogo className="[&_div]:text-primary-foreground" />
             <p className="text-sm text-primary-foreground/80 leading-relaxed">
-              Centralised geospatial and health data platform for Niger State — funded by Umbrella Fund,
-              powered by Zerasage Technologies.
+              Centralised geospatial and health data platform for Niger State — funded by Umbrella
+              Fund, implemented by FACT Foundation.
             </p>
           </div>
 
@@ -52,7 +53,7 @@ export function Footer() {
             <h3 className="mb-3 text-sm font-semibold text-[#E8A020]">Partners</h3>
             <ul className="space-y-2 text-sm text-primary-foreground/85">
               <li><strong>Funded By:</strong> Umbrella Fund</li>
-              <li><strong>Powered By:</strong> Zerasage Technologies</li>
+              <li><strong>Implemented By:</strong> FACT Foundation</li>
               <li><strong>Lead Agency:</strong> NSPHCDA</li>
             </ul>
             <div className="flex gap-3 mt-4 text-sm">
@@ -64,7 +65,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-primary-foreground/20 pt-8 text-sm text-primary-foreground/70">
-          <span>© {new Date().getFullYear()} Niger State Primary Health Care Development Agency. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} {BRAND.portalName}. All rights reserved.</span>
           <div className="flex gap-4">
             <Link href="/terms" className="hover:text-white">Terms</Link>
             <Link href="/privacy" className="hover:text-white">Privacy</Link>

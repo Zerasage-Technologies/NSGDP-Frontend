@@ -58,7 +58,7 @@ export default function SubmitDataPage() {
         <Container className="py-8">
           <h1 className="text-3xl font-bold">Submit Data</h1>
           <p className="mt-2 text-muted-foreground">
-            Contribute health datasets to the Niger State GeoHealth Portal
+            Contribute health datasets to the NSPHCDA Data Portal
           </p>
         </Container>
       </div>

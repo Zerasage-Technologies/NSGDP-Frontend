@@ -204,11 +204,11 @@ export default function ArchitecturePage() {
 
       {/* ── HEADER ─────────────────────────────────────────────────────── */}
       <h1 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 8px" }}>
-        Niger State GeoHealth Portal
+        NSPHCDA Data Portal
       </h1>
       <p style={{ fontSize: 14, color: C.textSecondary, margin: 0 }}>
         System Architecture — User Journey View &nbsp;·&nbsp; PRD v2.0 &nbsp;·&nbsp;
-        Zerasage Technologies &nbsp;·&nbsp; June 2026
+        FACT Foundation &nbsp;·&nbsp; June 2026
       </p>
 
       <div style={{ marginTop: 36 }} />
@@ -502,7 +502,7 @@ export default function ArchitecturePage() {
       }}>
         <p style={{ fontSize: 11, color: C.textMuted, margin: 0 }}>
           Source: Backend_Architecture_v1.0.md · Master_Build_Plan_v1.0.md · PRD v2.0 ·
-          Niger Health Facilities.gpkg inspection &nbsp;|&nbsp; Zerasage Technologies · June 2026
+          Niger Health Facilities.gpkg inspection &nbsp;|&nbsp; FACT Foundation · June 2026
         </p>
       </div>
 

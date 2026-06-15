@@ -59,7 +59,7 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
               <dt className="text-muted-foreground">Update Frequency</dt>
               <dd>{dataset.updateFrequency ?? "—"}</dd>
               <dt className="text-muted-foreground">Portal Source</dt>
-              <dd>{dataset.portalSource ?? "Niger State GeoHealth Portal"}</dd>
+              <dd>{dataset.portalSource ?? "NSPHCDA Data Portal"}</dd>
               <dt className="text-muted-foreground">Category</dt>
               <dd>
                 <Badge variant="secondary">

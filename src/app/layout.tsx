@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { RoleSwitcher } from "@/components/dev/role-switcher";
 import { AiAssistantWidget } from "@/components/feedback/ai-assistant-widget";
+import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
 const inter = Inter({
@@ -20,15 +21,24 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Niger State GeoHealth Portal",
-    template: "%s · Niger State GeoHealth Portal",
+    default: BRAND.portalName,
+    template: `%s | ${BRAND.portalName}`,
   },
   description:
-    "Niger State's centralised geospatial and health data platform — disease surveillance, facility mapping, analytics, and open health datasets across 25 LGAs.",
+    "NSPHCDA's centralised geospatial and health data platform — disease surveillance, facility mapping, analytics, and open health datasets across Niger State's 25 LGAs.",
   openGraph: {
-    title: "Niger State GeoHealth Portal",
+    title: BRAND.portalName,
+    siteName: BRAND.portalName,
     description: "Health data portal for evidence-based planning across Niger State.",
     type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: BRAND.portalName,
+  },
+  icons: {
+    icon: BRAND.logoPath,
+    apple: BRAND.logoPath,
   },
 };
 

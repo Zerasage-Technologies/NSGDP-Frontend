@@ -39,7 +39,7 @@ const whatWeDo = [
 const testimonials = [
   {
     quote:
-      "The GeoHealth Portal has transformed how we plan immunisation campaigns. We can now see coverage gaps by LGA at a glance and allocate resources accordingly.",
+      "The NSPHCDA Data Portal has transformed how we plan immunisation campaigns. We can now see coverage gaps by LGA at a glance and allocate resources accordingly.",
     name: "Dr. Amina Bello",
     role: "Health Planner, NSPHCDA",
   },
@@ -100,10 +100,10 @@ export default function AboutPage() {
               About the Portal
             </p>
             <h1 className="text-4xl font-bold sm:text-5xl">
-              Niger State GeoHealth Data Portal
+              NSPHCDA Data Portal
             </h1>
             <p className="text-lg text-primary-foreground/90 leading-relaxed">
-              The Niger State GeoHealth Portal is a centralised geospatial health data system
+              The NSPHCDA Data Portal is a centralised geospatial health data system
               developed to strengthen data-driven decision-making across the state&apos;s 25 Local
               Government Areas. It brings together disease surveillance, health facility registry,
               and population data in one accessible platform.

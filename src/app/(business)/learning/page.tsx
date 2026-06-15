@@ -40,7 +40,7 @@ const heroSlides = [
 ];
 
 const videoTutorials = [
-  { title: "Introduction to Niger State GeoHealth Portal", duration: "12 min", tags: ["Portal", "Basics"] },
+  { title: "Introduction to NSPHCDA Data Portal", duration: "12 min", tags: ["Portal", "Basics"] },
   { title: "Navigating the Data Repository", duration: "18 min", tags: ["Data", "Search"] },
   { title: "Filtering Datasets by LGA and Category", duration: "15 min", tags: ["Filters", "LGA"] },
   { title: "Downloading and Citing Health Datasets", duration: "10 min", tags: ["Download", "Citation"] },
@@ -105,7 +105,7 @@ const learningPath = [
   {
     stage: "GIS Basics",
     description: "Understand coordinates, layers, and map projections.",
-    resources: ["QGIS Training Manual Ch. 1–3", "Intro to GeoHealth Portal video"],
+    resources: ["QGIS Training Manual Ch. 1–3", "Intro to NSPHCDA Data Portal video"],
   },
   {
     stage: "Intermediate Geospatial",

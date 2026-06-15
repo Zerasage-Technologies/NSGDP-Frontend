@@ -1,4 +1,4 @@
-// Niger State GeoHealth Portal — domain types (PRD v2.0)
+// NSPHCDA Data Portal — domain types (PRD v2.0)
 
 export type UserRole =
   | "public"
