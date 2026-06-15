@@ -1,3 +1,11 @@
+import type {
+  AnalyticsMetric,
+  LGABurden,
+  LGACaseData,
+  OutlierFacility,
+} from "@/types";
+import { NIGER_STATE_LGAS } from "@/lib/constants";
+
 export const mockPlatformKPIs = {
   totalUsers: 248,
   totalDatasets: 24,
@@ -16,16 +24,16 @@ export const mockUploadsOverTime = [
 ];
 
 export const mockDownloadsByDataset = [
-  { name: "Health Facility Registry", downloads: 1240 },
-  { name: "Malaria Surveillance", downloads: 980 },
-  { name: "Population Estimates", downloads: 756 },
-  { name: "Routine Immunisation", downloads: 620 },
-  { name: "NHMIS Aggregate", downloads: 540 },
-  { name: "LGA Boundaries", downloads: 480 },
+  { name: "Health Facility Registry (HFR)", downloads: 1240 },
+  { name: "Malaria Case Surveillance", downloads: 980 },
+  { name: "Population Estimates & Boundaries", downloads: 756 },
+  { name: "Routine Immunisation Coverage", downloads: 620 },
+  { name: "NHMIS Aggregate Indicators", downloads: 540 },
+  { name: "Ward Administrative Boundaries", downloads: 480 },
   { name: "Meningitis Cases", downloads: 390 },
   { name: "HIV Unit Data", downloads: 310 },
-  { name: "TB Surveillance", downloads: 280 },
-  { name: "Maternal Health", downloads: 245 },
+  { name: "TB Unit Data", downloads: 280 },
+  { name: "Maternal Health Indicators", downloads: 245 },
 ];
 
 export const mockNewUsersOverTime = [
@@ -44,27 +52,127 @@ export const mockAnalyticsKPIs = {
   outlierFacilities: 14,
 };
 
-export const mockDiseaseMetrics = [
-  "Severe Malaria Cases",
-  "Meningitis Cases",
-  "Cholera Cases",
-  "Routine Immunisation",
-  "ANC Attendance",
-  "U5 Mortality",
-];
+const METRIC_BASE: Record<AnalyticsMetric, number> = {
+  severe_malaria: 4200,
+  meningitis: 890,
+  cholera: 340,
+  diphtheria: 210,
+  anc_attendance: 12400,
+  delivery_sba: 6800,
+  routine_immunisation: 15600,
+  u5_mortality: 420,
+  death_cases: 380,
+};
 
-export const mockLGABurden = [
-  { rank: 1, lga: "Chanchaga", totalCases: 4820, facilities: 187, population: 688000, incidence: 7.01 },
-  { rank: 2, lga: "Bida", totalCases: 3910, facilities: 142, population: 512000, incidence: 7.64 },
-  { rank: 3, lga: "Suleja", totalCases: 2840, facilities: 98, population: 421000, incidence: 6.75 },
-  { rank: 4, lga: "Kontagora", totalCases: 2210, facilities: 76, population: 389000, incidence: 5.68 },
-  { rank: 5, lga: "Minna", totalCases: 1980, facilities: 65, population: 310000, incidence: 6.39 },
-];
+function seededValue(metric: AnalyticsMetric, year: number, month?: number): number {
+  const base = METRIC_BASE[metric];
+  const growth = (year - 2013) * 0.04;
+  const seasonal = month !== undefined ? Math.sin((month / 12) * Math.PI * 2) * 0.15 : 0;
+  const hash = (metric.charCodeAt(0) + year + (month ?? 0)) % 17;
+  return Math.round(base * (1 + growth + seasonal) * (0.85 + hash * 0.02));
+}
 
-export function getMockTrendData(metric: string) {
-  const years = Array.from({ length: 13 }, (_, i) => 2013 + i);
-  return years.map((year) => ({
-    year: String(year),
-    cases: Math.floor(2000 + Math.random() * 3000 + (metric.length % 5) * 200),
+export function getTrendData(metric: AnalyticsMetric, mode: "annual" | "seasonal" = "annual") {
+  if (mode === "annual") {
+    return Array.from({ length: 13 }, (_, i) => {
+      const year = 2013 + i;
+      return { date: String(year), cases: seededValue(metric, year) };
+    });
+  }
+  const year = 2024;
+  return Array.from({ length: 12 }, (_, i) => ({
+    date: new Date(year, i).toLocaleString("en", { month: "short" }),
+    cases: seededValue(metric, year, i + 1),
+  }));
+}
+
+export function getLGACaseData(metric: AnalyticsMetric): LGACaseData[] {
+  return NIGER_STATE_LGAS.map((lga, i) => {
+    const pop = 120000 + i * 18000 + (lga.length % 5) * 5000;
+    const cases = Math.round(seededValue(metric, 2024) * (0.3 + (i % 10) * 0.08));
+    const facilities = 12 + (i % 8) * 3;
+    return { lga, cases, population: pop, facilities };
+  });
+}
+
+export function getLGABurdenTable(metric: AnalyticsMetric): LGABurden[] {
+  return getLGACaseData(metric)
+    .map((row) => ({
+      rank: 0,
+      lga: row.lga,
+      totalCases: row.cases,
+      facilities: row.facilities,
+      population: row.population,
+      incidencePer1000: Math.round((row.cases / row.population) * 1000 * 10) / 10,
+    }))
+    .sort((a, b) => b.totalCases - a.totalCases)
+    .map((row, i) => ({ ...row, rank: i + 1 }));
+}
+
+export function getTopLGAs(metric: AnalyticsMetric, n = 10) {
+  return getLGABurdenTable(metric).slice(0, n).map((r) => ({
+    lga: r.lga,
+    cases: r.totalCases,
+  }));
+}
+
+export function getOutlierFacilities(metric: AnalyticsMetric): OutlierFacility[] {
+  const outliers: OutlierFacility[] = [
+    { facility: "Chanchaga General Hospital", lga: "Chanchaga", totalCases: 842, zScore: 3.2, interpretation: "Very high – investigate" },
+    { facility: "Bida General Hospital", lga: "Bida", totalCases: 691, zScore: 2.8, interpretation: "Very high – investigate" },
+    { facility: "Suleja PHC 1", lga: "Suleja", totalCases: 412, zScore: 2.4, interpretation: "Elevated – monitor" },
+    { facility: "Kontagora General Hospital", lga: "Kontagora", totalCases: 378, zScore: 2.1, interpretation: "Elevated – monitor" },
+    { facility: "Minna PHC 2", lga: "Minna", totalCases: 298, zScore: 2.0, interpretation: "Borderline outlier" },
+  ];
+  return outliers.map((o) => ({
+    ...o,
+    totalCases: Math.round(o.totalCases * (METRIC_BASE[metric] / METRIC_BASE.severe_malaria)),
+  }));
+}
+
+export function getAnalyticsDashboard(metric: AnalyticsMetric) {
+  const burden = getLGABurdenTable(metric);
+  return {
+    kpis: {
+      totalCases: burden.reduce((s, r) => s + r.totalCases, 0),
+      healthFacilities: mockAnalyticsKPIs.healthFacilities,
+      lgasCovered: 25,
+      outlierFacilities: getOutlierFacilities(metric).length,
+    },
+    trendAnnual: getTrendData(metric, "annual"),
+    trendSeasonal: getTrendData(metric, "seasonal"),
+    topLGAs: getTopLGAs(metric, 10),
+    burdenTable: burden,
+    outliers: getOutlierFacilities(metric),
+  };
+}
+
+export function getGisBurdenBubbles(metric: AnalyticsMetric, year = 2024) {
+  const data = getLGACaseData(metric);
+  const maxCases = Math.max(...data.map((d) => d.cases));
+  return data.map((d, i) => {
+    const coords = {
+      Chanchaga: { lat: 9.6, lng: 6.55 },
+      Bida: { lat: 9.08, lng: 6.02 },
+      Suleja: { lat: 9.18, lng: 7.18 },
+      Kontagora: { lat: 10.4, lng: 5.6 },
+      Bosso: { lat: 9.62, lng: 6.58 },
+    }[d.lga] ?? { lat: 9.5 + (i % 5) * 0.12, lng: 6.0 + (i % 7) * 0.1 };
+    return {
+      lga: d.lga,
+      cases: Math.round(d.cases * (year / 2024)),
+      lat: coords.lat,
+      lng: coords.lng,
+      radius: 8 + (d.cases / maxCases) * 32,
+    };
+  });
+}
+
+// Legacy exports
+export const mockLGABurden = getLGABurdenTable("severe_malaria");
+export function getMockTrendData() {
+  return getTrendData("severe_malaria", "annual").map((d) => ({
+    year: d.date,
+    cases: d.cases,
   }));
 }

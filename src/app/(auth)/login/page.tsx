@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useMockSession } from "@/lib/auth/mock-session";
+import type { AccessLevel } from "@/types";
 import { loginSchema, type LoginFormData } from "@/lib/schemas/auth";
 import { toast } from "sonner";
 
@@ -26,7 +27,15 @@ function LoginContent() {
   const [attempts, setAttempts] = useState(0);
   const [locked, setLocked] = useState(false);
 
+  const [accessLevel, setAccessLevel] = useState<AccessLevel>("public");
+
   const returnTo = searchParams?.get("returnTo") || "/dashboard";
+  const submitLabel =
+    accessLevel === "public"
+      ? "Continue as Public User"
+      : accessLevel === "partner"
+        ? "Request Partner Access"
+        : "Log in as Administrator";
 
   const {
     register,
@@ -82,7 +91,7 @@ function LoginContent() {
           <CardDescription>Log in to access your account and datasets</CardDescription>
         </CardHeader>
         <CardContent>
-          {searchParams?.get("returnTo")?.includes("/datasets/") && (
+          {searchParams?.get("returnTo")?.includes("/dataportal/") && (
             <div className="mb-6 rounded-lg bg-blue-50 dark:bg-blue-950 p-4 text-sm">
               <p className="text-blue-900 dark:text-blue-100">Log in to download this dataset</p>
             </div>
@@ -98,6 +107,46 @@ function LoginContent() {
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium mb-2">Access Level</legend>
+                {(
+                  [
+                    ["public", "Public Access", "General public — browse and download open datasets"],
+                    ["partner", "Partner Access", "NGOs, donors, and development partners"],
+                    ["administrator", "Administrator", "State Ministry of Health admin users"],
+                  ] as const
+                ).map(([value, label, hint]) => (
+                  <label
+                    key={value}
+                    className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                      accessLevel === value ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="accessLevel"
+                      value={value}
+                      checked={accessLevel === value}
+                      onChange={() => setAccessLevel(value)}
+                      className="mt-1"
+                    />
+                    <span>
+                      <span className="text-sm font-medium block">{label}</span>
+                      <span className="text-xs text-muted-foreground">{hint}</span>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+
+              {accessLevel !== "public" && (
+                <p className="text-xs text-muted-foreground rounded-lg bg-muted p-3">
+                  Need access? Contact NSPHCDA at{" "}
+                  <a href="mailto:healthdata@nsphcda.ng.gov.ng" className="text-primary hover:underline">
+                    healthdata@nsphcda.ng.gov.ng
+                  </a>
+                </p>
+              )}
+
               <div>
                 <label htmlFor="email" className="block text-sm font-medium mb-1.5">Email Address</label>
                 <Input
@@ -151,7 +200,7 @@ function LoginContent() {
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Logging in..." : "Log In"}
+                {loading ? "Please wait…" : submitLabel}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">

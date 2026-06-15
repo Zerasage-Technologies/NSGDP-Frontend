@@ -4,8 +4,8 @@ import { Footer } from "@/components/layout/footer";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Niger State Open Data Portal",
-    default: "Niger State Open Data Portal",
+    template: "%s | Niger State GeoHealth Portal",
+    default: "Niger State GeoHealth Portal",
   },
 };
 

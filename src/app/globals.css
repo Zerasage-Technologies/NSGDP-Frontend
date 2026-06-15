@@ -6,9 +6,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  Niger State Government Open Data Portal — Design Tokens
-  Brand: Niger State Green (#1B5E35) · Teal accent · WCAG AA targets.
-  See docs/Frontend_PRD_v1.0.md §4.1.
+  Niger State GeoHealth Portal — Design Tokens
+  Brand: Deep Green (#1A4731) · Accent Amber (#E8A020)
 */
 
 @theme inline {
@@ -83,26 +82,26 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.205 0.01 160);
 
-  /* Primary = Niger State Green (#1B5E35) */
-  --primary: oklch(0.43 0.087 158);
+  /* Primary = Deep Green (#1A4731) */
+  --primary: oklch(0.35 0.055 155);
   --primary-foreground: oklch(0.985 0 0);
 
-  --secondary: oklch(0.97 0.005 160);
-  --secondary-foreground: oklch(0.3 0.02 160);
-  --muted: oklch(0.97 0.005 160);
-  --muted-foreground: oklch(0.52 0.015 160);
-  --accent: oklch(0.95 0.02 175);
-  --accent-foreground: oklch(0.3 0.04 175);
+  --secondary: oklch(0.97 0.005 155);
+  --secondary-foreground: oklch(0.3 0.02 155);
+  --muted: oklch(0.97 0.005 155);
+  --muted-foreground: oklch(0.52 0.015 155);
+  /* Accent = Amber (#E8A020) */
+  --accent: oklch(0.88 0.06 85);
+  --accent-foreground: oklch(0.35 0.08 75);
 
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.91 0.006 160);
-  --input: oklch(0.91 0.006 160);
-  --ring: oklch(0.43 0.087 158);
+  --border: oklch(0.91 0.006 155);
+  --input: oklch(0.91 0.006 155);
+  --ring: oklch(0.35 0.055 155);
 
-  /* Brand + semantic */
-  --brand: oklch(0.43 0.087 158);
+  --brand: oklch(0.35 0.055 155);
   --brand-foreground: oklch(0.985 0 0);
-  --teal: oklch(0.6 0.1 185);
+  --teal: oklch(0.78 0.14 75);
   --teal-foreground: oklch(0.985 0 0);
   --success: oklch(0.58 0.13 150);        /* PUBLIC */
   --success-foreground: oklch(0.985 0 0);

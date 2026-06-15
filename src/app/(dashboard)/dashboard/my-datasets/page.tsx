@@ -186,7 +186,7 @@ export default function MyDatasetsPage() {
                             <Database className="size-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div className="min-w-0">
                               <Link
-                                href={`/datasets/${dataset.slug}`}
+                                href={`/dataportal/${dataset.slug}`}
                                 className="font-medium hover:text-primary transition-colors block mb-1"
                               >
                                 {dataset.title}
@@ -219,7 +219,7 @@ export default function MyDatasetsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2">
-                            <Link href={`/datasets/${dataset.slug}`}>
+                            <Link href={`/dataportal/${dataset.slug}`}>
                               <Button size="sm" variant="ghost">
                                 <Eye className="size-4" />
                               </Button>

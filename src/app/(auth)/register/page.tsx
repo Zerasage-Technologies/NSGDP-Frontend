@@ -33,7 +33,7 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { terms: false as unknown as true },
+    defaultValues: { terms: false as unknown as true, accessLevel: "public" },
   });
 
   const password = watch("password", "");
@@ -138,6 +138,25 @@ export default function RegisterPage() {
                 </button>
               </div>
               <FormError message={errors.confirmPassword?.message} />
+            </div>
+
+            <div>
+              <label htmlFor="accessLevel" className="block text-sm font-medium mb-1.5">
+                Access Level <span className="text-destructive">*</span>
+              </label>
+              <select
+                id="accessLevel"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                {...register("accessLevel")}
+              >
+                <option value="public">Public user</option>
+                <option value="partner">Partner — pending admin approval</option>
+                <option value="administrator">Admin — pending admin approval</option>
+              </select>
+              <FormError message={errors.accessLevel?.message} />
+              <p className="text-xs text-muted-foreground mt-1">
+                Public accounts activated immediately. Partner and Admin requests must be approved by an administrator.
+              </p>
             </div>
 
             <div>

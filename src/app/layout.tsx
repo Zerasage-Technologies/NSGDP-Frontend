@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { RoleSwitcher } from "@/components/dev/role-switcher";
+import { AiAssistantWidget } from "@/components/feedback/ai-assistant-widget";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,11 +20,16 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Niger State Open Data Portal",
-    template: "%s · Niger State Open Data Portal",
+    default: "Niger State GeoHealth Portal",
+    template: "%s · Niger State GeoHealth Portal",
   },
   description:
-    "Niger State's official open data repository — browse and discover geospatial and health datasets for evidence-based planning and decision-making.",
+    "Niger State's centralised geospatial and health data platform — disease surveillance, facility mapping, analytics, and open health datasets across 25 LGAs.",
+  openGraph: {
+    title: "Niger State GeoHealth Portal",
+    description: "Health data portal for evidence-based planning across Niger State.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -40,6 +46,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <Providers>
           {children}
+          <AiAssistantWidget />
           <RoleSwitcher />
         </Providers>
         <Toaster />

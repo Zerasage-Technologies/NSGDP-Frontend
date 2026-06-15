@@ -165,7 +165,7 @@ export default function DashboardPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-4 mb-1">
                               <Link
-                                href={`/datasets/${dataset.slug}`}
+                                href={`/dataportal/${dataset.slug}`}
                                 className="font-medium hover:text-primary transition-colors"
                               >
                                 {dataset.title}
@@ -222,7 +222,7 @@ export default function DashboardPage() {
                         <Download className="size-5 text-blue-600 shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <Link
-                            href={`/datasets/${dataset.slug}`}
+                            href={`/dataportal/${dataset.slug}`}
                             className="font-medium hover:text-primary transition-colors block mb-1"
                           >
                             {dataset.title}

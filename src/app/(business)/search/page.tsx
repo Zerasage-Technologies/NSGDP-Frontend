@@ -73,7 +73,7 @@ function SearchContent() {
             icon={Search}
             title="Start searching"
             description="Use the search bar in the navigation to find data across the portal"
-            action={{ label: "Browse datasets", href: "/datasets" }}
+            action={{ label: "Browse datasets", href: "/dataportal" }}
           />
         ) : (
           <>
@@ -111,7 +111,7 @@ function SearchContent() {
                 icon={Search}
                 title="No results found"
                 description={`Nothing matched "${q}". Try different keywords or browse the catalogue.`}
-                action={{ label: "Browse all datasets", href: "/datasets" }}
+                action={{ label: "Browse all datasets", href: "/dataportal" }}
               />
             ) : (
               <div className="space-y-8">

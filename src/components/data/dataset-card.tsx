@@ -15,7 +15,7 @@ interface DatasetCardProps {
 
 export function DatasetCard({ dataset, className }: DatasetCardProps) {
   return (
-    <Link href={`/datasets/${dataset.slug}`}>
+    <Link href={`/dataportal/${dataset.slug}`}>
       <Card
         className={cn(
           "group relative flex flex-col transition-all duration-200 hover:shadow-lg hover:border-primary/40 hover:-translate-y-0.5",

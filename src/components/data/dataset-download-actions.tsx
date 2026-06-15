@@ -171,7 +171,7 @@ export function DatasetDownloadActions({
       <LoginPromptModal
         open={loginOpen}
         onOpenChange={setLoginOpen}
-        redirectAfterAuth={`/datasets/${datasetSlug}`}
+        redirectAfterAuth={`/dataportal/${datasetSlug}`}
       />
 
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>

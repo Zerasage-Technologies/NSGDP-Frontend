@@ -311,7 +311,7 @@ export default function MapExplorePage() {
                     </div>
                   </div>
 
-                  <Link href={`/datasets/${selectedDataset.slug}`}>
+                  <Link href={`/dataportal/${selectedDataset.slug}`}>
                     <Button className="w-full">View Full Details</Button>
                   </Link>
                 </CardContent>

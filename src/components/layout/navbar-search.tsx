@@ -53,7 +53,7 @@ export function NavbarSearch() {
   };
 
   const getHref = (result: SearchResult) => {
-    if (result.type === "dataset") return `/datasets/${(result.item as { slug: string }).slug}`;
+    if (result.type === "dataset") return `/dataportal/${(result.item as { slug: string }).slug}`;
     if (result.type === "organisation") return `/organisations/${(result.item as { slug: string }).slug}`;
     return `/groups/${(result.item as { slug: string }).slug}`;
   };

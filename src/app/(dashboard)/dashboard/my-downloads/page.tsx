@@ -102,7 +102,7 @@ export default function MyDownloadsPage() {
                 ? undefined
                 : {
                     label: "Browse Datasets",
-                    onClick: () => (window.location.href = "/datasets"),
+                    onClick: () => (window.location.href = "/dataportal"),
                   }
             }
           />
@@ -155,7 +155,7 @@ export default function MyDownloadsPage() {
                             <FileText className="size-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                               <Link
-                                href={`/datasets/${item.dataset.slug}`}
+                                href={`/dataportal/${item.dataset.slug}`}
                                 className="font-medium hover:text-primary transition-colors block mb-1"
                               >
                                 {item.dataset.title}
@@ -187,7 +187,7 @@ export default function MyDownloadsPage() {
                               <Download className="size-4 mr-2" />
                               Re-download
                             </Button>
-                            <Link href={`/datasets/${item.dataset.slug}`}>
+                            <Link href={`/dataportal/${item.dataset.slug}`}>
                               <Button size="sm" variant="ghost">
                                 View Dataset
                               </Button>

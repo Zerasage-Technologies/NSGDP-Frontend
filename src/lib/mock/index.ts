@@ -1,7 +1,7 @@
 // Centralized mock API - typed accessors that mimic the future REST API
 // These will be replaced with real API calls when backend is ready
 
-import type { Dataset, Organisation, Group, Visibility, DatasetStatus } from "@/types";
+import type { Dataset, Organisation, Group, Visibility, DatasetStatus, HealthCategory, AnalyticsMetric } from "@/types";
 import type { AuditAction } from "@/types/admin";
 import { mockDatasets } from "./datasets";
 import { mockOrganisations } from "./organisations";
@@ -21,7 +21,11 @@ import {
   mockUploadsOverTime,
   mockDownloadsByDataset,
   mockNewUsersOverTime,
+  getAnalyticsDashboard,
+  getGisBurdenBubbles as getGisBurdenBubblesSync,
 } from "./analytics";
+import { mockFacilities, getFacilities, getWardsForLGA } from "./facilities";
+import { mockCampaigns } from "./campaigns";
 
 // ============================================================================
 // DATASETS
@@ -33,6 +37,7 @@ export interface DatasetFilters {
   organisations?: string[];
   lgas?: string[];
   formats?: string[];
+  healthCategories?: HealthCategory[];
   visibility?: Visibility;
   status?: DatasetStatus;
   sort?: "recent" | "popular" | "name";
@@ -79,6 +84,12 @@ export async function getDatasets(filters: DatasetFilters = {}) {
       if (d.lgaCoverage.includes("All")) return true;
       return d.lgaCoverage.some((lga) => filters.lgas!.includes(lga));
     });
+  }
+
+  if (filters.healthCategories?.length) {
+    results = results.filter((d) =>
+      filters.healthCategories!.includes(d.healthCategory)
+    );
   }
 
   if (filters.formats?.length) {
@@ -369,4 +380,21 @@ export async function getDatasetActivity() {
     activity30d: generateActivityData(30),
   };
 }
+
+// ============================================================================
+// GEOHEALTH — Analytics, Facilities, Campaigns (Phase B)
+// ============================================================================
+
+export async function getHealthAnalytics(metric: AnalyticsMetric = "severe_malaria") {
+  await simulateDelay();
+  return getAnalyticsDashboard(metric);
+}
+
+export async function getGisBurdenBubbles(metric: AnalyticsMetric, year = 2024) {
+  await simulateDelay();
+  return getGisBurdenBubblesSync(metric, year);
+}
+
+export { mockFacilities, getFacilities, getWardsForLGA, mockCampaigns };
+export { getGisBurdenBubbles as getGisBurdenBubblesSync } from "./analytics";
 

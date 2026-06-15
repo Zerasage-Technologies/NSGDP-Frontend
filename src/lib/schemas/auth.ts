@@ -26,6 +26,7 @@ export const registerSchema = z
       .regex(/[a-z]/, "Include at least one lowercase letter")
       .regex(/\d/, "Include at least one number"),
     confirmPassword: z.string(),
+    accessLevel: z.enum(["public", "partner", "administrator"]),
     reason: z.string().min(20, "Please provide at least 20 characters"),
     terms: z.literal(true, { message: "You must accept the terms" }),
   })
