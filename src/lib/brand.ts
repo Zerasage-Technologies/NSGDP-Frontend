@@ -9,4 +9,5 @@ export const BRAND = {
   heroSuperLabel: "NSPHCDA DATA PORTAL",
   logoPath: "/images/nsphcda-logo.jpeg",
   logoAlt: "NSPHCDA Logo",
+  heroImagePath: "/images/hero-image.png",
 } as const;

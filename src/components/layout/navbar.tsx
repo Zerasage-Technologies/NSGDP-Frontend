@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -131,14 +132,15 @@ export function Navbar() {
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>{currentUser.fullName}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-                  <LayoutDashboard className="size-4" /> Dashboard
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/dashboard/profile")}>
-                  <Settings className="size-4" /> Settings
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>{currentUser.fullName}</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                    <LayoutDashboard className="size-4" /> Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/dashboard/profile")}>
+                    <Settings className="size-4" /> Settings
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="size-4" /> Log Out

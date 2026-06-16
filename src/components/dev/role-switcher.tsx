@@ -6,9 +6,9 @@ import { useMockSession } from "@/lib/auth/mock-session";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { UserRole } from "@/types";
@@ -38,26 +38,27 @@ export function RoleSwitcher() {
           <Settings className="size-5" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel className="text-xs text-muted-foreground">
-            Dev: Role Switcher
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {ROLES.map((role) => (
-            <DropdownMenuItem
-              key={role.value}
-              onClick={() => setRole(role.value)}
-              className={
-                currentUser.role === role.value
-                  ? "bg-primary text-primary-foreground"
-                  : ""
-              }
-            >
-              {role.label}
-              {currentUser.role === role.value && (
-                <span className="ml-auto text-xs">✓</span>
-              )}
-            </DropdownMenuItem>
-          ))}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              Dev: Role Switcher
+            </DropdownMenuLabel>
+            {ROLES.map((role) => (
+              <DropdownMenuItem
+                key={role.value}
+                onClick={() => setRole(role.value)}
+                className={
+                  currentUser.role === role.value
+                    ? "bg-primary text-primary-foreground"
+                    : ""
+                }
+              >
+                {role.label}
+                {currentUser.role === role.value && (
+                  <span className="ml-auto text-xs">✓</span>
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
