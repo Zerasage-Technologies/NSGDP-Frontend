@@ -83,8 +83,17 @@ export function HomeHeroSection() {
               <p className="text-sm font-semibold uppercase tracking-widest text-[#E8A020]">
                 {BRAND.heroSuperLabel}
               </p>
-              <h1 className="text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-                Welcome to Niger State Health and Geospatial Data Portal
+              <h1 className="text-2xl font-bold leading-snug sm:text-3xl lg:text-4xl">
+                <span className="text-white/75 font-medium">Welcome to </span>
+                <span className="text-white">Niger State</span>
+                <span className="text-white/75 font-medium"> Primary Health Care</span>
+                {" "}
+                <span className="text-[#E8A020]">Development Agency&apos;s</span>
+                <br className="hidden sm:block" />
+                {" "}
+                <span className="text-white font-extrabold tracking-tight text-3xl sm:text-4xl lg:text-5xl">
+                  Health &amp; Geospatial Data Portal
+                </span>
               </h1>
               <p className="text-base leading-relaxed text-white/88 sm:text-lg">
                 Centralised geospatial health data for evidence-based planning, disease

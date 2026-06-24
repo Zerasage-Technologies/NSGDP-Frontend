@@ -37,8 +37,12 @@ export const metadata: Metadata = {
     title: BRAND.portalName,
   },
   icons: {
-    icon: BRAND.logoPath,
-    apple: BRAND.logoPath,
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
+    shortcut: "/favicon-32.png",
   },
 };
 

@@ -1,8 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ChevronDown, LogOut, LayoutDashboard, Settings, ShieldCheck, Sun, Moon } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  ChevronDown,
+  LogOut,
+  LayoutDashboard,
+  Settings,
+  ShieldCheck,
+  Sun,
+  Moon,
+  Menu,
+  X,
+  Map,
+  Database,
+  Upload,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import { useMockSession } from "@/lib/auth/mock-session";
 import { GeoHealthLogo } from "@/components/layout/geohealth-logo";
@@ -16,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const NAV_LINKS = [
@@ -26,130 +41,287 @@ const NAV_LINKS = [
   { href: "/learning", label: "Tools & Learning" },
 ];
 
+const DATA_PORTAL_LINKS = [
+  { href: "/dataportal", label: "View Data", icon: Database },
+  { href: "/submit", label: "Submit Data", icon: Upload },
+];
+
+const GIS_LINKS = [
+  { href: "/gis-mapping", label: "Disease Burden Map", icon: Map },
+  { href: "/gis-map", label: "Facility Map", icon: Map },
+];
+
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { currentUser, isAuthenticated, logout } = useMockSession();
   const isAdmin = currentUser.role === "super_admin";
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     toast.success("Logged out successfully");
     router.push("/");
+    setMobileOpen(false);
   };
 
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
+
   return (
-    <header className="navbar sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4">
-        <GeoHealthLogo />
+    <>
+      <header className="navbar sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4">
+          <GeoHealthLogo />
 
-        <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
-          {NAV_LINKS.map((link) => (
-            <Link key={link.href} href={link.href}>
-              <Button variant="ghost" size="sm" className="text-sm">
-                {link.label}
-              </Button>
-            </Link>
-          ))}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted">
-              Data Portal
-              <ChevronDown className="size-3.5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => router.push("/dataportal")}>
-                View Data
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/submit")}>
-                Submit Data
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted">
-              GIS Mapping
-              <ChevronDown className="size-3.5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => router.push("/gis-mapping")}>
-                Disease Burden Map
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/gis-map")}>
-                Facility Map
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </nav>
-
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <span className="hidden md:inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-amber-500" />
-            DHIS2 Sync: Manual
-          </span>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            aria-label="Toggle theme"
-          >
-            <Sun className="size-4 dark:hidden" />
-            <Moon className="size-4 hidden dark:block" />
-          </Button>
-
-          {isAdmin && (
-            <Link href="/admin" className="hidden sm:block">
-              <Button variant="outline" size="sm">
-                <ShieldCheck className="size-4" />
-              </Button>
-            </Link>
-          )}
-
-          {!isAuthenticated ? (
-            <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
-                  Log In
+          {/* Desktop nav */}
+          <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
+            {NAV_LINKS.map((link) => (
+              <Link key={link.href} href={link.href}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn("text-sm", isActive(link.href) && "bg-muted font-semibold")}
+                >
+                  {link.label}
                 </Button>
               </Link>
-              <Link href="/register">
-                <Button size="sm" className="bg-primary hover:bg-primary/90 font-semibold">
-                  Sign Up
-                </Button>
-              </Link>
-            </>
-          ) : (
+            ))}
+
             <DropdownMenu>
-              <DropdownMenuTrigger
-                className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-muted"
-                aria-label="User menu"
-              >
-                <div className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-                  {currentUser.fullName.charAt(0)}
-                </div>
+              <DropdownMenuTrigger className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted">
+                Data Portal
+                <ChevronDown className="size-3.5" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>{currentUser.fullName}</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-                    <LayoutDashboard className="size-4" /> Dashboard
+              <DropdownMenuContent>
+                {DATA_PORTAL_LINKS.map((l) => (
+                  <DropdownMenuItem key={l.href} onClick={() => router.push(l.href)}>
+                    {l.label}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/dashboard/profile")}>
-                    <Settings className="size-4" /> Settings
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="size-4" /> Log Out
-                </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted">
+                GIS Mapping
+                <ChevronDown className="size-3.5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {GIS_LINKS.map((l) => (
+                  <DropdownMenuItem key={l.href} onClick={() => router.push(l.href)}>
+                    {l.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </nav>
+
+          {/* Desktop right actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="hidden md:inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
+              <span className="size-1.5 rounded-full bg-amber-500" />
+              DHIS2 Sync: Manual
+            </span>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              aria-label="Toggle theme"
+            >
+              <Sun className="size-4 dark:hidden" />
+              <Moon className="size-4 hidden dark:block" />
+            </Button>
+
+            {isAdmin && (
+              <Link href="/admin" className="hidden sm:block">
+                <Button variant="outline" size="sm">
+                  <ShieldCheck className="size-4" />
+                </Button>
+              </Link>
+            )}
+
+            {!isAuthenticated ? (
+              <>
+                <Link href="/login" className="hidden sm:block">
+                  <Button variant="ghost" size="sm">Log In</Button>
+                </Link>
+                <Link href="/register" className="hidden sm:block">
+                  <Button size="sm" className="bg-primary hover:bg-primary/90 font-semibold">
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="hidden sm:flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-muted"
+                  aria-label="User menu"
+                >
+                  <div className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+                    {currentUser.fullName.charAt(0)}
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>{currentUser.fullName}</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                      <LayoutDashboard className="size-4" /> Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/dashboard/profile")}>
+                      <Settings className="size-4" /> Settings
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="size-4" /> Log Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Mobile hamburger */}
+            <button
+              className="lg:hidden ml-1 flex size-9 items-center justify-center rounded-md hover:bg-muted"
+              onClick={() => setMobileOpen((o) => !o)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-30 flex">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden
+          />
+
+          {/* Panel */}
+          <nav
+            className="relative ml-auto flex h-full w-72 max-w-[85vw] flex-col overflow-y-auto bg-background shadow-xl"
+            aria-label="Mobile navigation"
+          >
+            <div className="flex items-center justify-between border-b px-4 py-4">
+              <GeoHealthLogo compact />
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="rounded-md p-1.5 hover:bg-muted"
+                aria-label="Close menu"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-0.5 p-3">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted",
+                    isActive(link.href) && "bg-primary/10 text-primary font-semibold"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+
+              <div className="mt-2 border-t pt-2">
+                <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Data Portal
+                </p>
+                {DATA_PORTAL_LINKS.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted",
+                      isActive(l.href) && "bg-primary/10 text-primary font-semibold"
+                    )}
+                  >
+                    <l.icon className="size-4 text-muted-foreground" />
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+
+              <div className="mt-2 border-t pt-2">
+                <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  GIS Mapping
+                </p>
+                {GIS_LINKS.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted",
+                      isActive(l.href) && "bg-primary/10 text-primary font-semibold"
+                    )}
+                  >
+                    <l.icon className="size-4 text-muted-foreground" />
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile auth */}
+            <div className="mt-auto border-t p-4 space-y-2">
+              {!isAuthenticated ? (
+                <>
+                  <Link href="/login" onClick={() => setMobileOpen(false)} className="block">
+                    <Button variant="outline" className="w-full">Log In</Button>
+                  </Link>
+                  <Link href="/register" onClick={() => setMobileOpen(false)} className="block">
+                    <Button className="w-full bg-primary hover:bg-primary/90 font-semibold">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2.5">
+                    <div className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+                      {currentUser.fullName.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{currentUser.fullName}</p>
+                      <p className="truncate text-xs text-muted-foreground capitalize">{currentUser.role.replace("_", " ")}</p>
+                    </div>
+                  </div>
+                  <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted">
+                    <LayoutDashboard className="size-4" /> Dashboard
+                  </Link>
+                  {isAdmin && (
+                    <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted">
+                      <ShieldCheck className="size-4" /> Admin Panel
+                    </Link>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+                  >
+                    <LogOut className="size-4" /> Log Out
+                  </button>
+                </>
+              )}
+            </div>
+          </nav>
+        </div>
+      )}
+    </>
   );
 }
