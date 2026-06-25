@@ -25,8 +25,12 @@ export function RoleSwitcher() {
   const { currentUser, setRole } = useMockSession();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Only show in development
-  if (process.env.NODE_ENV !== "development") return null;
+  // Show in dev always; in production only when NEXT_PUBLIC_SHOW_ROLE_SWITCHER=true
+  const show =
+    process.env.NODE_ENV === "development" ||
+    process.env.NEXT_PUBLIC_SHOW_ROLE_SWITCHER === "true";
+
+  if (!show) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
