@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { GeoHealthLogo } from "@/components/layout/geohealth-logo";
 import { BRAND } from "@/lib/brand";
@@ -14,6 +15,24 @@ export function Footer() {
               Centralised geospatial and health data platform for Niger State — funded by Umbrella
               Fund, implemented by FACT Foundation.
             </p>
+            {/* Logo pair in footer brand column */}
+            <div className="flex items-center gap-3 pt-1">
+              <Image
+                src="/images/moh-logo.png"
+                alt="Niger State Ministry of Health"
+                width={44}
+                height={44}
+                className="size-11 rounded-full object-cover border border-white/30 shadow-sm bg-white/10"
+              />
+              <span className="h-8 w-px bg-primary-foreground/20" aria-hidden />
+              <Image
+                src={BRAND.logoPath}
+                alt={BRAND.logoAlt}
+                width={44}
+                height={44}
+                className="size-11 rounded-full object-cover border-2 border-[#E8A020] shadow-sm"
+              />
+            </div>
           </div>
 
           <div>
@@ -55,6 +74,7 @@ export function Footer() {
               <li><strong>Funded By:</strong> Umbrella Fund</li>
               <li><strong>Implemented By:</strong> FACT Foundation</li>
               <li><strong>Lead Agency:</strong> NSPHCDA</li>
+              <li><strong>Supported By:</strong> Niger State Ministry of Health</li>
             </ul>
             <div className="flex gap-3 mt-4 text-sm">
               <a href="#" className="hover:text-[#E8A020]">Facebook</a>

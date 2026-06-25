@@ -120,11 +120,6 @@ export function Navbar() {
 
           {/* Desktop right actions */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="hidden md:inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
-              <span className="size-1.5 rounded-full bg-amber-500" />
-              DHIS2 Sync: Manual
-            </span>
-
             <Button
               type="button"
               variant="ghost"
