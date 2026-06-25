@@ -29,7 +29,7 @@ const roles = [
       { page: "Analytics Dashboard", desc: "KPIs · trends · LGA burden table" },
       { page: "Disease Burden Map",  desc: "Leaflet · proportional bubbles" },
       { page: "Health Facility Map", desc: "2,191 facilities · popup · filter" },
-      { page: "Campaigns",           desc: "Coverage progress · status badges" },
+      { page: "Programs",             desc: "Campaigns · surveillance · training · reports" },
       { page: "Tools & Learning",    desc: "QGIS · videos · e-books · path" },
       { page: "About",               desc: "Partners · testimonials · LGA map" },
     ],
@@ -71,7 +71,7 @@ const roles = [
       { page: "User Management", desc: "Role change · suspend · ban" },
       { page: "Audit Log",       desc: "Immutable · searchable · CSV export" },
       { page: "System Analytics",desc: "Platform KPIs · date range" },
-      { page: "Campaign CRUD",   desc: "Create · update coverage · close" },
+      { page: "Program Management", desc: "Create · set timeline · update coverage · close" },
     ],
   },
 ];
@@ -101,7 +101,7 @@ const sysLayers = [
       "/gis/* — LGA polygons · facilities · disease GeoJSON",
       "/analytics/* — burden · Z-score · trends · export",
       "/uploads — multipart → MinIO → queue job",
-      "/admin/* — review · users · audit · campaigns",
+      "/admin/* — review · users · audit · programs",
     ],
   },
   {

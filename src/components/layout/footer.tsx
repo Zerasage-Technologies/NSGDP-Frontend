@@ -42,7 +42,7 @@ export function Footer() {
               <li><Link href="/analytics" className="hover:text-white">Analytics</Link></li>
               <li><Link href="/gis-mapping" className="hover:text-white">Disease Burden Map</Link></li>
               <li><Link href="/gis-map" className="hover:text-white">Facility Map</Link></li>
-              <li><Link href="/campaigns" className="hover:text-white">Campaigns</Link></li>
+              <li><Link href="/programs" className="hover:text-white">Programs</Link></li>
               <li><Link href="/learning" className="hover:text-white">Tools & Learning</Link></li>
               <li><Link href="/submit" className="hover:text-white">Submit Data</Link></li>
             </ul>

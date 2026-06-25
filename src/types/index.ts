@@ -36,7 +36,19 @@ export type HealthCategory =
 
 export type AccessLevel = "public" | "partner" | "administrator";
 
-export type CampaignStatus = "ongoing" | "completed" | "planned";
+export type ProgramStatus = "ongoing" | "completed" | "planned";
+
+/** @deprecated use ProgramStatus */
+export type CampaignStatus = ProgramStatus;
+
+export type ProgramType =
+  | "campaign"
+  | "surveillance"
+  | "screening"
+  | "training"
+  | "infrastructure"
+  | "research"
+  | "other";
 
 export type FacilityType = "PHC" | "Secondary" | "General Hospital";
 
@@ -120,6 +132,8 @@ export interface Dataset {
   source?: string;
   portalSource?: string;
   keyAttributes?: KeyAttribute[];
+  /** Optional link to a Program this dataset belongs to */
+  programId?: string;
 }
 
 export interface Facility {
@@ -132,6 +146,37 @@ export interface Facility {
   coordinates: { lat: number; lng: number };
 }
 
+export interface ProgramReport {
+  id: string;
+  title: string;
+  uploadedAt: string;
+  uploadedBy: string;
+  fileSizeBytes: number;
+  fileFormat: "PDF" | "DOCX" | "XLSX";
+  url: string;
+}
+
+export interface Program {
+  id: string;
+  slug: string;
+  name: string;
+  type: ProgramType;
+  status: ProgramStatus;
+  description: string;
+  startDate: string;
+  endDate?: string;
+  primaryMetric: string;
+  completionPercent: number;
+  reachCount: number;
+  targetCount: number;
+  activeDays: number;
+  lgasCovered: number;
+  /** Reports are only visible when completionPercent === 100 */
+  reports?: ProgramReport[];
+  linkedDatasetIds?: string[];
+}
+
+/** @deprecated use Program */
 export interface Campaign {
   id: string;
   name: string;

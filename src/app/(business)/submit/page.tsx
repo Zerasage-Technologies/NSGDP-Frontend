@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { submitDatasetSchema, type SubmitDatasetFormData } from "@/lib/schemas/submit";
+import { mockPrograms } from "@/lib/mock";
 import { toast } from "sonner";
 
 const reviewSteps = [
@@ -193,6 +194,31 @@ export default function SubmitDataPage() {
                       disabled={submitted}
                     />
                     <FormError message={errors.description?.message} />
+                  </div>
+
+                  {/* Optional program link */}
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium">
+                      Link to Program{" "}
+                      <span className="text-muted-foreground font-normal">(optional)</span>
+                    </label>
+                    <p className="mb-1.5 text-xs text-muted-foreground">
+                      Associate this dataset with an existing program to make it discoverable from the Programs page.
+                    </p>
+                    <select
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                      disabled={submitted}
+                      defaultValue=""
+                    >
+                      <option value="">— None —</option>
+                      {mockPrograms
+                        .filter((p) => p.status !== "completed")
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </select>
                   </div>
 
                   <div>

@@ -25,7 +25,7 @@ import {
   getGisBurdenBubbles as getGisBurdenBubblesSync,
 } from "./analytics";
 import { mockFacilities, getFacilities, getWardsForLGA } from "./facilities";
-import { mockCampaigns } from "./campaigns";
+import { mockPrograms, mockCampaigns } from "./programs";
 
 // ============================================================================
 // DATASETS
@@ -382,7 +382,7 @@ export async function getDatasetActivity() {
 }
 
 // ============================================================================
-// GEOHEALTH — Analytics, Facilities, Campaigns (Phase B)
+// GEOHEALTH — Analytics, Facilities, Programs (Phase B)
 // ============================================================================
 
 export async function getHealthAnalytics(metric: AnalyticsMetric = "severe_malaria") {
@@ -395,6 +395,6 @@ export async function getGisBurdenBubbles(metric: AnalyticsMetric, year = 2024) 
   return getGisBurdenBubblesSync(metric, year);
 }
 
-export { mockFacilities, getFacilities, getWardsForLGA, mockCampaigns };
+export { mockFacilities, getFacilities, getWardsForLGA, mockPrograms, mockCampaigns };
 export { getGisBurdenBubbles as getGisBurdenBubblesSync } from "./analytics";
 
