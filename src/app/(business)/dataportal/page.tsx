@@ -6,7 +6,10 @@ import { Database } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { GeoHealthDatasetCard } from "@/components/data/geohealth-dataset-card";
 import { DatasetDetailModal } from "@/components/data/dataset-detail-modal";
-import { FilterSidebar } from "@/components/filters/filter-sidebar";
+import {
+  AdvancedDatasetFilters,
+  buildAdvancedFilterSections,
+} from "@/components/filters/advanced-dataset-filters";
 import { MobileFilterDrawer } from "@/components/filters/mobile-filter-drawer";
 import { ActiveFilterChips } from "@/components/filters/active-filter-chips";
 import { EmptyState } from "@/components/feedback/empty-state";
@@ -14,10 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Pagination } from "@/components/data/pagination";
 import { DatasetCardSkeleton } from "@/components/feedback/skeletons";
 import { getDatasets, getOrganisations } from "@/lib/mock";
+import { DEFAULT_PORTAL_FILTERS } from "@/lib/constants/dataset-filters";
 import type { Dataset, HealthCategory } from "@/types";
-import { NIGER_STATE_LGAS, FILE_FORMATS } from "@/lib/constants";
-import { HEALTH_CATEGORIES } from "@/lib/constants/health";
-import { cn } from "@/lib/utils";
 
 type SortOption = "recent" | "popular" | "name";
 
@@ -28,12 +29,7 @@ function DataportalContent() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [modalDataset, setModalDataset] = useState<Dataset | null>(null);
-  const [selectedCategories, setSelectedCategories] = useState<HealthCategory[]>([]);
-  const [filters, setFilters] = useState<Record<string, string[]>>({
-    organisations: [],
-    lgas: [],
-    formats: [],
-  });
+  const [filters, setFilters] = useState<Record<string, string[]>>(DEFAULT_PORTAL_FILTERS);
   const [sort, setSort] = useState<SortOption>("recent");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -61,7 +57,17 @@ function DataportalContent() {
         organisations: filters.organisations,
         lgas: filters.lgas,
         formats: filters.formats,
-        healthCategories: selectedCategories.length ? selectedCategories : undefined,
+        healthCategories: filters.categories.length
+          ? (filters.categories as HealthCategory[])
+          : undefined,
+        diseases: filters.diseases,
+        wards: filters.wards,
+        facilities: filters.facilities,
+        years: filters.years,
+        programs: filters.programs,
+        updateFrequency: filters.updateFrequency,
+        statuses: filters.status,
+        dataLicenses: filters.dataLicense,
         sort,
         page,
         pageSize,
@@ -72,7 +78,7 @@ function DataportalContent() {
       setLoading(false);
     };
     fetch();
-  }, [filters, selectedCategories, sort, page, pageSize]);
+  }, [filters, sort, page, pageSize]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -82,24 +88,13 @@ function DataportalContent() {
     router.replace(params.toString() ? `/dataportal?${params}` : "/dataportal", { scroll: false });
   }, [sort, page, pageSize, router]);
 
-  const toggleCategory = (cat: HealthCategory) => {
-    setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
-    );
-    setPage(1);
-  };
-
-  const filterSections = [
-    { id: "organisations", label: "Organisations", options: orgs },
-    { id: "lgas", label: "LGAs", options: NIGER_STATE_LGAS.map((l) => ({ value: l, label: l })) },
-    { id: "formats", label: "Formats", options: FILE_FORMATS.map((f) => ({ value: f, label: f })) },
-  ];
+  const filterSections = buildAdvancedFilterSections(orgs);
 
   const activeChips = Object.entries(filters).flatMap(([filterId, values]) =>
     values.map((value) => ({
       filterId,
       value,
-      label: value,
+      label: filterSections.find((s) => s.id === filterId)?.options.find((o) => o.value === value)?.label ?? value,
     }))
   );
 
@@ -115,35 +110,16 @@ function DataportalContent() {
       </div>
 
       <Container size="wide" className="py-8">
-        <div className="flex flex-wrap gap-2 mb-6">
-          {HEALTH_CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => toggleCategory(cat.id)}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium border transition-colors",
-                selectedCategories.includes(cat.id)
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background hover:bg-muted border-border"
-              )}
-            >
-              <span>{cat.emoji}</span>
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
         <div className="flex gap-8">
           <div className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-20">
-              <FilterSidebar
+              <AdvancedDatasetFilters
                 filters={filters}
                 onFilterChange={(id, vals) => {
                   setFilters((p) => ({ ...p, [id]: vals }));
                   setPage(1);
                 }}
-                sections={filterSections}
+                orgs={orgs}
               />
             </div>
           </div>
@@ -154,7 +130,7 @@ function DataportalContent() {
               onRemove={(id, val) =>
                 setFilters((p) => ({ ...p, [id]: p[id].filter((v) => v !== val) }))
               }
-              onClearAll={() => setFilters({ organisations: [], lgas: [], formats: [] })}
+              onClearAll={() => setFilters(DEFAULT_PORTAL_FILTERS)}
               className="mb-4"
             />
 
@@ -194,13 +170,10 @@ function DataportalContent() {
               <EmptyState
                 icon={Database}
                 title="No datasets found"
-                description="Try adjusting your category or filter selections"
+                description="Try adjusting your filter selections"
                 action={{
                   label: "Clear filters",
-                  onClick: () => {
-                    setSelectedCategories([]);
-                    setFilters({ organisations: [], lgas: [], formats: [] });
-                  },
+                  onClick: () => setFilters(DEFAULT_PORTAL_FILTERS),
                 }}
               />
             ) : (

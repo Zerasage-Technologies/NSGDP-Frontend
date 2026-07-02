@@ -71,7 +71,7 @@ export function GeoHealthDatasetCard({
           ))}
         </div>
         <Button
-          className="w-full bg-[#E8A020] hover:bg-[#d4901a] text-foreground font-semibold"
+          className="w-full bg-teal hover:bg-teal/90 text-teal-foreground font-semibold"
           onClick={handleDownload}
         >
           <Download className="size-4 mr-2" />

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, CheckCircle2, Clock, Download, Upload, Users } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,55 @@ import { PasswordStrengthMeter } from "@/components/forms/password-strength-mete
 import { FormError } from "@/components/forms/form-error";
 import { registerSchema, type RegisterFormData } from "@/lib/schemas/auth";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+const ACCESS_LEVELS = [
+  {
+    value: "public",
+    title: "Registered User",
+    tagline: "For researchers, planners, health officials & the public",
+    capabilities: [
+      "Browse and search all published datasets",
+      "Download open-access data files",
+      "Track your personal download history",
+      "Request access to restricted datasets",
+    ],
+    activation: "Activated immediately",
+    activationIcon: CheckCircle2,
+    activationClass: "text-emerald-600",
+    icon: Download,
+  },
+  {
+    value: "partner",
+    title: "Data Contributor",
+    tagline: "For data officers, programme teams & partner organisations",
+    capabilities: [
+      "Everything a Registered User can do",
+      "Upload and submit datasets for review",
+      "Submit programme and campaign reports",
+      "Track submission status through the approval workflow",
+    ],
+    activation: "Requires admin approval",
+    activationIcon: Clock,
+    activationClass: "text-amber-600",
+    icon: Upload,
+  },
+  {
+    value: "administrator",
+    title: "Organisation Representative",
+    tagline: "For heads of unit and organisation focal points",
+    capabilities: [
+      "Everything a Data Contributor can do",
+      "Manage your organisation's dataset catalogue",
+      "Request user management for your team members",
+      "Organisation profile and data-sharing agreement management",
+    ],
+    activation: "Requires admin approval & org. verification",
+    activationIcon: Clock,
+    activationClass: "text-amber-600",
+    icon: Users,
+  },
+];
 
 export const dynamic = "force-dynamic";
 
@@ -141,22 +190,65 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="accessLevel" className="block text-sm font-medium mb-1.5">
+              <p className="block text-sm font-medium mb-3">
                 Access Level <span className="text-destructive">*</span>
-              </label>
-              <select
-                id="accessLevel"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                {...register("accessLevel")}
-              >
-                <option value="public">Public user</option>
-                <option value="partner">Partner — pending admin approval</option>
-                <option value="administrator">Admin — pending admin approval</option>
-              </select>
-              <FormError message={errors.accessLevel?.message} />
-              <p className="text-xs text-muted-foreground mt-1">
-                Public accounts activated immediately. Partner and Admin requests must be approved by an administrator.
               </p>
+              <Controller
+                name="accessLevel"
+                control={control}
+                render={({ field }) => (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {ACCESS_LEVELS.map((level) => {
+                      const isSelected = field.value === level.value;
+                      const ActivationIcon = level.activationIcon;
+                      const RoleIcon = level.icon;
+                      return (
+                        <button
+                          key={level.value}
+                          type="button"
+                          onClick={() => field.onChange(level.value)}
+                          className={cn(
+                            "text-left rounded-xl border-2 p-4 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                            isSelected
+                              ? "border-primary bg-primary/5 shadow-sm"
+                              : "border-input bg-background hover:border-primary/50 hover:bg-muted/40"
+                          )}
+                          aria-pressed={isSelected}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className={cn(
+                              "flex size-9 items-center justify-center rounded-lg",
+                              isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            )}>
+                              <RoleIcon className="size-4" />
+                            </div>
+                            {isSelected && (
+                              <CheckCircle2 className="size-5 text-primary shrink-0 mt-0.5" />
+                            )}
+                          </div>
+                          <p className="font-semibold text-sm leading-tight">{level.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1 mb-3 leading-snug">{level.tagline}</p>
+                          <ul className="space-y-1 mb-3">
+                            {level.capabilities.map((cap) => (
+                              <li key={cap} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                                <span className="mt-0.5 shrink-0 size-3 rounded-full bg-muted-foreground/20 flex items-center justify-center">
+                                  <span className="size-1.5 rounded-full bg-muted-foreground/60" />
+                                </span>
+                                {cap}
+                              </li>
+                            ))}
+                          </ul>
+                          <div className={cn("flex items-center gap-1.5 text-xs font-medium", level.activationClass)}>
+                            <ActivationIcon className="size-3.5" />
+                            {level.activation}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              />
+              <FormError message={errors.accessLevel?.message} />
             </div>
 
             <div>

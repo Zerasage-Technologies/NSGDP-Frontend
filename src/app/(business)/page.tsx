@@ -12,6 +12,9 @@ import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { HomeHeroSection } from "@/components/map/home-hero-section";
+import { OutbreakAlertBanner } from "@/components/home/outbreak-alert-banner";
+import { RepositoryDashboard } from "@/components/home/repository-dashboard";
+import { mockAlerts } from "@/lib/mock/alerts";
 
 const features = [
   {
@@ -98,6 +101,11 @@ export default function HomePage() {
   return (
     <main className="flex-1">
       <HomeHeroSection />
+
+      {/* Outbreak / disease alerts */}
+      <Container>
+        <OutbreakAlertBanner alerts={mockAlerts} />
+      </Container>
 
       {/* Feature cards */}
       <section className="py-16 sm:py-20">
@@ -200,6 +208,9 @@ export default function HomePage() {
           </div>
         </Container>
       </section>
+
+      {/* Public repository dashboard */}
+      <RepositoryDashboard />
     </main>
   );
 }

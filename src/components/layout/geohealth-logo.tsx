@@ -21,7 +21,7 @@ export function GeoHealthLogo({ className, compact }: GeoHealthLogoProps) {
         alt="Niger State Ministry of Health"
         width={38}
         height={38}
-        className="size-[38px] rounded-full object-cover border border-[#E8A020]/60 shadow-sm"
+        className="size-[38px] rounded-full object-cover border border-teal/60 shadow-sm"
         priority
       />
 
@@ -34,14 +34,14 @@ export function GeoHealthLogo({ className, compact }: GeoHealthLogoProps) {
         alt={BRAND.logoAlt}
         width={38}
         height={38}
-        className="size-[38px] rounded-full object-cover border-2 border-[#E8A020] shadow-sm"
+        className="size-[38px] rounded-full object-cover border-2 border-teal shadow-sm"
         priority
       />
 
       {!compact && (
         <div className="hidden sm:block leading-tight ml-1">
           <div className="text-sm font-bold text-foreground">{BRAND.portalName}</div>
-          <div className="text-[10px] font-semibold tracking-widest text-[#E8A020] uppercase">
+          <div className="text-[10px] font-semibold tracking-widest text-teal uppercase">
             {BRAND.portalTagline}
           </div>
         </div>

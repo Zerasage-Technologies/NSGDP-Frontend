@@ -1,7 +1,7 @@
 // Centralized mock API - typed accessors that mimic the future REST API
 // These will be replaced with real API calls when backend is ready
 
-import type { Dataset, Organisation, Group, Visibility, DatasetStatus, HealthCategory, AnalyticsMetric } from "@/types";
+import type { Dataset, Organisation, Group, Visibility, DatasetStatus, HealthCategory, AnalyticsMetric, DatasetArchiveInfo } from "@/types";
 import type { AuditAction } from "@/types/admin";
 import { mockDatasets } from "./datasets";
 import { mockOrganisations } from "./organisations";
@@ -31,6 +31,25 @@ import { mockPrograms, mockCampaigns } from "./programs";
 // DATASETS
 // ============================================================================
 
+/** Runtime archive state (mock persistence) */
+const runtimeArchives = new Map<string, DatasetArchiveInfo>();
+
+export function archiveDataset(id: string, info: DatasetArchiveInfo) {
+  runtimeArchives.set(id, info);
+}
+
+function withArchiveInfo(d: Dataset): Dataset {
+  const runtimeArchive = runtimeArchives.get(d.id);
+  const archiveInfo = runtimeArchive ?? d.archiveInfo;
+  if (!archiveInfo) return d;
+  return {
+    ...d,
+    status: "archived",
+    lifecycleStage: "archived",
+    archiveInfo,
+  };
+}
+
 export interface DatasetFilters {
   query?: string;
   groups?: string[];
@@ -38,6 +57,14 @@ export interface DatasetFilters {
   lgas?: string[];
   formats?: string[];
   healthCategories?: HealthCategory[];
+  diseases?: string[];
+  wards?: string[];
+  facilities?: string[];
+  years?: string[];
+  programs?: string[];
+  updateFrequency?: string[];
+  statuses?: string[];
+  dataLicenses?: string[];
   visibility?: Visibility;
   status?: DatasetStatus;
   sort?: "recent" | "popular" | "name";
@@ -50,7 +77,7 @@ export interface DatasetFilters {
 export async function getDatasets(filters: DatasetFilters = {}) {
   await simulateDelay();
 
-  let results = [...mockDatasets];
+  let results = mockDatasets.map(withArchiveInfo);
 
   if (!filters.includePrivate) {
     results = results.filter((d) => d.visibility !== "private");
@@ -89,6 +116,58 @@ export async function getDatasets(filters: DatasetFilters = {}) {
   if (filters.healthCategories?.length) {
     results = results.filter((d) =>
       filters.healthCategories!.includes(d.healthCategory)
+    );
+  }
+
+  if (filters.diseases?.length) {
+    results = results.filter(
+      (d) => d.disease && filters.diseases!.includes(d.disease)
+    );
+  }
+
+  if (filters.wards?.length) {
+    results = results.filter((d) =>
+      d.wardCoverage?.some((w) => filters.wards!.includes(w))
+    );
+  }
+
+  if (filters.facilities?.length) {
+    results = results.filter(
+      (d) => d.facilityScope && filters.facilities!.includes(d.facilityScope)
+    );
+  }
+
+  if (filters.years?.length) {
+    results = results.filter(
+      (d) => d.reportingYear && filters.years!.includes(String(d.reportingYear))
+    );
+  }
+
+  if (filters.programs?.length) {
+    results = results.filter((d) => {
+      if (filters.programs!.includes("none")) {
+        return !d.linkedProgram && !d.programId;
+      }
+      return (
+        (d.linkedProgram && filters.programs!.includes(d.linkedProgram)) ||
+        (d.programId && filters.programs!.some((p) => d.programId?.includes(p)))
+      );
+    });
+  }
+
+  if (filters.updateFrequency?.length) {
+    results = results.filter(
+      (d) => d.updateFrequency && filters.updateFrequency!.includes(d.updateFrequency)
+    );
+  }
+
+  if (filters.statuses?.length) {
+    results = results.filter((d) => filters.statuses!.includes(d.status));
+  }
+
+  if (filters.dataLicenses?.length) {
+    results = results.filter(
+      (d) => d.dataLicense && filters.dataLicenses!.includes(d.dataLicense)
     );
   }
 
@@ -345,16 +424,15 @@ export async function getReviewQueue(filters?: {
 }) {
   await simulateDelay();
 
-  const reviewStatuses: DatasetStatus[] = [
-    "submitted",
-    "under_review",
-    "needs_revision",
-  ];
-
-  let results = mockDatasets.filter((d) => reviewStatuses.includes(d.status));
+  let results = mockDatasets.map(withArchiveInfo);
 
   if (filters?.status && filters.status !== "all") {
     results = results.filter((d) => d.status === filters.status);
+  } else if (!filters?.status || filters.status === "all") {
+    // default: show review-relevant statuses plus published/archived when browsing all
+    results = results.filter((d) =>
+      ["submitted", "under_review", "needs_revision", "published", "archived"].includes(d.status)
+    );
   }
 
   if (filters?.query) {
@@ -385,9 +463,18 @@ export async function getDatasetActivity() {
 // GEOHEALTH — Analytics, Facilities, Programs (Phase B)
 // ============================================================================
 
-export async function getHealthAnalytics(metric: AnalyticsMetric = "severe_malaria") {
+export async function getHealthAnalytics(
+  metric: AnalyticsMetric = "severe_malaria",
+  dataSourceId: import("@/lib/constants/analytics-sources").AnalyticsDataSourceId = "all"
+) {
   await simulateDelay();
-  return getAnalyticsDashboard(metric);
+  return getAnalyticsDashboard(metric, dataSourceId);
+}
+
+export async function getAnalyticsDataSources() {
+  await simulateDelay();
+  const { ANALYTICS_DATA_SOURCES } = await import("@/lib/constants/analytics-sources");
+  return ANALYTICS_DATA_SOURCES;
 }
 
 export async function getGisBurdenBubbles(metric: AnalyticsMetric, year = 2024) {
@@ -395,6 +482,17 @@ export async function getGisBurdenBubbles(metric: AnalyticsMetric, year = 2024) 
   return getGisBurdenBubblesSync(metric, year);
 }
 
+export async function getOverdueDatasets() {
+  await simulateDelay();
+  const { getFreshnessStatus } = await import("@/lib/utils/freshness");
+  return mockDatasets
+    .map(withArchiveInfo)
+    .filter(
+      (d) =>
+        d.status === "published" &&
+        getFreshnessStatus(d.updatedAt, d.updateFrequency) === "overdue"
+    );
+}
+
 export { mockFacilities, getFacilities, getWardsForLGA, mockPrograms, mockCampaigns };
 export { getGisBurdenBubbles as getGisBurdenBubblesSync } from "./analytics";
-

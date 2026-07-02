@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Database, Map, Shield, Quote } from "lucide-react";
+import { ChevronLeft, ChevronRight, Database, Map, Shield, Quote, Flag, Server, Lock, FileCheck } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -190,6 +190,59 @@ export default function AboutPage() {
                   <CardDescription className="text-xs">{partner.role}</CardDescription>
                 </CardContent>
               </Card>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* Platform Ownership & Data Sovereignty */}
+      <section className="py-16 sm:py-20 bg-primary text-primary-foreground">
+        <Container size="wide">
+          <div className="text-center mb-10 max-w-2xl mx-auto">
+            <p className="text-sm font-semibold uppercase tracking-widest text-teal mb-3">
+              Platform Ownership & Data Sovereignty
+            </p>
+            <h2 className="text-3xl font-bold">A Niger State-Owned Platform</h2>
+            <p className="mt-4 text-primary-foreground/85 leading-relaxed">
+              The NSPHCDA Data Portal is fully owned, governed, and operated by Niger State through the
+              Niger State Primary Health Care Development Agency (NSPHCDA). This is not a third-party
+              or donor-managed system — all infrastructure, data, and governance decisions remain under
+              the authority of the Niger State government.
+            </p>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                icon: Flag,
+                title: "State Ownership",
+                body: "The platform is owned by Niger State government. NSPHCDA holds full authority over all data published on this portal.",
+              },
+              {
+                icon: Server,
+                title: "Infrastructure Sovereignty",
+                body: "Hosting, storage, and backups are managed within Nigeria, ensuring data residency and compliance with national data protection law.",
+              },
+              {
+                icon: Lock,
+                title: "Governance Authority",
+                body: "NSPHCDA defines publication rules, access policies, validation standards, and data-sharing agreements. No dataset is published without state approval.",
+              },
+              {
+                icon: FileCheck,
+                title: "Data Quality & Trust",
+                body: "Every dataset passes a structured multi-stage approval pipeline before publication, guaranteeing that only verified, quality-assured data reaches users.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-xl border border-primary-foreground/20 bg-primary-foreground/5 p-6 space-y-3"
+              >
+                <div className="flex size-10 items-center justify-center rounded-lg bg-teal/20">
+                  <item.icon className="size-5 text-teal" aria-hidden />
+                </div>
+                <h3 className="font-semibold text-primary-foreground">{item.title}</h3>
+                <p className="text-sm leading-relaxed text-primary-foreground/80">{item.body}</p>
+              </div>
             ))}
           </div>
         </Container>

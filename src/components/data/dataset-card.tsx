@@ -6,6 +6,7 @@ import type { Dataset } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { VisibilityBadge } from "./visibility-badge";
+import { LifecycleBadge } from "./lifecycle-badge";
 import { cn } from "@/lib/utils";
 
 interface DatasetCardProps {
@@ -22,9 +23,12 @@ export function DatasetCard({ dataset, className }: DatasetCardProps) {
           className
         )}
       >
-        {/* Status Badge (top-right) */}
-        <div className="absolute right-3 top-3 z-10">
+        {/* Badges (top-right) */}
+        <div className="absolute right-3 top-3 z-10 flex flex-col items-end gap-1">
           <VisibilityBadge visibility={dataset.visibility} />
+          {dataset.lifecycleStage && dataset.lifecycleStage !== "published" && (
+            <LifecycleBadge stage={dataset.lifecycleStage} showDot={false} className="text-[10px] px-1.5 py-px" />
+          )}
         </div>
 
         <CardHeader className="pb-3">
@@ -102,6 +106,11 @@ export function DatasetCard({ dataset, className }: DatasetCardProps) {
 
           {/* Footer Metrics */}
           <div className="dataset-footer pt-3 border-t border-border/50 space-y-2.5">
+            {dataset.dataLicense && (
+              <p className="text-xs text-muted-foreground truncate">
+                <span className="font-medium">License: </span>{dataset.dataLicense}
+              </p>
+            )}
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Calendar className="size-3.5" />

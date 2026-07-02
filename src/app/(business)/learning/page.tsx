@@ -153,9 +153,9 @@ export default function LearningPage() {
           </div>
           <div className="absolute right-4 bottom-4 flex items-center gap-3 sm:right-8 sm:bottom-8">
             <Button
-              variant="outline"
+              variant="onDark"
               size="icon"
-              className="border-white/30 bg-white/10 text-white hover:bg-white/20"
+              className="hero-control-outline"
               onClick={prevSlide}
               aria-label="Previous slide"
             >
@@ -175,9 +175,9 @@ export default function LearningPage() {
               ))}
             </div>
             <Button
-              variant="outline"
+              variant="onDark"
               size="icon"
-              className="border-white/30 bg-white/10 text-white hover:bg-white/20"
+              className="hero-control-outline"
               onClick={nextSlide}
               aria-label="Next slide"
             >

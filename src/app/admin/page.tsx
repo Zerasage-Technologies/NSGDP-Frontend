@@ -10,6 +10,9 @@ import {
   Activity,
   CheckCircle2,
   AlertTriangle,
+  ExternalLink,
+  BarChart3,
+  Upload,
 } from "lucide-react";
 import { getPlatformKPIs, getReviewQueue, getActivityFeed, getSystemHealth } from "@/lib/mock";
 import { ActivityGraph } from "@/components/charts/activity-graph";
@@ -67,6 +70,37 @@ export default function AdminDashboardPage() {
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
         <p className="text-muted-foreground mt-1">Platform overview and pending actions</p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Public Portal</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Leave the admin console to view the public-facing data portal.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { href: "/", label: "Portal Home", icon: ExternalLink },
+              { href: "/dataportal", label: "Browse Datasets", icon: Database },
+              { href: "/analytics", label: "Health Analytics", icon: BarChart3 },
+              { href: "/submit", label: "Submit Dataset", icon: Upload },
+            ].map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "gap-1.5"
+                )}
+              >
+                <Icon className="size-3.5" />
+                {label}
+              </Link>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[

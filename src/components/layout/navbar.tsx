@@ -9,17 +9,16 @@ import {
   LayoutDashboard,
   Settings,
   ShieldCheck,
-  Sun,
-  Moon,
   Menu,
   X,
   Map,
   Database,
   Upload,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useMockSession } from "@/lib/auth/mock-session";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { GeoHealthLogo } from "@/components/layout/geohealth-logo";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -36,14 +35,16 @@ import { toast } from "sonner";
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  { href: "/analytics", label: "Analytics" },
+  { href: "/analytics", label: "Analytics Dashboard" },
   { href: "/programs", label: "Programs" },
   { href: "/learning", label: "Tools & Learning" },
 ];
 
 const DATA_PORTAL_LINKS = [
-  { href: "/dataportal", label: "View Data", icon: Database },
-  { href: "/submit", label: "Submit Data", icon: Upload },
+  { href: "/dataportal", label: "Browse Datasets", icon: Database },
+  { href: "/documents", label: "Document Library", icon: Database },
+  { href: "/partner-data", label: "Partner Data", icon: Database },
+  { href: "/submit", label: "Submit Dataset", icon: Upload },
 ];
 
 const GIS_LINKS = [
@@ -54,9 +55,8 @@ const GIS_LINKS = [
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
   const { currentUser, isAuthenticated, logout } = useMockSession();
-  const isAdmin = currentUser.role === "super_admin";
+  const isAdmin = ["super_admin", "repo_admin", "ict_admin"].includes(currentUser.role);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {
@@ -91,7 +91,7 @@ export function Navbar() {
 
             <DropdownMenu>
               <DropdownMenuTrigger className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted">
-                Data Portal
+                Explore Data
                 <ChevronDown className="size-3.5" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -120,16 +120,13 @@ export function Navbar() {
 
           {/* Desktop right actions */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              aria-label="Toggle theme"
-            >
-              <Sun className="size-4 dark:hidden" />
-              <Moon className="size-4 hidden dark:block" />
-            </Button>
+            <ThemeToggle />
+
+            {isAuthenticated && (
+              <div className="hidden sm:block">
+                <NotificationBell />
+              </div>
+            )}
 
             {isAdmin && (
               <Link href="/admin" className="hidden sm:block">
@@ -234,7 +231,7 @@ export function Navbar() {
 
               <div className="mt-2 border-t pt-2">
                 <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Data Portal
+                  Explore Data
                 </p>
                 {DATA_PORTAL_LINKS.map((l) => (
                   <Link

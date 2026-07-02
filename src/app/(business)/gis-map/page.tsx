@@ -15,6 +15,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getFacilities, getWardsForLGA } from "@/lib/mock";
 import { NIGER_STATE_LGAS } from "@/lib/constants";
+import { MapLegend, FACILITY_LEGEND } from "@/components/map/map-legend";
+import { MapTooltip } from "@/components/map/map-tooltip";
+import { HelpTooltip } from "@/components/feedback/help-tooltip";
 import type { FacilityType } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -144,13 +147,16 @@ export default function FacilityMapPage() {
               <span className="text-xs font-medium">{facility.name}</span>
             </Tooltip>
             <Popup>
-              <div className="space-y-1 text-sm">
-                <p className="font-bold">{facility.name}</p>
-                <p><span className="text-muted-foreground">LGA:</span> {facility.lga}</p>
-                <p><span className="text-muted-foreground">Ward:</span> {facility.ward}</p>
-                <p><span className="text-muted-foreground">Code:</span> {facility.facilityCode}</p>
-                <p><span className="text-muted-foreground">Type:</span> {facility.facilityType}</p>
-              </div>
+              <MapTooltip
+                title={facility.name}
+                rows={[
+                  { label: "LGA", value: facility.lga },
+                  { label: "Ward", value: facility.ward },
+                  { label: "Code", value: facility.facilityCode },
+                  { label: "Type", value: facility.facilityType },
+                ]}
+                className="border-0 shadow-none p-0 min-w-0 bg-transparent backdrop-blur-none"
+              />
             </Popup>
           </CircleMarker>
         ))}
@@ -236,8 +242,9 @@ export default function FacilityMapPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 Facility type
+                <HelpTooltip content="Filter facilities by type. Blue = PHC, Purple = Secondary, Red = General Hospital." />
               </label>
               <Select
                 value={facilityType}
@@ -261,6 +268,12 @@ export default function FacilityMapPage() {
           </CardContent>
         </Card>
       </div>
+
+      <MapLegend
+        title="Facility Types"
+        items={FACILITY_LEGEND}
+        className="absolute bottom-4 right-4 z-[1000]"
+      />
     </div>
   );
 }

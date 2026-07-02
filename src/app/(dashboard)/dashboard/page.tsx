@@ -20,13 +20,18 @@ import { DatasetActivityPanel } from "@/components/data/dataset-activity-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMockSession } from "@/lib/auth/mock-session";
-import { getDatasets } from "@/lib/mock";
+import { getDatasets, getOverdueDatasets } from "@/lib/mock";
+import { OutbreakAlertBanner } from "@/components/home/outbreak-alert-banner";
+import { mockAlerts } from "@/lib/mock/alerts";
+import { alertSurface } from "@/lib/constants/status-surfaces";
+import { cn } from "@/lib/utils";
 import type { Dataset } from "@/types";
 
 export default function DashboardPage() {
   const { currentUser } = useMockSession();
   const [myDatasets, setMyDatasets] = useState<Dataset[]>([]);
   const [recentDownloads, setRecentDownloads] = useState<Dataset[]>([]);
+  const [overdueDatasets, setOverdueDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,6 +47,11 @@ export default function DashboardPage() {
       // Get recent downloads for all authenticated users
       const downloads = await getDatasets({ pageSize: 4 });
       setRecentDownloads(downloads.data.slice(0, 4));
+
+      if (["custodian", "repo_admin", "super_admin", "org_admin"].includes(currentUser.role)) {
+        const overdue = await getOverdueDatasets();
+        setOverdueDatasets(overdue);
+      }
 
       setLoading(false);
     };
@@ -64,6 +74,22 @@ export default function DashboardPage() {
       </div>
 
       <Container size="wide" className="py-8">
+        <OutbreakAlertBanner alerts={mockAlerts} />
+
+        {overdueDatasets.length > 0 && (
+          <div className={cn("mb-6 rounded-lg border px-4 py-3 text-sm", alertSurface.amber)}>
+            <p className="font-semibold flex items-center gap-2">
+              <AlertCircle className="size-4" />
+              {overdueDatasets.length} dataset{overdueDatasets.length > 1 ? "s" : ""} overdue for update
+            </p>
+            <ul className="mt-2 space-y-1 text-xs">
+              {overdueDatasets.slice(0, 3).map((d) => (
+                <li key={d.id}>· {d.title} — last updated {new Date(d.updatedAt).toLocaleDateString()}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           {loading ? (

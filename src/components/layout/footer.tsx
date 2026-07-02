@@ -30,26 +30,28 @@ export function Footer() {
                 alt={BRAND.logoAlt}
                 width={44}
                 height={44}
-                className="size-11 rounded-full object-cover border-2 border-[#E8A020] shadow-sm"
+                className="size-11 rounded-full object-cover border-2 border-teal shadow-sm"
               />
             </div>
           </div>
 
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-[#E8A020]">Quick Links</h3>
+            <h3 className="mb-3 text-sm font-semibold text-teal">Quick Links</h3>
             <ul className="space-y-2 text-sm text-primary-foreground/85">
-              <li><Link href="/dataportal" className="hover:text-white">Data Portal</Link></li>
-              <li><Link href="/analytics" className="hover:text-white">Analytics</Link></li>
+              <li><Link href="/dataportal" className="hover:text-white">Explore Data</Link></li>
+              <li><Link href="/analytics" className="hover:text-white">Analytics Dashboard</Link></li>
               <li><Link href="/gis-mapping" className="hover:text-white">Disease Burden Map</Link></li>
               <li><Link href="/gis-map" className="hover:text-white">Facility Map</Link></li>
               <li><Link href="/programs" className="hover:text-white">Programs</Link></li>
               <li><Link href="/learning" className="hover:text-white">Tools & Learning</Link></li>
-              <li><Link href="/submit" className="hover:text-white">Submit Data</Link></li>
+              <li><Link href="/documents" className="hover:text-white">Document Library</Link></li>
+              <li><Link href="/partner-data" className="hover:text-white">Partner Data</Link></li>
+              <li><Link href="/submit" className="hover:text-white">Submit Dataset</Link></li>
             </ul>
           </div>
 
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-[#E8A020]">Contact</h3>
+            <h3 className="mb-3 text-sm font-semibold text-teal">Contact</h3>
             <ul className="space-y-3 text-sm text-primary-foreground/85">
               <li className="flex items-start gap-2">
                 <MapPin className="size-4 shrink-0 mt-0.5" aria-hidden />
@@ -69,7 +71,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-[#E8A020]">Partners</h3>
+            <h3 className="mb-3 text-sm font-semibold text-teal">Partners</h3>
             <ul className="space-y-2 text-sm text-primary-foreground/85">
               <li><strong>Funded By:</strong> Umbrella Fund</li>
               <li><strong>Implemented By:</strong> FACT Foundation</li>
@@ -77,9 +79,9 @@ export function Footer() {
               <li><strong>Supported By:</strong> Niger State Ministry of Health</li>
             </ul>
             <div className="flex gap-3 mt-4 text-sm">
-              <a href="#" className="hover:text-[#E8A020]">Facebook</a>
-              <a href="#" className="hover:text-[#E8A020]">Twitter</a>
-              <a href="#" className="hover:text-[#E8A020]">LinkedIn</a>
+              <a href="#" className="hover:text-teal">Facebook</a>
+              <a href="#" className="hover:text-teal">Twitter</a>
+              <a href="#" className="hover:text-teal">LinkedIn</a>
             </div>
           </div>
         </div>

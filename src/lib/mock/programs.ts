@@ -1,6 +1,20 @@
-import type { Program } from "@/types";
+import type { Program, ProgramReport } from "@/types";
+import { PROGRAM_DATA_SOURCE } from "@/lib/constants/analytics-sources";
+import { mockOrganisations } from "./organisations";
+import type { ProgramFormData } from "@/lib/schemas/program";
 
-export const mockPrograms: Program[] = [
+const orgNameById = Object.fromEntries(mockOrganisations.map((o) => [o.id, o.name]));
+
+function enrichProgram(p: Program): Program {
+  const orgId = p.organisationId ?? PROGRAM_DATA_SOURCE[p.id] ?? "org-1";
+  return {
+    ...p,
+    organisationId: orgId,
+    organisationName: orgNameById[orgId] ?? "NSPHCDA",
+  };
+}
+
+const SEED_PROGRAMS: Program[] = [
   // ── CAMPAIGNS (vaccination / SIA) ────────────────────────────────────────
   {
     id: "prog-1",
@@ -195,5 +209,101 @@ export const mockPrograms: Program[] = [
   },
 ];
 
-/** Campaigns are a subset of programs */
-export const mockCampaigns = mockPrograms.filter((p) => p.type === "campaign");
+let runtimePrograms: Program[] = SEED_PROGRAMS.map(enrichProgram);
+
+export const mockPrograms = runtimePrograms;
+
+export function getProgramsList(): Program[] {
+  return [...runtimePrograms];
+}
+
+export function getProgramById(idOrSlug: string): Program | undefined {
+  return runtimePrograms.find((p) => p.id === idOrSlug || p.slug === idOrSlug);
+}
+
+function slugify(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export function createProgram(data: ProgramFormData): Program {
+  const id = `prog-${Date.now()}`;
+  const reach = data.reachCount ?? 0;
+  const target = data.targetCount;
+  const program: Program = enrichProgram({
+    id,
+    slug: slugify(data.name),
+    name: data.name,
+    type: data.type,
+    status: data.status,
+    description: data.description,
+    startDate: data.startDate,
+    endDate: data.endDate || undefined,
+    primaryMetric: data.primaryMetric,
+    completionPercent: target > 0 ? Math.min(100, Math.round((reach / target) * 100)) : 0,
+    reachCount: reach,
+    targetCount: target,
+    activeDays: 0,
+    lgasCovered: data.lgasCovered ?? 0,
+    organisationId: data.organisationId,
+    reports: [],
+    linkedDatasetIds: [],
+  });
+  runtimePrograms = [program, ...runtimePrograms];
+  return program;
+}
+
+export function updateProgram(id: string, data: Partial<ProgramFormData>): Program | undefined {
+  const idx = runtimePrograms.findIndex((p) => p.id === id);
+  if (idx === -1) return undefined;
+  const current = runtimePrograms[idx];
+  const reach = data.reachCount ?? current.reachCount;
+  const target = data.targetCount ?? current.targetCount;
+  const updated: Program = enrichProgram({
+    ...current,
+    ...data,
+    slug: data.name ? slugify(data.name) : current.slug,
+    endDate: data.endDate || undefined,
+    completionPercent: target > 0 ? Math.min(100, Math.round((reach / target) * 100)) : 0,
+    reachCount: reach,
+    targetCount: target,
+    lgasCovered: data.lgasCovered ?? current.lgasCovered,
+  });
+  runtimePrograms = runtimePrograms.map((p, i) => (i === idx ? updated : p));
+  return updated;
+}
+
+export function deleteProgram(id: string): boolean {
+  const before = runtimePrograms.length;
+  runtimePrograms = runtimePrograms.filter((p) => p.id !== id);
+  return runtimePrograms.length < before;
+}
+
+export function addProgramReport(
+  programId: string,
+  report: Omit<ProgramReport, "id" | "uploadedAt"> & { uploadedBy: string }
+): ProgramReport | undefined {
+  const idx = runtimePrograms.findIndex((p) => p.id === programId);
+  if (idx === -1) return undefined;
+  const entry: ProgramReport = {
+    ...report,
+    id: `rpt-${Date.now()}`,
+    uploadedAt: new Date().toISOString(),
+  };
+  const program = runtimePrograms[idx];
+  runtimePrograms[idx] = {
+    ...program,
+    reports: [...(program.reports ?? []), entry],
+  };
+  return entry;
+}
+
+/** Campaigns are a subset of programs (always current list) */
+export function getMockCampaigns(): Program[] {
+  return getProgramsList().filter((p) => p.type === "campaign");
+}
+
+/** @deprecated use getMockCampaigns() — kept for static imports */
+export const mockCampaigns = getMockCampaigns();

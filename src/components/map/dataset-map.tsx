@@ -6,6 +6,7 @@ import type { FeatureCollection, Feature } from "geojson";
 import { Loader2, Maximize2, Minimize2, Layers, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { MapTooltip } from "@/components/map/map-tooltip";
 
 function configureLeafletIcons() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -65,6 +66,7 @@ interface DatasetMapProps {
     position: [number, number];
     title: string;
     description?: string;
+    rows?: Array<{ label: string; value: string | number }>;
   }>;
   lgaCoverage?: string[];
   height?: string;
@@ -229,14 +231,16 @@ export function DatasetMap({
             markers.map((marker) => (
               <Marker key={marker.id} position={marker.position}>
                 <Popup>
-                  <div className="p-2">
-                    <h3 className="font-bold mb-1">{marker.title}</h3>
-                    {marker.description && (
-                      <p className="text-sm text-muted-foreground">
-                        {marker.description}
-                      </p>
-                    )}
-                  </div>
+                  <MapTooltip
+                    title={marker.title}
+                    rows={
+                      marker.rows ??
+                      (marker.description
+                        ? [{ label: "Details", value: marker.description }]
+                        : [])
+                    }
+                    className="border-0 shadow-none p-0 min-w-0 bg-transparent backdrop-blur-none"
+                  />
                 </Popup>
               </Marker>
             ))}

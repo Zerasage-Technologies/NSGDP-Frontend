@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Search, Lock, FileText, BarChart3, ArrowRight } from "lucide-react";
+import { Search, Lock, FileText, BarChart3, ArrowRight, BarChart2 } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,7 +80,7 @@ export function HomeHeroSection() {
         <Container className="relative flex min-h-[inherit] flex-col">
           <div className="flex flex-1 flex-col items-center justify-center px-4 py-20 text-center sm:py-24">
             <div className="mx-auto max-w-2xl space-y-5 text-white">
-              <p className="text-sm font-semibold uppercase tracking-widest text-[#E8A020]">
+              <p className="text-sm font-semibold uppercase tracking-widest text-teal">
                 {BRAND.heroSuperLabel}
               </p>
               <h1 className="text-2xl font-bold leading-snug sm:text-3xl lg:text-4xl">
@@ -88,7 +88,7 @@ export function HomeHeroSection() {
                 <span className="text-white">Niger State</span>
                 <span className="text-white/75 font-medium"> Primary Health Care</span>
                 {" "}
-                <span className="text-[#E8A020]">Development Agency&apos;s</span>
+                <span className="text-teal">Development Agency&apos;s</span>
                 <br className="hidden sm:block" />
                 {" "}
                 <span className="text-white font-extrabold tracking-tight text-3xl sm:text-4xl lg:text-5xl">
@@ -107,15 +107,16 @@ export function HomeHeroSection() {
               >
                 <div className="relative flex-1">
                   <Search
-                    className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                    className="hero-input-icon pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2"
                     aria-hidden
                   />
                   <Input
                     type="search"
+                    surface="hero"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search datasets by keyword, region, or topic..."
-                    className="h-11 rounded-lg border-0 bg-white/95 pl-11 text-sm text-foreground shadow-md"
+                    className="h-11 pl-11 text-sm"
                     aria-label="Search datasets"
                   />
                 </div>
@@ -123,20 +124,32 @@ export function HomeHeroSection() {
                   type="submit"
                   size="lg"
                   variant="secondary"
-                  className="h-11 bg-white/95 text-primary hover:bg-white shadow-md"
+                  className="hero-btn-solid h-11 border-0 px-6"
                 >
                   Search
                 </Button>
               </form>
 
-              <div className="pt-3">
+              {/* Primary CTA row — always visible above the fold */}
+              <div className="pt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 <Link href="/dataportal">
                   <Button
                     size="lg"
-                    className="bg-[#E8A020] text-foreground shadow-lg hover:bg-[#E8A020]/90"
+                    variant="onDarkSolid"
+                    className="w-full sm:w-auto px-7 py-3 text-base"
                   >
                     Browse Repository
                     <ArrowRight className="size-4" />
+                  </Button>
+                </Link>
+                <Link href="/analytics">
+                  <Button
+                    size="lg"
+                    variant="onDark"
+                    className="w-full sm:w-auto px-7 py-3 text-base"
+                  >
+                    <BarChart2 className="size-4" />
+                    Analytics Dashboard
                   </Button>
                 </Link>
               </div>
@@ -147,12 +160,12 @@ export function HomeHeroSection() {
             {statItems.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-lg border border-white/20 bg-white/90 px-4 py-3 text-center shadow-lg"
+                className="hero-stat-chip"
               >
-                <p className="text-2xl font-bold text-primary sm:text-3xl">
+                <p className="hero-stat-value">
                   {isLoading || stat.value == null ? "—" : stat.value}
                 </p>
-                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">{stat.label}</p>
+                <p className="hero-stat-label">{stat.label}</p>
               </div>
             ))}
           </div>

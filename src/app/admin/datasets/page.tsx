@@ -2,26 +2,33 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
-import { getReviewQueue } from "@/lib/mock";
+import { Search, Archive } from "lucide-react";
+import { getReviewQueue, archiveDataset } from "@/lib/mock";
+import { useMockSession } from "@/lib/auth/mock-session";
 import type { Dataset, DatasetStatus } from "@/types";
 import { AgeBadge } from "@/components/data/age-badge";
 import { StatusBadge } from "@/components/data/status-badge";
+import { LifecycleBadge } from "@/components/data/lifecycle-badge";
+import { FreshnessIndicator } from "@/components/data/freshness-indicator";
 import { Input } from "@/components/ui/input";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TableRowSkeleton } from "@/components/feedback/skeletons";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { FileCheck } from "lucide-react";
+import { toast } from "sonner";
 
 const TABS: Array<{ key: DatasetStatus | "all"; label: string }> = [
   { key: "all", label: "All" },
   { key: "submitted", label: "Submitted" },
   { key: "under_review", label: "Under Review" },
   { key: "needs_revision", label: "Needs Revision" },
+  { key: "published", label: "Published" },
+  { key: "archived", label: "Archived" },
 ];
 
 export default function AdminReviewQueuePage() {
+  const { currentUser } = useMockSession();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<DatasetStatus | "all">("all");
@@ -36,11 +43,21 @@ export default function AdminReviewQueuePage() {
     });
   }, [tab, query]);
 
+  const handleArchive = (d: Dataset) => {
+    archiveDataset(d.id, {
+      archivedAt: new Date().toISOString(),
+      archivedBy: currentUser.fullName,
+      reason: "Archived from review queue",
+    });
+    setDatasets((prev) => prev.map((x) => x.id === d.id ? { ...x, status: "archived" as const, lifecycleStage: "archived" } : x));
+    toast.success(`"${d.title}" archived`);
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Review Queue</h1>
-        <p className="text-muted-foreground mt-1">Approve, revise, or reject dataset submissions</p>
+        <p className="text-muted-foreground mt-1">Manage dataset submissions through the approval pipeline</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -75,7 +92,8 @@ export default function AdminReviewQueuePage() {
               </th>
               <th className="px-4 py-3 font-medium">Dataset Title</th>
               <th className="px-4 py-3 font-medium">Organisation</th>
-              <th className="px-4 py-3 font-medium">Submitted</th>
+              <th className="px-4 py-3 font-medium">Stage</th>
+              <th className="px-4 py-3 font-medium">Freshness</th>
               <th className="px-4 py-3 font-medium">Age</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Actions</th>
@@ -83,10 +101,10 @@ export default function AdminReviewQueuePage() {
           </thead>
           <tbody>
             {loading ? (
-              [...Array(5)].map((_, i) => <TableRowSkeleton key={i} cols={7} />)
+              [...Array(5)].map((_, i) => <TableRowSkeleton key={i} cols={8} />)
             ) : datasets.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8">
+                <td colSpan={8} className="p-8">
                   <EmptyState icon={FileCheck} title="Queue is empty" description="No datasets match your filters" />
                 </td>
               </tr>
@@ -106,10 +124,22 @@ export default function AdminReviewQueuePage() {
                       aria-label={`Select ${d.title}`}
                     />
                   </td>
-                  <td className="px-4 py-3 font-medium">{d.title}</td>
+                  <td className="px-4 py-3 font-medium max-w-xs">
+                    <span className="line-clamp-1">{d.title}</span>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{d.organisation.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {new Date(d.updatedAt).toLocaleDateString()}
+                  <td className="px-4 py-3">
+                    {d.lifecycleStage ? (
+                      <LifecycleBadge stage={d.lifecycleStage} />
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <FreshnessIndicator
+                      lastUpdated={d.updatedAt}
+                      updateFrequency={d.updateFrequency}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <AgeBadge submittedAt={d.updatedAt} />
@@ -118,12 +148,30 @@ export default function AdminReviewQueuePage() {
                     <StatusBadge status={d.status} />
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/datasets/${d.id}/review`}
-                      className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-                    >
-                      Review
-                    </Link>
+                    <div className="flex gap-1">
+                      <Link
+                        href={`/admin/datasets/${d.id}/review`}
+                        className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                      >
+                        Review
+                      </Link>
+                      {d.status === "published" && (
+                        <Link
+                          href={`/admin/datasets/${d.id}/approve`}
+                          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                        >
+                          Approve
+                        </Link>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleArchive(d)}
+                        aria-label={`Archive ${d.title}`}
+                      >
+                        <Archive className="size-3.5" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))

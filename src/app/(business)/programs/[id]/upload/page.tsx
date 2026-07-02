@@ -1,0 +1,169 @@
+"use client";
+
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Upload } from "lucide-react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Container } from "@/components/layout/container";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FileUploadArea, type UploadedFile } from "@/components/forms/file-upload-area";
+import { FormError } from "@/components/forms/form-error";
+import { getProgramById, addProgramReport } from "@/lib/mock/programs";
+import { useProgramPermissions } from "@/lib/hooks/useProgramPermissions";
+import { useMockSession } from "@/lib/auth/mock-session";
+import { programReportSchema, type ProgramReportFormData } from "@/lib/schemas/program";
+import { toast } from "sonner";
+
+export default function UploadProgramReportPage() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const { canUpload } = useProgramPermissions();
+  const { currentUser } = useMockSession();
+  const program = getProgramById(id);
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<ProgramReportFormData>({
+    resolver: zodResolver(programReportSchema),
+    defaultValues: { fileFormat: "PDF" },
+  });
+
+  if (!program) {
+    return (
+      <Container className="py-16 text-center text-muted-foreground">
+        Programme not found.
+      </Container>
+    );
+  }
+
+  if (!canUpload) {
+    return (
+      <Container className="py-16 text-center space-y-4">
+        <p className="text-muted-foreground">
+          Upload requires the <strong>Upload Programme Reports</strong> permission (Contributors,
+          Custodians, Org Admins, or delegated Programme Leads group).
+        </p>
+        <Link href={`/programs/${program.id}`}>
+          <Button variant="outline">Back to Programme</Button>
+        </Link>
+      </Container>
+    );
+  }
+
+  const onSubmit = async (data: ProgramReportFormData) => {
+    if (files.length === 0) {
+      toast.error("Attach a report file before submitting");
+      return;
+    }
+    const file = files[0];
+    addProgramReport(program.id, {
+      title: data.title,
+      uploadedBy: currentUser.fullName,
+      fileSizeBytes: file.size,
+      fileFormat: data.fileFormat,
+      url: `/reports/${program.slug}-${Date.now()}.${data.fileFormat.toLowerCase()}`,
+    });
+    toast.success("Report uploaded (mock)");
+    router.push(`/programs/${program.id}`);
+  };
+
+  return (
+    <main className="flex-1">
+      <Container className="py-8 max-w-2xl">
+        <div className="mb-6 flex items-center gap-3">
+          <Link href={`/programs/${program.id}`}>
+            <Button variant="ghost" size="icon" aria-label="Back">
+              <ArrowLeft className="size-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold">Upload Programme Report</h1>
+            <p className="text-sm text-muted-foreground mt-1">{program.name}</p>
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="size-5" />
+              Report / Document
+            </CardTitle>
+            <CardDescription>
+              Final reports, monitoring briefs, or evaluation documents linked to this programme.
+              You can also attach datasets via{" "}
+              <Link href="/submit" className="text-primary hover:underline">
+                Submit Dataset
+              </Link>{" "}
+              and select this programme.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block" htmlFor="title">
+                  Report Title
+                </label>
+                <Input id="title" {...register("title")} placeholder="Q1 2026 Monitoring Report" />
+                <FormError message={errors.title?.message} />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Format</label>
+                <Controller
+                  name="fileFormat"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value ?? "PDF"} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PDF">PDF</SelectItem>
+                        <SelectItem value="DOCX">Word (DOCX)</SelectItem>
+                        <SelectItem value="XLSX">Excel (XLSX)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block" htmlFor="notes">
+                  Notes (optional)
+                </label>
+                <Textarea id="notes" rows={2} {...register("notes")} />
+              </div>
+
+              <FileUploadArea
+                files={files}
+                onFilesChange={setFiles}
+                accept=".pdf,.docx,.xlsx"
+                maxSizeMB={25}
+              />
+
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? "Uploading…" : "Upload Report"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </Container>
+    </main>
+  );
+}

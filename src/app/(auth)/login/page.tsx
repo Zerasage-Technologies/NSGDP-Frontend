@@ -68,6 +68,7 @@ function LoginContent() {
 
     if (data.email.includes("admin")) {
       setRole("super_admin");
+      // MFA placeholder: admins are directed to a verification step
       router.push("/login/verify");
     } else if (data.email.includes("contributor")) {
       setRole("contributor");
@@ -77,7 +78,7 @@ function LoginContent() {
       router.push("/login/verify");
     } else {
       setRole("registered");
-      toast.success("Login successful!");
+      toast.success("Login successful! Session expires after 8 hours of inactivity.");
       router.push(returnTo);
     }
     setLoading(false);
@@ -202,6 +203,15 @@ function LoginContent() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Please wait…" : submitLabel}
               </Button>
+
+              {accessLevel === "administrator" && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 p-3 text-xs text-blue-800 dark:text-blue-100">
+                  <p className="font-semibold mb-0.5">Multi-Factor Authentication Required</p>
+                  <p className="text-blue-700 dark:text-blue-200">
+                    Admin accounts require a one-time password (OTP) sent to your registered email or authenticator app after login.
+                  </p>
+                </div>
+              )}
 
               <p className="text-center text-sm text-muted-foreground">
                 Don&apos;t have an account?{" "}

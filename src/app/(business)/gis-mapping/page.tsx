@@ -35,6 +35,10 @@ import { getTrendData, getLGABurdenTable } from "@/lib/mock/analytics";
 import { ANALYTICS_METRICS, NIGER_STATE_POPULATION } from "@/lib/constants/health";
 import { NIGER_STATE_LGAS } from "@/lib/constants";
 import { getWardsForLGA } from "@/lib/mock/facilities";
+import { MapLegend, DISEASE_BUBBLE_LEGEND } from "@/components/map/map-legend";
+import { LayerComparison, type LayerConfig } from "@/components/map/layer-comparison";
+import { MapTooltip } from "@/components/map/map-tooltip";
+import { HelpTooltip } from "@/components/feedback/help-tooltip";
 import type { AnalyticsMetric } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -112,6 +116,9 @@ export default function GisMappingPage() {
     Awaited<ReturnType<typeof getGisBurdenBubbles>>
   >([]);
   const [loading, setLoading] = useState(true);
+  const [mapLayers, setMapLayers] = useState<LayerConfig[]>([]);
+  const [showWardBoundaries, setShowWardBoundaries] = useState(false);
+  const [showHotspots, setShowHotspots] = useState(true);
 
   const wards = lga === "all" ? [] : getWardsForLGA(lga);
 
@@ -212,11 +219,17 @@ export default function GisMappingPage() {
             }}
           >
             <Popup>
-              <div className="text-sm">
-                <p className="font-bold">{bubble.lga}</p>
-                <p>{displayValue(bubble.cases)} cases</p>
-                <p className="text-muted-foreground">{year}{month !== "all" ? ` · ${MONTHS[Number(month) - 1]}` : ""}</p>
-              </div>
+              <MapTooltip
+                title={bubble.lga}
+                rows={[
+                  { label: "Cases", value: displayValue(bubble.cases) },
+                  {
+                    label: "Period",
+                    value: `${year}${month !== "all" ? ` · ${MONTHS[Number(month) - 1]}` : ""}`,
+                  },
+                ]}
+                className="border-0 shadow-none p-0 min-w-0 bg-transparent backdrop-blur-none"
+              />
             </Popup>
           </CircleMarker>
         ))}
@@ -248,9 +261,14 @@ export default function GisMappingPage() {
           </Button>
         </div>
         <div className="space-y-4 overflow-y-auto p-4">
+          <div className="flex items-center justify-between">
+            <LayerComparison layers={mapLayers} onLayersChange={setMapLayers} />
+            <HelpTooltip content="Red circles show disease burden by LGA. Larger circles = more cases. Use layers to compare multiple indicators side by side." />
+          </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               Primary health metric
+              <HelpTooltip content="Select the disease or health indicator to display as bubble size on the map." />
             </label>
             <Select value={metric} onValueChange={(v) => v && setMetric(v as AnalyticsMetric)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -293,6 +311,22 @@ export default function GisMappingPage() {
                 onChange={(e) => setMaxCases(e.target.value)}
               />
             </div>
+          </div>
+          <div className="space-y-2 border-t pt-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Map Layers</p>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={showWardBoundaries} onChange={(e) => setShowWardBoundaries(e.target.checked)} className="rounded" />
+              Ward boundaries
+              <HelpTooltip content="Overlay 274 ward administrative boundaries for sub-LGA analysis." />
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={showHotspots} onChange={(e) => setShowHotspots(e.target.checked)} className="rounded" />
+              Disease hotspot layer
+              <HelpTooltip content="Highlights LGAs exceeding the epidemic threshold in red." />
+            </label>
+            {showWardBoundaries && (
+              <p className="text-xs text-muted-foreground pl-6">Ward boundaries overlay active (mock)</p>
+            )}
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Year</label>
@@ -488,6 +522,14 @@ export default function GisMappingPage() {
           Show Trend
         </Button>
       )}
+
+      {/* Permanent legend */}
+      <MapLegend
+        title="Disease Burden"
+        items={DISEASE_BUBBLE_LEGEND}
+        unit="cases"
+        className="absolute bottom-4 right-4 z-[1000]"
+      />
     </div>
   );
 }

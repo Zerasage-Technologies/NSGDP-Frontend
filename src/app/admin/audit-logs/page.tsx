@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Search } from "lucide-react";
+import { Download, Search, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { getAuditLog } from "@/lib/mock";
 import type { AuditLogEntry, AuditAction } from "@/types/admin";
 import { Pagination } from "@/components/data/pagination";
@@ -15,7 +15,72 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TableRowSkeleton } from "@/components/feedback/skeletons";
+import { statusPill } from "@/lib/constants/status-surfaces";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+const ACTION_GROUPS: Array<{ label: string; actions: Array<{ value: AuditAction; label: string }> }> = [
+  {
+    label: "Data Actions",
+    actions: [
+      { value: "upload", label: "Upload" },
+      { value: "download", label: "Download" },
+      { value: "version_update", label: "Version Update" },
+      { value: "archive", label: "Archive" },
+    ],
+  },
+  {
+    label: "Approval Actions",
+    actions: [
+      { value: "approve", label: "Approve" },
+      { value: "publish", label: "Publish" },
+      { value: "reject", label: "Reject" },
+      { value: "revise", label: "Request Revision" },
+    ],
+  },
+  {
+    label: "Access & Security",
+    actions: [
+      { value: "login", label: "Login" },
+      { value: "logout", label: "Logout" },
+      { value: "failed_login", label: "Failed Login" },
+      { value: "access_request", label: "Access Request" },
+      { value: "access_grant", label: "Access Grant" },
+    ],
+  },
+  {
+    label: "Administration",
+    actions: [
+      { value: "role_change", label: "Role Change" },
+      { value: "permission_grant", label: "Permission Grant" },
+      { value: "permission_revoke", label: "Permission Revoke" },
+      { value: "register", label: "Register" },
+      { value: "suspend", label: "Suspend" },
+    ],
+  },
+];
+
+const RISK_ACTIONS: AuditAction[] = ["failed_login", "suspend", "permission_grant", "permission_revoke"];
+const SUCCESS_ACTIONS: AuditAction[] = ["publish", "approve", "access_grant"];
+
+function ActionBadge({ action }: { action: AuditAction }) {
+  const isRisk = RISK_ACTIONS.includes(action);
+  const isSuccess = SUCCESS_ACTIONS.includes(action);
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+        isRisk    && "bg-destructive/10 text-destructive",
+        isSuccess && statusPill.emerald,
+        !isRisk && !isSuccess && "bg-muted text-muted-foreground"
+      )}
+    >
+      {isRisk    && <AlertTriangle className="size-2.5" />}
+      {isSuccess && <CheckCircle2 className="size-2.5" />}
+      {action.replace(/_/g, " ")}
+    </span>
+  );
+}
 
 export default function AdminAuditLogsPage() {
   const [entries, setEntries] = useState<AuditLogEntry[]>([]);
@@ -47,7 +112,7 @@ export default function AdminAuditLogsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Audit Log</h1>
-          <p className="text-muted-foreground mt-1">Immutable record of platform actions</p>
+          <p className="text-muted-foreground mt-1">Immutable record of all platform actions</p>
         </div>
         <Button variant="outline" onClick={() => toast.success("CSV export started (mock)")}>
           <Download className="size-4" />
@@ -66,15 +131,17 @@ export default function AdminAuditLogsPage() {
           />
         </div>
         <Select value={action} onValueChange={(v) => { if (v) { setAction(v); setPage(1); } }}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="Action" /></SelectTrigger>
+          <SelectTrigger className="w-52"><SelectValue placeholder="Action type" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All actions</SelectItem>
-            <SelectItem value="login">Login</SelectItem>
-            <SelectItem value="upload">Upload</SelectItem>
-            <SelectItem value="download">Download</SelectItem>
-            <SelectItem value="approve">Approve</SelectItem>
-            <SelectItem value="reject">Reject</SelectItem>
-            <SelectItem value="role_change">Role Change</SelectItem>
+            {ACTION_GROUPS.map((group) => (
+              <div key={group.label}>
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group.label}</div>
+                {group.actions.map((a) => (
+                  <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+                ))}
+              </div>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -86,19 +153,25 @@ export default function AdminAuditLogsPage() {
               <th className="px-4 py-3 font-medium">Timestamp</th>
               <th className="px-4 py-3 font-medium">User</th>
               <th className="px-4 py-3 font-medium">Action</th>
-              <th className="px-4 py-3 font-medium">Resource</th>
-              <th className="px-4 py-3 font-medium">IP</th>
+              <th className="px-4 py-3 font-medium">Resource / Detail</th>
+              <th className="px-4 py-3 font-medium">IP Address</th>
             </tr>
           </thead>
           <tbody>
             {loading
               ? [...Array(5)].map((_, i) => <TableRowSkeleton key={i} cols={5} />)
               : entries.map((e) => (
-                  <tr key={e.id} className="border-b font-mono text-xs">
-                    <td className="px-4 py-3">{new Date(e.timestamp).toLocaleString()}</td>
+                  <tr
+                    key={e.id}
+                    className={cn(
+                      "border-b font-mono text-xs",
+                      RISK_ACTIONS.includes(e.action) && "bg-destructive/5"
+                    )}
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap">{new Date(e.timestamp).toLocaleString()}</td>
                     <td className="px-4 py-3">{e.userName}</td>
-                    <td className="px-4 py-3 capitalize">{e.action.replace("_", " ")}</td>
-                    <td className="px-4 py-3">{e.resource}</td>
+                    <td className="px-4 py-3"><ActionBadge action={e.action} /></td>
+                    <td className="px-4 py-3 max-w-xs truncate font-sans">{e.resource}</td>
                     <td className="px-4 py-3 text-muted-foreground">{e.ipAddress}</td>
                   </tr>
                 ))}

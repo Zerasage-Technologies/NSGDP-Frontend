@@ -8,6 +8,7 @@ import {
   Download,
   MapPin,
   ArrowUpDown,
+  Building,
 } from "lucide-react";
 import {
   LineChart,
@@ -34,11 +35,21 @@ import {
 import { PageHeaderSkeleton } from "@/components/feedback/skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getHealthAnalytics } from "@/lib/mock";
+import { mockPrograms } from "@/lib/mock/programs";
 import { ANALYTICS_METRICS } from "@/lib/constants/health";
+import {
+  ANALYTICS_DATA_SOURCES,
+  PROGRAM_DATA_SOURCE,
+  getAnalyticsSourceLabel,
+  type AnalyticsDataSourceId,
+} from "@/lib/constants/analytics-sources";
+import { WardAnalyticsChart } from "@/components/charts/ward-analytics-chart";
+import { HelpTooltip } from "@/components/feedback/help-tooltip";
 import type { AnalyticsMetric, LGABurden } from "@/types";
 import { cn } from "@/lib/utils";
 
 type TrendMode = "annual" | "seasonal";
+type AnalyticsTab = "indicators" | "ward" | "programmes";
 type SortKey = keyof Pick<
   LGABurden,
   "rank" | "lga" | "totalCases" | "facilities" | "population" | "incidencePer1000"
@@ -46,7 +57,9 @@ type SortKey = keyof Pick<
 
 export default function HealthAnalyticsPage() {
   const [metric, setMetric] = useState<AnalyticsMetric>("severe_malaria");
+  const [dataSource, setDataSource] = useState<AnalyticsDataSourceId>("all");
   const [trendMode, setTrendMode] = useState<TrendMode>("annual");
+  const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>("indicators");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Awaited<ReturnType<typeof getHealthAnalytics>> | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
@@ -54,11 +67,11 @@ export default function HealthAnalyticsPage() {
 
   useEffect(() => {
     setLoading(true);
-    getHealthAnalytics(metric).then((d) => {
+    getHealthAnalytics(metric, dataSource).then((d) => {
       setData(d);
       setLoading(false);
     });
-  }, [metric]);
+  }, [metric, dataSource]);
 
   const trendData = trendMode === "annual" ? data?.trendAnnual : data?.trendSeasonal;
 
@@ -86,6 +99,14 @@ export default function HealthAnalyticsPage() {
   const metricLabel =
     ANALYTICS_METRICS.find((m) => m.id === metric)?.label ?? metric;
 
+  const sourceLabel = getAnalyticsSourceLabel(dataSource);
+
+  const filteredPrograms = mockPrograms.filter((p) => {
+    if (p.status !== "ongoing") return false;
+    if (dataSource === "all") return true;
+    return PROGRAM_DATA_SOURCE[p.id] === dataSource;
+  });
+
   if (loading && !data) {
     return (
       <main className="flex-1 py-8">
@@ -104,6 +125,137 @@ export default function HealthAnalyticsPage() {
   return (
     <main className="flex-1 py-8">
       <Container size="wide" className="space-y-8">
+        {/* Global filters */}
+        <div className="flex flex-wrap items-end justify-between gap-4 rounded-lg border bg-muted/30 p-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium flex items-center gap-1.5">
+              Data Source
+              <HelpTooltip content="Filter analytics to datasets generated and uploaded by a specific organisation. 'All Sources' shows aggregated state-level indicators." />
+            </p>
+            <p className="text-xs text-muted-foreground max-w-xl">
+              Organisation responsible for generating and uploading the underlying data
+            </p>
+          </div>
+          <Select
+            value={dataSource}
+            onValueChange={(v) => v && setDataSource(v as AnalyticsDataSourceId)}
+          >
+            <SelectTrigger className="w-72">
+              <SelectValue placeholder="Select data source" />
+            </SelectTrigger>
+            <SelectContent>
+              {ANALYTICS_DATA_SOURCES.map((source) => (
+                <SelectItem key={source.id} value={source.id}>
+                  {source.acronym} — {source.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {dataSource !== "all" && (
+          <p className="text-sm text-muted-foreground -mt-4">
+            Showing analytics for <strong className="text-foreground">{sourceLabel}</strong>
+            {ANALYTICS_DATA_SOURCES.find((s) => s.id === dataSource)?.description
+              ? ` — ${ANALYTICS_DATA_SOURCES.find((s) => s.id === dataSource)?.description}`
+              : ""}
+          </p>
+        )}
+
+        {/* Tab switcher */}
+        <div className="flex gap-1 rounded-lg border bg-muted/30 p-1 w-fit">
+          {(["indicators", "ward", "programmes"] as AnalyticsTab[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setAnalyticsTab(t)}
+              className={
+                analyticsTab === t
+                  ? "rounded-md bg-background px-4 py-1.5 text-sm font-medium shadow-sm"
+                  : "rounded-md px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+              }
+            >
+              {t === "indicators" ? "Health Indicators" : t === "ward" ? "Ward-Level Analytics" : "Programme Monitoring"}
+            </button>
+          ))}
+        </div>
+
+        {analyticsTab === "programmes" && (
+          <>
+            <p className="text-sm text-muted-foreground">
+              {dataSource === "all"
+                ? "Ongoing programmes across all data sources"
+                : `Ongoing programmes linked to ${sourceLabel}`}
+            </p>
+            {filteredPrograms.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                  No ongoing programmes linked to this data source.
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredPrograms.map((p) => (
+                  <Card key={p.id}>
+                    <CardHeader>
+                      <CardTitle className="text-base leading-snug">{p.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{p.primaryMetric}</span>
+                        <span className="font-bold text-primary">{p.completionPercent}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: `${p.completionPercent}%` }} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <span>{p.lgasCovered} LGAs</span>
+                        <span>{p.reachCount.toLocaleString()} reached</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {analyticsTab === "ward" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building className="size-5 text-primary" />
+                Ward-Level Disease Burden
+                <HelpTooltip content="Shows disaggregated case counts and incidence rates at ward level for selected LGAs. Red bars indicate wards exceeding the 15 per 1,000 threshold." />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-sm font-medium mb-2">Cases by Ward (Top 10)</p>
+                  <WardAnalyticsChart
+                    metric="cases"
+                    dataSourceId={dataSource}
+                    analyticsMetric={metric}
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                    Incidence Rate per 1,000
+                    <HelpTooltip content="Incidence per 1,000 population standardises case counts to allow fair comparison across wards with different populations." />
+                  </p>
+                  <WardAnalyticsChart
+                    metric="incidencePer1000"
+                    dataSourceId={dataSource}
+                    analyticsMetric={metric}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {analyticsTab === "indicators" && <>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">Health Analytics Dashboard</h1>
@@ -130,7 +282,9 @@ export default function HealthAnalyticsPage() {
             <Button
               variant="outline"
               onClick={() =>
-                toast.success(`Export started for ${metricLabel} (mock)`)
+                toast.success(
+                  `Export started for ${metricLabel} — ${sourceLabel} (mock)`
+                )
               }
             >
               <Download className="size-4" />
@@ -370,6 +524,7 @@ export default function HealthAnalyticsPage() {
             </table>
           </CardContent>
         </Card>
+        </>}
       </Container>
     </main>
   );

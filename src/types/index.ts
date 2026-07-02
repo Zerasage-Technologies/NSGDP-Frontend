@@ -1,11 +1,15 @@
-// NSPHCDA Data Portal — domain types (PRD v2.0)
+// NSPHCDA Data Portal — domain types (PRD v3.0)
 
 export type UserRole =
   | "public"
   | "registered"
   | "contributor"
-  | "org_admin"
-  | "super_admin";
+  | "custodian"      // Dataset Custodian — maintains assigned datasets
+  | "validator"      // Data Validator — reviews & approves submissions
+  | "org_admin"      // Organisation Admin — manages org datasets & team
+  | "repo_admin"     // Repository Administrator — publishes & governs
+  | "ict_admin"      // ICT Administrator — system admin & security
+  | "super_admin";   // Repository Owner — full access + permission delegation
 
 export type Visibility = "public" | "restricted" | "private";
 
@@ -17,6 +21,24 @@ export type DatasetStatus =
   | "published"
   | "rejected"
   | "archived";
+
+/** 5-step governance lifecycle — checklist-driven review replaces micro-gates */
+export type LifecycleStage =
+  | "draft"
+  | "submitted"
+  | "under_review"
+  | "approved"
+  | "published"
+  | "archived";
+
+export const LIFECYCLE_LABELS: Record<LifecycleStage, string> = {
+  draft: "Draft",
+  submitted: "Submitted",
+  under_review: "Under Review",
+  approved: "Approved",
+  published: "Published",
+  archived: "Archived",
+};
 
 export type FileFormat =
   | "CSV"
@@ -87,6 +109,7 @@ export interface Organisation {
   brandColor?: string;
   description?: string;
   datasetCount: number;
+  dataSharingAgreement?: DataSharingAgreement;
 }
 
 export interface Group {
@@ -107,6 +130,15 @@ export interface DatasetResource {
   updatedAt: string;
 }
 
+/** Version history entry for a published dataset */
+export interface DatasetVersion {
+  version: string;        // e.g. "v1.0", "v1.1"
+  publishedAt: string;
+  publishedBy: string;
+  changeNote: string;
+  resourceId?: string;    // links to specific DatasetResource
+}
+
 export interface Dataset {
   id: string;
   slug: string;
@@ -122,7 +154,7 @@ export interface Dataset {
   downloadCount: number;
   updatedAt: string;
   resources?: DatasetResource[];
-  // PRD v2.0 extended metadata
+  // ── PRD v2.0 extended metadata ──────────────────────────────────────────
   custodian?: string;
   dateCollected?: string;
   updateFrequency?: string;
@@ -132,8 +164,46 @@ export interface Dataset {
   source?: string;
   portalSource?: string;
   keyAttributes?: KeyAttribute[];
-  /** Optional link to a Program this dataset belongs to */
   programId?: string;
+  // ── PRD v3.0 — governance metadata (all 14 required fields) ─────────────
+  /** Responsible department within the owning organisation */
+  responsibleDept?: string;
+  /** Name and contact details for the data focal person */
+  contactPerson?: string;
+  /** Geographic scope in plain language e.g. "All 25 LGAs, Niger State" */
+  geographicCoverage?: string;
+  /** The time period this data covers e.g. "Jan 2024 – Dec 2024" */
+  reportingPeriod?: string;
+  /** ISO date the dataset was first published to this portal */
+  datePublished?: string;
+  /** Usage license e.g. "CC BY 4.0", "Open Government License", "Restricted" */
+  dataLicense?: string;
+  /** Searchable keywords / tags */
+  tags?: string[];
+  // ── Advanced filter metadata ─────────────────────────────────────────────
+  disease?: string;
+  reportingYear?: number;
+  wardCoverage?: string[];
+  facilityScope?: string;
+  linkedProgram?: string;
+  // ── Governance lifecycle & versioning ────────────────────────────────────
+  lifecycleStage?: LifecycleStage;
+  versions?: DatasetVersion[];
+  archiveInfo?: DatasetArchiveInfo;
+}
+
+export interface DatasetArchiveInfo {
+  archivedAt: string;
+  archivedBy: string;
+  reason: string;
+}
+
+export interface DataSharingAgreement {
+  status: "active" | "pending" | "expired" | "none";
+  signedDate?: string;
+  expiryDate?: string;
+  contactName?: string;
+  datasetCount?: number;
 }
 
 export interface Facility {
@@ -171,6 +241,9 @@ export interface Program {
   targetCount: number;
   activeDays: number;
   lgasCovered: number;
+  /** Owning organisation (data source / programme owner) */
+  organisationId?: string;
+  organisationName?: string;
   /** Reports are only visible when completionPercent === 100 */
   reports?: ProgramReport[];
   linkedDatasetIds?: string[];
@@ -219,4 +292,98 @@ export interface LGACaseData {
   cases: number;
   population: number;
   facilities: number;
+}
+
+// ── Document Repository ───────────────────────────────────────────────────────
+
+export type DocumentCategory =
+  | "sop"
+  | "policy"
+  | "research"
+  | "report"
+  | "guideline"
+  | "archive"
+  | "evaluation";
+
+export interface PortalDocument {
+  id: string;
+  slug: string;
+  title: string;
+  category: DocumentCategory;
+  description?: string;
+  fileFormat: "PDF" | "DOCX" | "XLSX" | "PPTX";
+  fileSizeBytes: number;
+  uploadedAt: string;
+  uploadedBy: string;
+  organisationName: string;
+  tags?: string[];
+  restricted?: boolean;
+  programId?: string;
+}
+
+// ── Programme Milestones ──────────────────────────────────────────────────────
+
+export interface ProgramMilestone {
+  id: string;
+  title: string;
+  targetDate: string;
+  completedDate?: string;
+  status: "pending" | "completed" | "overdue";
+}
+
+// ── Data Freshness Compliance ─────────────────────────────────────────────────
+
+/** ISO date of the next expected update, derived from updateFrequency + updatedAt */
+export type FreshnessStatus = "fresh" | "due_soon" | "overdue" | "unknown";
+
+// ── Notification ─────────────────────────────────────────────────────────────
+
+export type NotificationType =
+  | "dataset_published"
+  | "dataset_updated"
+  | "approval_request"
+  | "revision_request"
+  | "access_granted"
+  | "disease_alert"
+  | "qa_flag"
+  | "sop_updated";
+
+export interface PortalNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  timestamp: string;
+  link?: string;
+}
+
+// ── Outbreak Alert ────────────────────────────────────────────────────────────
+
+export type AlertSeverity = "info" | "warning" | "critical";
+
+export interface OutbreakAlert {
+  id: string;
+  title: string;
+  summary: string;
+  disease: string;
+  affectedLGAs: string[];
+  severity: AlertSeverity;
+  publishedAt: string;
+  active: boolean;
+}
+
+// ── SOP ──────────────────────────────────────────────────────────────────────
+
+export type SOPCategory = "submission" | "validation" | "publication" | "archival" | "correction";
+
+export interface SOP {
+  id: string;
+  title: string;
+  category: SOPCategory;
+  version: string;
+  effectiveDate: string;
+  summary: string;
+  fileUrl?: string;
+  lastReviewed?: string;
 }

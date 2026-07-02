@@ -30,6 +30,13 @@ export const mockOrganisations: Organisation[] = [
     brandColor: "#059669",
     description: "National PHC programmes, HFR, and immunisation data.",
     datasetCount: 4,
+    dataSharingAgreement: {
+      status: "active",
+      signedDate: "2023-01-10",
+      expiryDate: "2026-01-10",
+      contactName: "NPHCDA Data Unit",
+      datasetCount: 4,
+    },
   },
   {
     id: "org-4",
@@ -40,6 +47,13 @@ export const mockOrganisations: Organisation[] = [
     brandColor: "#2563EB",
     description: "Geospatial population estimates and administrative boundaries.",
     datasetCount: 3,
+    dataSharingAgreement: {
+      status: "active",
+      signedDate: "2024-03-15",
+      expiryDate: "2027-03-15",
+      contactName: "GRID3 Nigeria Focal Point",
+      datasetCount: 3,
+    },
   },
   {
     id: "org-5",
@@ -90,6 +104,10 @@ export const mockOrganisations: Organisation[] = [
     brandColor: "#0891B2",
     description: "Technical partner supporting geospatial health data systems.",
     datasetCount: 1,
+    dataSharingAgreement: {
+      status: "pending",
+      contactName: "Dev-Afrique Programme Lead",
+    },
   },
   {
     id: "org-10",

@@ -20,11 +20,19 @@ export type AuditAction =
   | "upload"
   | "download"
   | "approve"
+  | "publish"
   | "reject"
   | "revise"
+  | "archive"
   | "register"
   | "role_change"
-  | "suspend";
+  | "suspend"
+  | "permission_grant"
+  | "permission_revoke"
+  | "version_update"
+  | "access_request"
+  | "access_grant"
+  | "failed_login";
 
 export interface AuditLogEntry {
   id: string;
@@ -57,6 +65,8 @@ export interface AdminUser {
   fullName: string;
   email: string;
   role: UserRole;
+  organisationId?: string;
+  organisationName?: string;
   joinedAt: string;
   lastLogin: string;
   status: "active" | "suspended" | "banned";

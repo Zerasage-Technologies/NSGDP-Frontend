@@ -5,6 +5,11 @@ import type {
   OutlierFacility,
 } from "@/types";
 import { NIGER_STATE_LGAS } from "@/lib/constants";
+import type { AnalyticsDataSourceId } from "@/lib/constants/analytics-sources";
+import {
+  getAnalyticsFacilityShare,
+  getAnalyticsSourceShare,
+} from "@/lib/constants/analytics-sources";
 
 export const mockPlatformKPIs = {
   totalUsers: 248,
@@ -64,39 +69,63 @@ const METRIC_BASE: Record<AnalyticsMetric, number> = {
   death_cases: 380,
 };
 
-function seededValue(metric: AnalyticsMetric, year: number, month?: number): number {
+function seededValue(
+  metric: AnalyticsMetric,
+  year: number,
+  month?: number,
+  sourceId: AnalyticsDataSourceId = "all"
+): number {
   const base = METRIC_BASE[metric];
   const growth = (year - 2013) * 0.04;
   const seasonal = month !== undefined ? Math.sin((month / 12) * Math.PI * 2) * 0.15 : 0;
   const hash = (metric.charCodeAt(0) + year + (month ?? 0)) % 17;
-  return Math.round(base * (1 + growth + seasonal) * (0.85 + hash * 0.02));
+  const raw = Math.round(base * (1 + growth + seasonal) * (0.85 + hash * 0.02));
+  return Math.round(raw * getAnalyticsSourceShare(sourceId, metric));
 }
 
-export function getTrendData(metric: AnalyticsMetric, mode: "annual" | "seasonal" = "annual") {
+export function getTrendData(
+  metric: AnalyticsMetric,
+  mode: "annual" | "seasonal" = "annual",
+  sourceId: AnalyticsDataSourceId = "all"
+) {
   if (mode === "annual") {
     return Array.from({ length: 13 }, (_, i) => {
       const year = 2013 + i;
-      return { date: String(year), cases: seededValue(metric, year) };
+      return { date: String(year), cases: seededValue(metric, year, undefined, sourceId) };
     });
   }
   const year = 2024;
   return Array.from({ length: 12 }, (_, i) => ({
     date: new Date(year, i).toLocaleString("en", { month: "short" }),
-    cases: seededValue(metric, year, i + 1),
+    cases: seededValue(metric, year, i + 1, sourceId),
   }));
 }
 
-export function getLGACaseData(metric: AnalyticsMetric): LGACaseData[] {
+export function getLGACaseData(
+  metric: AnalyticsMetric,
+  sourceId: AnalyticsDataSourceId = "all"
+): LGACaseData[] {
   return NIGER_STATE_LGAS.map((lga, i) => {
-    const pop = 120000 + i * 18000 + (lga.length % 5) * 5000;
-    const cases = Math.round(seededValue(metric, 2024) * (0.3 + (i % 10) * 0.08));
-    const facilities = 12 + (i % 8) * 3;
-    return { lga, cases, population: pop, facilities };
+    const pop = Math.round(
+      (120000 + i * 18000 + (lga.length % 5) * 5000) *
+        (sourceId === "all" ? 1 : getAnalyticsSourceShare(sourceId, metric) * 2.2)
+    );
+    const cases = Math.round(
+      seededValue(metric, 2024, undefined, sourceId) * (0.3 + (i % 10) * 0.08)
+    );
+    const facilities = Math.max(
+      1,
+      Math.round((12 + (i % 8) * 3) * getAnalyticsFacilityShare(sourceId))
+    );
+    return { lga, cases, population: Math.max(pop, 1000), facilities };
   });
 }
 
-export function getLGABurdenTable(metric: AnalyticsMetric): LGABurden[] {
-  return getLGACaseData(metric)
+export function getLGABurdenTable(
+  metric: AnalyticsMetric,
+  sourceId: AnalyticsDataSourceId = "all"
+): LGABurden[] {
+  return getLGACaseData(metric, sourceId)
     .map((row) => ({
       rank: 0,
       lga: row.lga,
@@ -109,14 +138,21 @@ export function getLGABurdenTable(metric: AnalyticsMetric): LGABurden[] {
     .map((row, i) => ({ ...row, rank: i + 1 }));
 }
 
-export function getTopLGAs(metric: AnalyticsMetric, n = 10) {
-  return getLGABurdenTable(metric).slice(0, n).map((r) => ({
+export function getTopLGAs(
+  metric: AnalyticsMetric,
+  n = 10,
+  sourceId: AnalyticsDataSourceId = "all"
+) {
+  return getLGABurdenTable(metric, sourceId).slice(0, n).map((r) => ({
     lga: r.lga,
     cases: r.totalCases,
   }));
 }
 
-export function getOutlierFacilities(metric: AnalyticsMetric): OutlierFacility[] {
+export function getOutlierFacilities(
+  metric: AnalyticsMetric,
+  sourceId: AnalyticsDataSourceId = "all"
+): OutlierFacility[] {
   const outliers: OutlierFacility[] = [
     { facility: "Chanchaga General Hospital", lga: "Chanchaga", totalCases: 842, zScore: 3.2, interpretation: "Very high – investigate" },
     { facility: "Bida General Hospital", lga: "Bida", totalCases: 691, zScore: 2.8, interpretation: "Very high – investigate" },
@@ -124,31 +160,50 @@ export function getOutlierFacilities(metric: AnalyticsMetric): OutlierFacility[]
     { facility: "Kontagora General Hospital", lga: "Kontagora", totalCases: 378, zScore: 2.1, interpretation: "Elevated – monitor" },
     { facility: "Minna PHC 2", lga: "Minna", totalCases: 298, zScore: 2.0, interpretation: "Borderline outlier" },
   ];
-  return outliers.map((o) => ({
+  const scale =
+    (METRIC_BASE[metric] / METRIC_BASE.severe_malaria) *
+    getAnalyticsSourceShare(sourceId, metric);
+  const sliceCount =
+    sourceId === "all"
+      ? outliers.length
+      : Math.max(1, Math.ceil(outliers.length * getAnalyticsSourceShare(sourceId, metric)));
+
+  return outliers.slice(0, sliceCount).map((o) => ({
     ...o,
-    totalCases: Math.round(o.totalCases * (METRIC_BASE[metric] / METRIC_BASE.severe_malaria)),
+    totalCases: Math.round(o.totalCases * scale),
   }));
 }
 
-export function getAnalyticsDashboard(metric: AnalyticsMetric) {
-  const burden = getLGABurdenTable(metric);
+export function getAnalyticsDashboard(
+  metric: AnalyticsMetric,
+  sourceId: AnalyticsDataSourceId = "all"
+) {
+  const burden = getLGABurdenTable(metric, sourceId);
+  const outliers = getOutlierFacilities(metric, sourceId);
+  const facilityShare = getAnalyticsFacilityShare(sourceId);
+
   return {
+    dataSourceId: sourceId,
     kpis: {
       totalCases: burden.reduce((s, r) => s + r.totalCases, 0),
-      healthFacilities: mockAnalyticsKPIs.healthFacilities,
-      lgasCovered: 25,
-      outlierFacilities: getOutlierFacilities(metric).length,
+      healthFacilities: Math.round(mockAnalyticsKPIs.healthFacilities * facilityShare),
+      lgasCovered: burden.some((r) => r.totalCases > 0) ? 25 : 0,
+      outlierFacilities: outliers.length,
     },
-    trendAnnual: getTrendData(metric, "annual"),
-    trendSeasonal: getTrendData(metric, "seasonal"),
-    topLGAs: getTopLGAs(metric, 10),
+    trendAnnual: getTrendData(metric, "annual", sourceId),
+    trendSeasonal: getTrendData(metric, "seasonal", sourceId),
+    topLGAs: getTopLGAs(metric, 10, sourceId),
     burdenTable: burden,
-    outliers: getOutlierFacilities(metric),
+    outliers,
   };
 }
 
-export function getGisBurdenBubbles(metric: AnalyticsMetric, year = 2024) {
-  const data = getLGACaseData(metric);
+export function getGisBurdenBubbles(
+  metric: AnalyticsMetric,
+  year = 2024,
+  sourceId: AnalyticsDataSourceId = "all"
+) {
+  const data = getLGACaseData(metric, sourceId);
   const maxCases = Math.max(...data.map((d) => d.cases));
   return data.map((d, i) => {
     const coords = {

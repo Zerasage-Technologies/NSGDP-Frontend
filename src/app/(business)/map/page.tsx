@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/select";
 import { getDatasets, getGroups } from "@/lib/mock";
 import { Search, Filter, MapPin, Database } from "lucide-react";
+import { MapLegend } from "@/components/map/map-legend";
+import { HelpTooltip } from "@/components/feedback/help-tooltip";
 import type { Dataset } from "@/types";
 import Link from "next/link";
 
@@ -120,7 +122,16 @@ export default function MapExplorePage() {
         6.547 + (Math.random() - 0.5) * 1.5,
       ] as [number, number],
       title: dataset.title,
-      description: `${dataset.organisation.name} • ${dataset.downloadCount} downloads`,
+      rows: [
+        { label: "Organisation", value: dataset.organisation.name },
+        { label: "Downloads", value: dataset.downloadCount.toLocaleString() },
+        {
+          label: "LGA coverage",
+          value: dataset.lgaCoverage.includes("All")
+            ? "All 25 LGAs"
+            : `${dataset.lgaCoverage.length} LGAs`,
+        },
+      ],
     }));
 
   // Don't render until mounted on client
@@ -249,7 +260,7 @@ export default function MapExplorePage() {
           </div>
 
           {/* Map */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 relative">
             <Suspense
               fallback={
                 <div className="flex items-center justify-center h-[calc(100vh-200px)] border rounded-lg bg-muted/20">
@@ -264,6 +275,15 @@ export default function MapExplorePage() {
                 showControls={true}
               />
             </Suspense>
+
+            <MapLegend
+              title="Dataset Markers"
+              items={[
+                { label: "Selected dataset", color: "#2563eb", description: "Currently highlighted on map" },
+                { label: "Other datasets", color: "#94a3b8", description: "Available geospatial datasets" },
+              ]}
+              className="absolute bottom-4 right-4 z-10 hidden sm:block"
+            />
 
             {/* Selected Dataset Info */}
             {selectedDataset && (

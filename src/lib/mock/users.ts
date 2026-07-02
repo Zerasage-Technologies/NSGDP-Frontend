@@ -1,6 +1,5 @@
 import type { User } from "@/types";
 
-// Mock users for role simulation
 export const mockUsers: Record<string, User> = {
   public: {
     id: "user-public",
@@ -23,12 +22,40 @@ export const mockUsers: Record<string, User> = {
     role: "contributor",
     organisationIds: ["org-1"],
   },
+  custodian: {
+    id: "user-009",
+    fullName: "Zainab Idris",
+    email: "zainab.idris@nsphcda.gov.ng",
+    role: "custodian",
+    organisationIds: ["org-1"],
+  },
+  validator: {
+    id: "user-010",
+    fullName: "Emmanuel Okafor",
+    email: "emmanuel.okafor@health.niger.gov.ng",
+    role: "validator",
+    organisationIds: ["org-2"],
+  },
   orgAdmin: {
     id: "user-003",
     fullName: "Dr. Amina Yusuf",
     email: "amina.yusuf@health.niger.gov.ng",
     role: "org_admin",
     organisationIds: ["org-1"],
+  },
+  repoAdmin: {
+    id: "user-011",
+    fullName: "Hajiya Maryam Danjuma",
+    email: "maryam.danjuma@nsphcda.gov.ng",
+    role: "repo_admin",
+    organisationIds: [],
+  },
+  ictAdmin: {
+    id: "user-012",
+    fullName: "Chukwuemeka Nwosu",
+    email: "chukwuemeka.nwosu@nsphcda.gov.ng",
+    role: "ict_admin",
+    organisationIds: [],
   },
   superAdmin: {
     id: "user-004",

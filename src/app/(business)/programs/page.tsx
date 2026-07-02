@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import {
   LayoutGrid,
   Calendar,
@@ -21,10 +23,12 @@ import {
 import { Container } from "@/components/layout/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { mockPrograms } from "@/lib/mock";
-import { useMockSession } from "@/lib/auth/mock-session";
-import type { ProgramStatus, ProgramType } from "@/types";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { getProgramsList } from "@/lib/mock/programs";
+import { useProgramPermissions } from "@/lib/hooks/useProgramPermissions";
+import type { Program, ProgramStatus, ProgramType } from "@/types";
+import { typeChip } from "@/lib/constants/status-surfaces";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -51,13 +55,13 @@ const TYPE_LABELS: Record<ProgramType, string> = {
 };
 
 const TYPE_COLORS: Record<ProgramType, string> = {
-  campaign:       "bg-blue-100 text-blue-800",
-  surveillance:   "bg-purple-100 text-purple-800",
-  screening:      "bg-teal-100 text-teal-800",
-  training:       "bg-yellow-100 text-yellow-800",
-  infrastructure: "bg-orange-100 text-orange-800",
-  research:       "bg-pink-100 text-pink-800",
-  other:          "bg-gray-100 text-gray-800",
+  campaign:       typeChip.blue,
+  surveillance:   typeChip.purple,
+  screening:      typeChip.teal,
+  training:       typeChip.yellow,
+  infrastructure: typeChip.orange,
+  research:       typeChip.pink,
+  other:          typeChip.gray,
 };
 
 function coverageBarColor(pct: number) {
@@ -98,25 +102,28 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
 // ── component ─────────────────────────────────────────────────────────────────
 
 export default function ProgramsPage() {
-  const { currentUser } = useMockSession();
-  const isAdmin = currentUser.role === "super_admin";
-  const isContributor = ["contributor", "org_admin", "super_admin"].includes(currentUser.role);
+  const { canCreate, canUpload } = useProgramPermissions();
+  const [programs, setPrograms] = useState<Program[]>([]);
+
+  useEffect(() => {
+    setPrograms(getProgramsList());
+  }, []);
 
   const [statusFilter, setStatusFilter] = useState<ProgramStatus | "all">("all");
   const [typeFilter, setTypeFilter]     = useState<ProgramType | "all">("all");
   const [filtersOpen, setFiltersOpen]   = useState(false);
 
-  const filtered = mockPrograms.filter((p) => {
+  const filtered = programs.filter((p) => {
     if (statusFilter !== "all" && p.status !== statusFilter) return false;
     if (typeFilter   !== "all" && p.type   !== typeFilter)   return false;
     return true;
   });
 
   const stats = {
-    total:     mockPrograms.length,
-    ongoing:   mockPrograms.filter((p) => p.status === "ongoing").length,
-    completed: mockPrograms.filter((p) => p.status === "completed").length,
-    planned:   mockPrograms.filter((p) => p.status === "planned").length,
+    total:     programs.length,
+    ongoing:   programs.filter((p) => p.status === "ongoing").length,
+    completed: programs.filter((p) => p.status === "completed").length,
+    planned:   programs.filter((p) => p.status === "planned").length,
   };
 
   return (
@@ -142,12 +149,15 @@ export default function ProgramsPage() {
                 </p>
               </div>
             </div>
-            {isAdmin && (
-              <Button className="bg-[#E8A020] text-foreground hover:bg-[#E8A020]/90 text-sm">
+            {canCreate && (
+              <Link
+                href="/programs/new"
+                className={cn(buttonVariants({ variant: "onDarkSolid" }), "text-sm gap-1.5")}
+              >
                 <Plus className="size-4" />
-                <span className="hidden xs:inline">Create Program</span>
-                <span className="xs:hidden">New</span>
-              </Button>
+                <span className="hidden sm:inline">Create Programme</span>
+                <span className="sm:hidden">New</span>
+              </Link>
             )}
           </div>
 
@@ -218,7 +228,7 @@ export default function ProgramsPage() {
       <section className="py-8 sm:py-12 lg:py-16">
         <Container size="wide">
           <p className="mb-4 text-sm text-muted-foreground">
-            Showing <strong>{filtered.length}</strong> of {mockPrograms.length} programs
+            Showing <strong>{filtered.length}</strong> of {programs.length} programs
           </p>
 
           {filtered.length === 0 ? (
@@ -228,7 +238,7 @@ export default function ProgramsPage() {
           ) : (
             <div className="grid gap-5 sm:gap-6 md:grid-cols-2">
               {filtered.map((program) => (
-                <Card key={program.id} className="flex flex-col">
+                <Card key={program.id} className="flex flex-col h-full">
 
                   {/* ── Card header ────────────────────────────────────────── */}
                   <CardHeader className="space-y-2 pb-3">
@@ -236,7 +246,12 @@ export default function ProgramsPage() {
                       <div className="flex items-start gap-2 flex-1 min-w-0">
                         {statusIcon(program.status)}
                         <CardTitle className="text-base leading-snug sm:text-lg">
-                          {program.name}
+                          <Link
+                            href={`/programs/${program.id}`}
+                            className="hover:text-primary hover:underline"
+                          >
+                            {program.name}
+                          </Link>
                         </CardTitle>
                       </div>
                       {statusBadge(program.status)}
@@ -349,11 +364,17 @@ export default function ProgramsPage() {
                             </li>
                           ))}
                         </ul>
-                        {isContributor && (
-                          <Button variant="outline" size="sm" className="mt-2 w-full text-xs">
+                        {canUpload && (
+                          <Link
+                            href={`/programs/${program.id}/upload`}
+                            className={cn(
+                              buttonVariants({ variant: "outline", size: "sm" }),
+                              "mt-2 w-full text-xs"
+                            )}
+                          >
                             <Plus className="size-3" />
-                            Upload Additional Report
-                          </Button>
+                            Upload Report
+                          </Link>
                         )}
                       </div>
                     )}
@@ -364,26 +385,51 @@ export default function ProgramsPage() {
                         <p className="text-xs text-muted-foreground italic">
                           Reports will be available once this program reaches 100% completion.
                         </p>
-                        {isContributor && (
-                          <Button variant="outline" size="sm" className="mt-2 w-full text-xs" disabled>
+                        {canUpload && (
+                          <Link
+                            href={`/programs/${program.id}/upload`}
+                            className={cn(
+                              buttonVariants({ variant: "outline", size: "sm" }),
+                              "mt-2 w-full text-xs"
+                            )}
+                          >
                             <FileText className="size-3" />
-                            Upload Report (available at completion)
-                          </Button>
+                            Upload Report
+                          </Link>
                         )}
                       </div>
                     )}
 
                     {/* Admin actions for planned */}
-                    {program.status === "planned" && isAdmin && (
+                    {program.status === "planned" && canCreate && (
                       <div className="border-t pt-3 mt-auto flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1 text-xs">
+                        <Link
+                          href={`/programs/${program.id}/edit`}
+                          className={cn(
+                            buttonVariants({ variant: "outline", size: "sm" }),
+                            "flex-1 text-xs"
+                          )}
+                        >
                           Edit Timeline
-                        </Button>
-                        <Button size="sm" className="flex-1 text-xs bg-primary">
+                        </Link>
+                        <Link
+                          href={`/programs/${program.id}/edit`}
+                          className={cn(buttonVariants({ size: "sm" }), "flex-1 text-xs bg-primary")}
+                        >
                           Mark as Started
-                        </Button>
+                        </Link>
                       </div>
                     )}
+
+                    <div className="border-t pt-3 mt-auto">
+                      <Link
+                        href={`/programs/${program.id}`}
+                        className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                      >
+                        View programme dashboard
+                        <ArrowRight className="size-3.5" />
+                      </Link>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
