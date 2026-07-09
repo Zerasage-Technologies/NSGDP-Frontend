@@ -382,7 +382,7 @@ frontend/
 - [ ] Accessibility audit (WCAG AA)
 - [ ] Footer verification (Funded By / Powered By content)
 
-See `docs/newdocs/Master_Build_Plan_v1.0.md` for complete task breakdown.
+See `docs/newdocs/Master_Build_Plan_v1.1.md` for complete task breakdown.
 
 ---
 

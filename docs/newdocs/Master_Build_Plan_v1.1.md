@@ -61,7 +61,7 @@ Tasks marked ✅ **COMPLETE** below have been verified as fully implemented in t
 - **Tier 1 (6 features):** Document Repository, Partner Data Portal, User Groups, Permission Delegation, Governance Module, Architecture Route
 - **Tier 2 (5 features):** Programme Management CRUD, Ward-Level Analytics, Outbreak Alert Banner, Notification Center, Platform Ownership Section
 
-**Backend Impact:** Backend Architecture has been updated to v1.1 to include full API support (database schemas, services, routes) for all B10 features, preparing for Phase C production integration.
+**Backend Impact:** Backend Architecture has been updated to v1.1 to include full API support (database schemas, services, routes) for the 6 B10 features that require backend APIs (B10.01-B10.05, B10.07). The remaining 5 features (B10.06, B10.08-B10.11) are frontend-only and require no backend changes.
 
 ---
 

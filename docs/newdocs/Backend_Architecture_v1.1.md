@@ -8,7 +8,7 @@
 | **Date** | July 2026 |
 | **Prepared by** | Zerasage Technologies — Engineering |
 | **Audience** | Backend Engineer, CTO, DevOps |
-| **Status** | **Updated to reflect 11 additional features built in prototype** (B10.01-B10.11) |
+| **Status** | **Updated to reflect backend requirements for 6 prototype features** (B10.01-B10.05, B10.07) |
 | **Data Confirmed** | Niger Health Facilities.gpkg (2,191 facilities, NHFR 2024, GRID3-verified, EPSG:4326) · Niger Local Govt Areas.gpkg (25 LGA polygons, INEC-sourced) · Niger Wards.gpkg · Niger Pop Estimates LGA.csv · Niger Primary and Sec Roads.gpkg · Niger State MLoS V12.1 (xlsx + gpkg) · AFP Surveillance data |
 
 ---
@@ -23,7 +23,7 @@
   - **B10.04**: Permission Delegation (`/admin/permissions`) — granular resource permissions
   - **B10.05**: Admin Governance Module (`/admin/governance`) — indicator and SOP management
   - **B10.07**: Programme Management CRUD (`/programs`) — intervention tracking system
-- Added 6 new database tables: `programmes`, `programme_reports`, `documents`, `user_groups`, `user_group_members`, `permissions`, `indicator_revisions`, `sop_register`
+- Added 8 new database tables: `programmes`, `programme_reports`, `documents`, `user_groups`, `user_group_members`, `permissions`, `indicator_revisions`, `sop_register`
 - Added 5 new service classes: `ProgrammeService`, `DocumentService`, `GovernanceService`, `UserGroupService`, `PermissionService`
 - Added 6 new API route sections (§5.7-§5.12) with 40+ new endpoints
 - Total API surface expanded from ~60 to ~100 endpoints
