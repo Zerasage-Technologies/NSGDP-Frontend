@@ -13,12 +13,12 @@
 
 ## Sprint Overview
 
-| Sprint | Focus | Key Deliverable | Tasks |
+| Sprint | Focus | Key Deliverable | Sections |
 |---|---|---|---|
-| **Sprint 1** | Foundation + Auth | Database schema + Auth APIs working | 18 tasks |
-| **Sprint 2** | Upload + Approval | Full dataset lifecycle + Email system | 16 tasks |
-| **Sprint 3** | Polish + Testing | MVP ready for UAT + Partner Data Portal | 12 tasks |
-| **Total** | | **M2 Complete + 1 Bonus B10 Feature** | **46 tasks** |
+| **Sprint 1** | Foundation + Auth | Database schema + Auth APIs working | 6 sections (40 tasks) |
+| **Sprint 2** | Upload + Approval | Full dataset lifecycle + Version tracking + Email system | 7 sections (32 tasks) |
+| **Sprint 3** | Polish + Testing | MVP ready for UAT + Dataset preview + Partner Data Portal | 7 sections (26 tasks) |
+| **Total** | | **M2 Complete** | **20 sections (98 tasks)** |
 
 ---
 
@@ -65,7 +65,7 @@
 
 ---
 
-## Sprint 1 Tasks (18 tasks)
+## Sprint 1 Tasks (6 sections, 40 tasks)
 
 ### 1.1 Project Setup & Initialization
 
@@ -206,7 +206,7 @@ backend/
 
 ---
 
-## Sprint 2 Tasks (16 tasks)
+## Sprint 2 Tasks (7 sections, 32 tasks)
 
 ### 2.1 File Upload Pipeline
 
@@ -248,38 +248,48 @@ backend/
 
 ---
 
-### 2.4 Audit Logging System
+### 2.4 Dataset Version Tracking
 
 | ID | Task | Output | Priority |
 |---|---|---|---|
-| 2.4.1 | Build AuditService (log event, query logs, export CSV) | `src/services/AuditService.ts` | P1 |
-| 2.4.2 | Create audit logging middleware (auto-log all CRUD events) | `src/middleware/auditLog.ts` | P1 |
-| 2.4.3 | Build admin route: GET /admin/audit-logs (searchable audit log) | `src/routes/admin.ts` | P1 |
-| 2.4.4 | Build admin route: GET /admin/audit-logs/export (export as CSV) | `src/routes/admin.ts` | P2 |
+| 2.4.1 | Add version tracking to datasets table (version column + updated_at) | Update migration `002_dataset_tables.sql` | P1 |
+| 2.4.2 | Implement version increment logic on dataset resubmission | Update DatasetService | P1 |
+| 2.4.3 | Build dataset route: GET /datasets/:slug/versions (list version history) | `src/routes/datasets.ts` | P1 |
 
 ---
 
-### 2.5 Email Notification System
+### 2.5 Audit Logging System
 
 | ID | Task | Output | Priority |
 |---|---|---|---|
-| 2.5.1 | Set up Nodemailer with SMTP (SendGrid or Brevo) | `src/utils/email.ts` | P1 |
-| 2.5.2 | Create email templates (submission confirmed, approved, rejected, account activated) | `src/templates/email/` folder with Handlebars templates | P1 |
-| 2.5.3 | Build NotificationService (sendEmail, createInApp, markRead) | `src/services/NotificationService.ts` | P1 |
-| 2.5.4 | Create NotificationWorker (BullMQ worker for async email dispatch) | `src/workers/NotificationWorker.ts` | P1 |
-| 2.5.5 | Integrate email triggers into approval workflow | Update ApprovalService | P1 |
+| 2.5.1 | Build AuditService (log event, query logs, export CSV) | `src/services/AuditService.ts` | P1 |
+| 2.5.2 | Create audit logging middleware (auto-log all CRUD events) | `src/middleware/auditLog.ts` | P1 |
+| 2.5.3 | Build admin route: GET /admin/audit-logs (searchable audit log) | `src/routes/admin.ts` | P1 |
+| 2.5.4 | Build admin route: GET /admin/audit-logs/export (export as CSV) | `src/routes/admin.ts` | P2 |
+
+---
+
+### 2.6 Email Notification System
+
+| ID | Task | Output | Priority |
+|---|---|---|---|
+| 2.6.1 | Set up Nodemailer with SMTP (SendGrid or Brevo) | `src/utils/email.ts` | P1 |
+| 2.6.2 | Create email templates (submission confirmed, approved, rejected, account activated) | `src/templates/email/` folder with Handlebars templates | P1 |
+| 2.6.3 | Build NotificationService (sendEmail, createInApp, markRead) | `src/services/NotificationService.ts` | P1 |
+| 2.6.4 | Create NotificationWorker (BullMQ worker for async email dispatch) | `src/workers/NotificationWorker.ts` | P1 |
+| 2.6.5 | Integrate email triggers into approval workflow | Update ApprovalService | P1 |
 
 **Note:** Start with console logging in dev, add real SMTP in Sprint 3 if time-constrained.
 
 ---
 
-### 2.6 Password Reset Flow
+### 2.7 Password Reset Flow
 
 | ID | Task | Output | Priority |
 |---|---|---|---|
-| 2.6.1 | Build auth route: POST /auth/forgot-password (send reset email, always return 200) | `src/routes/auth.ts` | P2 |
-| 2.6.2 | Build auth route: POST /auth/reset-password (consume token, set new password) | `src/routes/auth.ts` | P2 |
-| 2.6.3 | Create password reset email template | `src/templates/email/password-reset.hbs` | P2 |
+| 2.7.1 | Build auth route: POST /auth/forgot-password (send reset email, always return 200) | `src/routes/auth.ts` | P2 |
+| 2.7.2 | Build auth route: POST /auth/reset-password (consume token, set new password) | `src/routes/auth.ts` | P2 |
+| 2.7.3 | Create password reset email template | `src/templates/email/password-reset.hbs` | P2 |
 
 ---
 
@@ -290,20 +300,23 @@ backend/
 ✅ Admin Review Queue shows pending submissions  
 ✅ Admin can approve/reject/request-revision with reason  
 ✅ Download generates presigned URL and logs download event  
+✅ Dataset version tracking works (version increments on resubmission)  
+✅ Version history accessible via GET /datasets/:slug/versions  
 ✅ Email notifications sent on submission/approval/rejection  
 ✅ Audit log records all CRUD events (upload, approve, download, user edits)  
 ✅ All P1 tasks complete  
 
 ---
 
-# SPRINT 3 — Polish + Testing + Partner Data Portal
+# SPRINT 3 — Polish + Testing + Dataset Preview + Partner Data Portal
 
-**Goal:** MVP ready for User Acceptance Testing + 1 bonus B10 feature
+**Goal:** MVP ready for User Acceptance Testing + dataset preview + 1 bonus B10 feature
 
 **Duration:** Flexible (task-driven)
 
 **End State:**
 - Search & filter APIs complete
+- Dataset preview/metadata display working
 - B10.02 Partner Data Portal (organization-filtered datasets)
 - Integration testing complete
 - ClamAV virus scanning enabled
@@ -312,7 +325,7 @@ backend/
 
 ---
 
-## Sprint 3 Tasks (12 tasks)
+## Sprint 3 Tasks (7 sections, 26 tasks)
 
 ### 3.1 Search & Filter APIs
 
@@ -338,47 +351,56 @@ backend/
 
 ---
 
-### 3.3 Virus Scanning & Security
+### 3.3 Dataset Preview & Metadata Display
 
 | ID | Task | Output | Priority |
 |---|---|---|---|
-| 3.3.1 | Integrate ClamAV into ValidationWorker (virus scan before storage) | Update `src/workers/ValidationWorker.ts` | P1 |
-| 3.3.2 | Add ClamAV service to Docker Compose | Update `docker-compose.yml` | P1 |
+| 3.3.1 | Build dataset preview route: GET /datasets/:slug/preview (first 100 rows for CSV, simplified GeoJSON for spatial) | `src/routes/datasets.ts` | P1 |
+| 3.3.2 | Implement preview caching in Redis (TTL 24h) | Update DatasetService | P1 |
 
 ---
 
-### 3.4 Integration Testing
+### 3.4 Virus Scanning & Security
 
 | ID | Task | Output | Priority |
 |---|---|---|---|
-| 3.4.1 | Write end-to-end test: Full lifecycle (register → upload → approve → download → audit log) | Test file `tests/e2e.test.ts` | P1 |
-| 3.4.2 | Write integration tests for approval workflow (pending → review → approved/rejected) | Test file `tests/approval.test.ts` | P1 |
-| 3.4.3 | Write integration tests for upload pipeline (validation → storage → job tracking) | Test file `tests/upload.test.ts` | P2 |
-| 3.4.4 | Run full test suite and fix all failing tests | All tests passing | P1 |
+| 3.4.1 | Integrate ClamAV into ValidationWorker (virus scan before storage) | Update `src/workers/ValidationWorker.ts` | P1 |
+| 3.4.2 | Add ClamAV service to Docker Compose | Update `docker-compose.yml` | P1 |
 
 ---
 
-### 3.5 DevOps & Deployment
+### 3.5 Integration Testing
 
 | ID | Task | Output | Priority |
 |---|---|---|---|
-| 3.5.1 | Write Dockerfile for production build | `Dockerfile` | P1 |
-| 3.5.2 | Set up GitHub Actions CI/CD pipeline (lint, test, build, deploy to staging) | `.github/workflows/ci.yml` | P1 |
-| 3.5.3 | Deploy to staging server (Galaxy Backbone or approved hosting) | Staging URL live | P1 |
-| 3.5.4 | Configure staging environment variables (database, Redis, MinIO, SMTP) | Staging env configured | P1 |
-| 3.5.5 | Run database migrations on staging | Staging database schema live | P1 |
-| 3.5.6 | Seed staging database with test data | Staging has test organisations, categories, users | P2 |
+| 3.5.1 | Write end-to-end test: Full lifecycle (register → upload → approve → download → audit log) | Test file `tests/e2e.test.ts` | P1 |
+| 3.5.2 | Write integration tests for approval workflow (pending → review → approved/rejected) | Test file `tests/approval.test.ts` | P1 |
+| 3.5.3 | Write integration tests for upload pipeline (validation → storage → job tracking) | Test file `tests/upload.test.ts` | P2 |
+| 3.5.4 | Run full test suite and fix all failing tests | All tests passing | P1 |
 
 ---
 
-### 3.6 Documentation & Polish
+### 3.6 DevOps & Deployment
 
 | ID | Task | Output | Priority |
 |---|---|---|---|
-| 3.6.1 | Write API documentation (Swagger/OpenAPI 3.0) | `docs/api-spec.yaml` + Swagger UI at /api/docs | P1 |
-| 3.6.2 | Write README.md (setup instructions, environment variables, running locally) | `README.md` | P1 |
-| 3.6.3 | Create deployment runbook (how to deploy, migrate, rollback) | `docs/DEPLOYMENT.md` | P2 |
-| 3.6.4 | Fix all bugs discovered during integration testing | Bug-free MVP | P1 |
+| 3.6.1 | Write Dockerfile for production build | `Dockerfile` | P1 |
+| 3.6.2 | Set up GitHub Actions CI/CD pipeline (lint, test, build, deploy to staging) | `.github/workflows/ci.yml` | P1 |
+| 3.6.3 | Deploy to staging server (Galaxy Backbone or approved hosting) | Staging URL live | P1 |
+| 3.6.4 | Configure staging environment variables (database, Redis, MinIO, SMTP) | Staging env configured | P1 |
+| 3.6.5 | Run database migrations on staging | Staging database schema live | P1 |
+| 3.6.6 | Seed staging database with test data | Staging has test organisations, categories, users | P2 |
+
+---
+
+### 3.7 Documentation & Polish
+
+| ID | Task | Output | Priority |
+|---|---|---|---|
+| 3.7.1 | Write API documentation (Swagger/OpenAPI 3.0) | `docs/api-spec.yaml` + Swagger UI at /api/docs | P1 |
+| 3.7.2 | Write README.md (setup instructions, environment variables, running locally) | `README.md` | P1 |
+| 3.7.3 | Create deployment runbook (how to deploy, migrate, rollback) | `docs/DEPLOYMENT.md` | P2 |
+| 3.7.4 | Fix all bugs discovered during integration testing | Bug-free MVP | P1 |
 
 ---
 
@@ -386,6 +408,8 @@ backend/
 
 ✅ Full E2E test passes: register → upload → approve → download → audit log  
 ✅ Search & filter APIs work with all query parameters  
+✅ Dataset preview working (first 100 rows for CSV, simplified GeoJSON for spatial)  
+✅ Preview cached in Redis with 24h TTL  
 ✅ Partner Data Portal shows organization-filtered datasets  
 ✅ ClamAV virus scanning working on file uploads  
 ✅ Staging environment live and accessible  
@@ -396,48 +420,14 @@ backend/
 
 ---
 
-## Post-Sprint 3: What's Next?
+## Sprint Summary
 
-After completing these 3 sprints, the backend will have achieved **Milestone 2 deliverable** (First Functional MVP on Staging) PLUS one bonus B10 feature.
-
-### Remaining Work for Full Production:
-
-**Milestone 3 Features (Weeks 9-13):**
-- Analytics APIs (KPIs, trends, LGA burden, outliers)
-- GIS/Spatial APIs (LGA boundaries, ward boundaries, disease burden bubbles, facility map)
-- Campaigns module
-- AI Assistant backend (RAG pipeline)
-- Access request system (restricted datasets)
-- Bulk import tool
-- DHIS2 integration (if applicable)
-
-**Remaining B10 Features (Sprint 4+):**
-- B10.01 Document Repository (1-2 days)
-- B10.03 User Groups Management (2-3 days)
-- B10.07 Programme Management (2-3 days)
-- B10.05 Governance Module (2-3 days)
-- B10.04 Permission Delegation (3-5 days, requires auth refactoring)
-
-**Milestone 4 (Weeks 14-18):**
-- Production deployment
-- Security audit & penetration testing
-- Performance optimization
-- Technical documentation
-- Staff training
-- Handover
-
----
-
-## Summary
-
-| Metric | Value |
-|---|---|
-| **Total Sprints** | 3 |
-| **Total Tasks** | 46 (18 + 16 + 12) |
-| **Deliverable** | Milestone 2: First Functional MVP on Staging |
-| **Bonus** | B10.02 Partner Data Portal |
-| **Coverage** | 100% of M2 requirements + 1 B10 feature |
-| **Deferred** | Analytics, GIS, Campaigns, AI Assistant, 5 other B10 features |
+| Sprint | Sections | Individual Tasks | Core Deliverables |
+|---|---|---|---|
+| **Sprint 1** | 6 sections | 40 tasks | Foundation + Auth + Database Schema + Basic Dataset CRUD |
+| **Sprint 2** | 7 sections | 32 tasks | Upload + Approval + Download + Version Tracking + Email + Audit |
+| **Sprint 3** | 7 sections | 26 tasks | Search + Preview + Partner Portal + Testing + Deployment |
+| **Total** | **20 sections** | **98 tasks** | **Milestone 2 Complete** |
 
 **End State After Sprint 3:**
 - ✅ Auth system complete (register, login, JWT, RBAC)
