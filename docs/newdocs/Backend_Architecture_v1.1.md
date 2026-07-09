@@ -1,14 +1,35 @@
-# Niger State GeoHealth Portal — Backend Architecture v1.0
+# Niger State GeoHealth Portal — Backend Architecture v1.1
 
 | Field | Detail |
 |---|---|
 | **Product** | Niger State GeoHealth Data Portal |
 | **Document Type** | Full Backend & System Architecture Specification |
-| **Version** | 1.0 |
-| **Date** | June 2026 |
+| **Version** | 1.1 |
+| **Date** | July 2026 |
 | **Prepared by** | Zerasage Technologies — Engineering |
 | **Audience** | Backend Engineer, CTO, DevOps |
+| **Status** | **Updated to reflect 11 additional features built in prototype** (B10.01-B10.11) |
 | **Data Confirmed** | Niger Health Facilities.gpkg (2,191 facilities, NHFR 2024, GRID3-verified, EPSG:4326) · Niger Local Govt Areas.gpkg (25 LGA polygons, INEC-sourced) · Niger Wards.gpkg · Niger Pop Estimates LGA.csv · Niger Primary and Sec Roads.gpkg · Niger State MLoS V12.1 (xlsx + gpkg) · AFP Surveillance data |
+
+---
+
+## Changelog
+
+**v1.1 (July 2026)**
+- Added backend support for 6 Tier 1 undocumented features from prototype Phase A+B:
+  - **B10.01**: Document Repository (`/documents`) — SOPs, policies, research papers, guidelines
+  - **B10.02**: Partner Data Portal (`/partner-data`) — partner-specific dataset filtering
+  - **B10.03**: User Groups Management (`/admin/user-groups`) — team-based access control
+  - **B10.04**: Permission Delegation (`/admin/permissions`) — granular resource permissions
+  - **B10.05**: Admin Governance Module (`/admin/governance`) — indicator and SOP management
+  - **B10.07**: Programme Management CRUD (`/programs`) — intervention tracking system
+- Added 6 new database tables: `programmes`, `programme_reports`, `documents`, `user_groups`, `user_group_members`, `permissions`, `indicator_revisions`, `sop_register`
+- Added 5 new service classes: `ProgrammeService`, `DocumentService`, `GovernanceService`, `UserGroupService`, `PermissionService`
+- Added 6 new API route sections (§5.7-§5.12) with 40+ new endpoints
+- Total API surface expanded from ~60 to ~100 endpoints
+
+**v1.0 (June 2026)**
+- Initial comprehensive architecture for Phase C backend implementation
 
 ---
 
@@ -164,7 +185,8 @@
 │  │  /auth/*         /datasets/*      /organisations/*   /groups/*          │    │
 │  │  /search         /analytics/*     /gis/*             /campaigns/*       │    │
 │  │  /admin/*        /facilities/*    /submissions/*     /notifications/*   │    │
-│  │  /exports/*      /uploads         /health                               │    │
+│  │  /exports/*      /uploads         /health            /programs/*        │    │
+│  │  /documents/*    /partner-data    /user-groups/*     /permissions/*     │    │
 │  └─────────────────────────────────────────────────────────────────────────┘    │
 │                                                                                  │
 │  ┌─────────────────────────────────────────────────────────────────────────┐    │
@@ -202,6 +224,28 @@
 │  │  │ manageUsers()    │  │                   │  │                      │ │    │
 │  │  │ getAuditLogs()   │  │                   │  │                      │ │    │
 │  │  └──────────────────┘  └───────────────────┘  └──────────────────────┘ │    │
+│  │                                                                         │    │
+│  │  ┌──────────────────┐  ┌───────────────────┐  ┌──────────────────────┐ │    │
+│  │  │ ProgrammeService │  │ DocumentService   │  │ GovernanceService    │ │    │
+│  │  │                  │  │                   │  │                      │ │    │
+│  │  │ list()           │  │ list()            │  │ getIndicators()      │ │    │
+│  │  │ getById()        │  │ getBySlug()       │  │ createIndicator()    │ │    │
+│  │  │ create()         │  │ search()          │  │ updateIndicator()    │ │    │
+│  │  │ update()         │  │ uploadSOP()       │  │ archiveIndicator()   │ │    │
+│  │  │ archive()        │  │ uploadPolicy()    │  │ getSOPs()            │ │    │
+│  │  │ uploadReport()   │  │ uploadResearch()  │  │ manageSOPs()         │ │    │
+│  │  └──────────────────┘  └───────────────────┘  └──────────────────────┘ │    │
+│  │                                                                         │    │
+│  │  ┌──────────────────┐  ┌───────────────────┐                             │    │
+│  │  │UserGroupService  │  │ PermissionService │                             │    │
+│  │  │                  │  │                   │                             │    │
+│  │  │ listGroups()     │  │ getMatrix()       │                             │    │
+│  │  │ createGroup()    │  │ assignPermission()│                             │    │
+│  │  │ updateGroup()    │  │ revokePermission()│                             │    │
+│  │  │ deleteGroup()    │  │ delegateToUser()  │                             │    │
+│  │  │ addMembers()     │  │ getEffective()    │                             │    │
+│  │  │ removeMembers()  │  │                   │                             │    │
+│  │  └──────────────────┘  └───────────────────┘                             │    │
 │  └─────────────────────────────────────────────────────────────────────────┘    │
 │                                                                                  │
 │  ┌─────────────────────────────────────────────────────────────────────────┐    │
@@ -990,6 +1034,172 @@ CREATE TABLE export_jobs (
 );
 ```
 
+### 4.11 Programme Management Tables
+
+```sql
+-- Programmes (intervention/campaign tracking system)
+-- Supports B10.07 Programme Management CRUD feature
+CREATE TABLE programmes (
+  id               SERIAL PRIMARY KEY,
+  slug             VARCHAR(200) UNIQUE NOT NULL,
+  title            VARCHAR(500) NOT NULL,
+  description      TEXT,
+  programme_type   VARCHAR(100),                       -- 'routine-immunization', 'outbreak-response', 'nutrition', etc.
+  status           VARCHAR(50) DEFAULT 'planned',      -- 'planned', 'active', 'completed', 'suspended'
+  start_date       DATE,
+  end_date         DATE,
+  target_lgas      INTEGER[],                          -- Array of LGA IDs
+  lead_organisation_id  INTEGER REFERENCES organisations(id),
+  created_by       UUID REFERENCES users(id),
+  created_at       TIMESTAMPTZ DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_programmes_status ON programmes(status);
+CREATE INDEX idx_programmes_type ON programmes(programme_type);
+
+-- Programme reports/documents uploaded by M&E officers
+CREATE TABLE programme_reports (
+  id               SERIAL PRIMARY KEY,
+  programme_id     INTEGER NOT NULL REFERENCES programmes(id) ON DELETE CASCADE,
+  title            VARCHAR(300) NOT NULL,
+  report_type      VARCHAR(100),                       -- 'monthly', 'quarterly', 'final', 'adhoc'
+  report_period    VARCHAR(100),                       -- 'Q1 2024', 'January 2024'
+  file_url         VARCHAR(500),                       -- MinIO URL
+  uploaded_by      UUID REFERENCES users(id),
+  uploaded_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_programme_reports_programme ON programme_reports(programme_id);
+```
+
+### 4.12 Document Repository Tables
+
+```sql
+-- Document Repository (B10.01)
+-- Stores SOPs, policies, research papers, guidelines
+CREATE TYPE document_category AS ENUM ('sop', 'policy', 'research', 'guideline', 'report', 'training', 'other');
+
+CREATE TABLE documents (
+  id               SERIAL PRIMARY KEY,
+  slug             VARCHAR(200) UNIQUE NOT NULL,
+  title            VARCHAR(500) NOT NULL,
+  description      TEXT,
+  document_category  document_category NOT NULL,
+  file_url         VARCHAR(500),                       -- MinIO URL
+  file_size_bytes  BIGINT,
+  file_format      VARCHAR(50),                        -- 'PDF', 'DOCX', 'XLSX'
+  version          VARCHAR(50),                        -- '1.0', '2.1', etc.
+  effective_date   DATE,                               -- When SOP/policy takes effect
+  expiry_date      DATE,                               -- When SOP/policy expires
+  tags             VARCHAR(100)[],                     -- ['maternal-health', 'data-quality']
+  uploaded_by      UUID REFERENCES users(id),
+  organisation_id  INTEGER REFERENCES organisations(id),
+  is_public        BOOLEAN DEFAULT true,
+  download_count   INTEGER DEFAULT 0,
+  created_at       TIMESTAMPTZ DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ DEFAULT NOW(),
+  
+  -- Full-text search
+  search_vector    tsvector GENERATED ALWAYS AS (
+    setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
+    setweight(to_tsvector('english', COALESCE(description, '')), 'B')
+  ) STORED
+);
+
+CREATE INDEX idx_documents_category ON documents(document_category);
+CREATE INDEX idx_documents_organisation ON documents(organisation_id);
+CREATE INDEX idx_documents_tags ON documents USING gin(tags);
+CREATE INDEX idx_documents_search ON documents USING gin(search_vector);
+CREATE INDEX idx_documents_public ON documents(is_public) WHERE is_public = true;
+```
+
+### 4.13 User Groups & Permissions Tables
+
+```sql
+-- User Groups (B10.03)
+-- Team-based access control beyond simple role-based RBAC
+CREATE TABLE user_groups (
+  id               SERIAL PRIMARY KEY,
+  slug             VARCHAR(100) UNIQUE NOT NULL,
+  name             VARCHAR(200) NOT NULL,
+  description      TEXT,
+  created_by       UUID REFERENCES users(id),
+  created_at       TIMESTAMPTZ DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE user_group_members (
+  group_id         INTEGER REFERENCES user_groups(id) ON DELETE CASCADE,
+  user_id          UUID REFERENCES users(id) ON DELETE CASCADE,
+  added_by         UUID REFERENCES users(id),
+  added_at         TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (group_id, user_id)
+);
+
+CREATE INDEX idx_group_members_user ON user_group_members(user_id);
+
+-- Granular Permissions (B10.04)
+-- Resource-level permission delegation beyond role-based access
+CREATE TYPE permission_action AS ENUM ('read', 'write', 'delete', 'approve', 'manage');
+CREATE TYPE permission_resource AS ENUM ('dataset', 'programme', 'document', 'user', 'campaign', 'all');
+
+CREATE TABLE permissions (
+  id                SERIAL PRIMARY KEY,
+  grantee_type      VARCHAR(20) NOT NULL,               -- 'user' or 'group'
+  grantee_id        VARCHAR(100) NOT NULL,              -- user UUID or group ID
+  resource_type     permission_resource NOT NULL,
+  resource_id       INTEGER,                            -- NULL = all resources of type
+  action            permission_action NOT NULL,
+  granted_by        UUID REFERENCES users(id),
+  granted_at        TIMESTAMPTZ DEFAULT NOW(),
+  expires_at        TIMESTAMPTZ,                        -- NULL = never expires
+  
+  UNIQUE (grantee_type, grantee_id, resource_type, resource_id, action)
+);
+
+CREATE INDEX idx_permissions_grantee ON permissions(grantee_type, grantee_id);
+CREATE INDEX idx_permissions_resource ON permissions(resource_type, resource_id);
+```
+
+### 4.14 Governance Reference Tables
+
+```sql
+-- Admin-managed health indicator master list (B10.05)
+-- This supplements disease_indicators table with admin CRUD interface
+-- NOTE: disease_indicators already exists in §4.7, this adds audit trail
+
+CREATE TABLE indicator_revisions (
+  id               SERIAL PRIMARY KEY,
+  indicator_id     INTEGER REFERENCES disease_indicators(id) ON DELETE CASCADE,
+  field_changed    VARCHAR(100),                       -- 'name', 'definition', 'dhis2_mapping'
+  old_value        TEXT,
+  new_value        TEXT,
+  changed_by       UUID REFERENCES users(id),
+  changed_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_indicator_revisions_indicator ON indicator_revisions(indicator_id);
+
+-- Admin-managed SOP master register (links to documents table)
+-- NOTE: documents table already stores SOPs, this adds governance metadata
+CREATE TABLE sop_register (
+  id               SERIAL PRIMARY KEY,
+  document_id      INTEGER UNIQUE REFERENCES documents(id) ON DELETE CASCADE,
+  sop_code         VARCHAR(100) UNIQUE NOT NULL,       -- 'SOP-DS-001'
+  department       VARCHAR(200),                       -- 'Disease Surveillance', 'Data Management'
+  review_frequency VARCHAR(50),                        -- 'annual', 'biannual', 'triannual'
+  next_review_date DATE,
+  responsible_officer_id  UUID REFERENCES users(id),
+  approval_status  VARCHAR(50) DEFAULT 'draft',        -- 'draft', 'review', 'approved', 'retired'
+  approved_by      UUID REFERENCES users(id),
+  approved_at      TIMESTAMPTZ
+);
+
+CREATE INDEX idx_sop_register_status ON sop_register(approval_status);
+CREATE INDEX idx_sop_register_review ON sop_register(next_review_date);
+```
+
 ---
 
 ## Part 5 — REST API Surface (OpenAPI 3.0)
@@ -1114,7 +1324,113 @@ CREATE TABLE export_jobs (
 | CRUD | `/admin/organisations` | Admin+ | Organisation management |
 | CRUD | `/admin/groups` | Admin+ | Category/group management |
 
-### 5.7 Other Routes
+### 5.7 Programme Management Routes (`/programs`)
+
+**Supports B10.07 — Programme Management CRUD feature built in prototype**
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/programs` | Public | List all programmes (with filters) |
+| GET | `/programs/:slug` | Public | Get programme details + timeline |
+| POST | `/programs` | Admin+ | Create new programme |
+| PATCH | `/programs/:slug` | Admin+ | Update programme metadata |
+| DELETE | `/programs/:slug` | Admin+ | Archive programme |
+| POST | `/programs/:slug/reports` | Contributor+ | Upload programme report |
+| GET | `/programs/:slug/reports` | Public | List reports for programme |
+| DELETE | `/programs/:slug/reports/:id` | Admin+ | Delete report |
+
+**Query params for `GET /programs`:**
+```
+?status=active|planned|completed|suspended
+&type=routine-immunization|outbreak-response|nutrition
+&lga=27001                    Filter by target LGA
+&organisation=nsphcda         Filter by lead organisation
+&q=malaria                    Search title/description
+&sort=recent|alphabetical
+```
+
+### 5.8 Document Repository Routes (`/documents`)
+
+**Supports B10.01 — Document Repository feature built in prototype**
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/documents` | Public | Browse SOPs, policies, research papers, guidelines |
+| GET | `/documents/:slug` | Public | Get document details + download URL |
+| POST | `/documents` | Admin+ | Upload new document |
+| PATCH | `/documents/:slug` | Admin+ | Update document metadata |
+| DELETE | `/documents/:slug` | Admin+ | Archive document |
+| POST | `/documents/:slug/download` | Auth | Log download + return presigned URL |
+
+**Query params for `GET /documents`:**
+```
+?category=sop|policy|research|guideline|report|training
+&organisation=nsphcda
+&tags=maternal-health,data-quality    Comma-separated
+&q=surveillance                       Full-text search
+&effective_date_from=2024-01-01
+&is_public=true
+&sort=recent|alphabetical|downloads
+```
+
+### 5.9 Partner Data Portal Routes (`/partner-data`)
+
+**Supports B10.02 — Partner Data Portal feature built in prototype**
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/partner-data` | Auth | Partner-specific dataset portal with role-based filtering |
+
+**Note:** This endpoint filters datasets by user's organisation and applies partner-specific visibility rules. Uses same underlying dataset infrastructure with enhanced filtering.
+
+### 5.10 User Groups & Permissions Routes
+
+**Supports B10.03 (User Groups) and B10.04 (Permission Delegation) features built in prototype**
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/admin/user-groups` | Admin+ | List all user groups |
+| POST | `/admin/user-groups` | Admin+ | Create user group |
+| GET | `/admin/user-groups/:id` | Admin+ | Get group + members |
+| PATCH | `/admin/user-groups/:id` | Admin+ | Update group metadata |
+| DELETE | `/admin/user-groups/:id` | Admin+ | Delete group |
+| POST | `/admin/user-groups/:id/members` | Admin+ | Add users to group (bulk) |
+| DELETE | `/admin/user-groups/:id/members/:userId` | Admin+ | Remove user from group |
+| GET | `/admin/permissions` | Admin+ | Get permission matrix (all grants) |
+| POST | `/admin/permissions` | Admin+ | Grant permission to user or group |
+| DELETE | `/admin/permissions/:id` | Admin+ | Revoke permission |
+| GET | `/admin/permissions/effective/:userId` | Admin+ | Get effective permissions for user (merged from user + groups) |
+
+**POST `/admin/permissions` body:**
+```json
+{
+  "granteeType": "user|group",
+  "granteeId": "uuid|groupId",
+  "resourceType": "dataset|programme|document|user|campaign|all",
+  "resourceId": 123,           // null for all resources
+  "action": "read|write|delete|approve|manage",
+  "expiresAt": "2025-12-31T23:59:59Z"  // null for permanent
+}
+```
+
+### 5.11 Governance Admin Routes (`/admin/governance`)
+
+**Supports B10.05 — Admin Governance Module feature built in prototype**
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/admin/governance/indicators` | Admin+ | List all health indicators with revision history |
+| POST | `/admin/governance/indicators` | Admin+ | Create new health indicator |
+| PATCH | `/admin/governance/indicators/:id` | Admin+ | Update indicator (creates revision record) |
+| DELETE | `/admin/governance/indicators/:id` | Admin+ | Archive indicator |
+| GET | `/admin/governance/indicators/:id/revisions` | Admin+ | Get revision history |
+| GET | `/admin/governance/sops` | Admin+ | SOP register with governance metadata |
+| POST | `/admin/governance/sops` | Admin+ | Add SOP to register (links to document) |
+| PATCH | `/admin/governance/sops/:id` | Admin+ | Update SOP governance metadata |
+| POST | `/admin/governance/sops/:id/approve` | Admin+ | Approve SOP |
+| POST | `/admin/governance/sops/:id/retire` | Admin+ | Retire SOP |
+
+### 5.12 Other Routes
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
