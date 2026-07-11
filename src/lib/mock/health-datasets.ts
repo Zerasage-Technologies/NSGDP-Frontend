@@ -1,5 +1,5 @@
 import type { Dataset, HealthCategory, FileFormat } from "@/types";
-import { NIGER_STATE_LGAS } from "@/lib/constants";
+import { NIGER_STATE_LGAS } from "@/lib/constants/core";
 
 type OrgRef = { id: string; slug: string; name: string };
 

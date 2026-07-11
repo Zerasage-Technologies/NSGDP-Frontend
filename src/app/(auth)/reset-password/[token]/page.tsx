@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, XCircle } from "lucide-react";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PasswordStrengthMeter } from "@/components/forms/password-strength-meter";
 import { FormError } from "@/components/forms/form-error";
 import { resetPasswordSchema } from "@/lib/schemas/auth";
+import { resetPassword } from "@/lib/api";
 import { toast } from "sonner";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,9 @@ type ResetFormData = { password: string; confirmPassword: string };
 
 function ResetPasswordContent() {
   const router = useRouter();
+  const params = useParams();
   const searchParams = useSearchParams();
+  const token = params.token as string;
   const tokenExpired =
     searchParams.get("expired") === "1" || searchParams.get("expired") === "true";
   const [loading, setLoading] = useState(false);
@@ -38,11 +41,33 @@ function ResetPasswordContent() {
 
   const password = watch("password", "");
 
-  const onSubmit = async () => {
+  const onSubmit = async (data: ResetFormData) => {
+    if (!token) {
+      toast.error("Invalid reset token");
+      return;
+    }
+
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success("Password reset successful! You can now log in with your new password.");
-    router.push("/login");
+    
+    try {
+      await resetPassword({
+        token,
+        password: data.password,
+      });
+
+      toast.success("Password reset successful! You can now log in with your new password.");
+      router.push("/login");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to reset password. Please try again.";
+      if (errorMessage.includes("expired") || errorMessage.includes("invalid")) {
+        toast.error("Reset link has expired or is invalid. Please request a new one.");
+        router.push("/forgot-password");
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (tokenExpired) {

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { OrgCardSkeleton } from "@/components/feedback/skeletons";
 import { getOrganisations } from "@/lib/mock";
 import type { Organisation } from "@/types";
-import { SECTORS } from "@/lib/constants";
+import { SECTORS } from "@/lib/constants/core";
 import { cn } from "@/lib/utils";
 
 // Force dynamic rendering

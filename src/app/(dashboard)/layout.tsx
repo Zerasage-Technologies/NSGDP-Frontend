@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 
 export default function DashboardLayout({
   children,
@@ -12,17 +12,29 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { currentUser } = useMockSession();
+  const { isAuthenticated, isLoading } = useAuth();
 
   // Auth guard - redirect to login if not authenticated
   useEffect(() => {
-    if (currentUser.role === "public") {
+    if (!isLoading && !isAuthenticated) {
       router.push("/login?returnTo=/dashboard");
     }
-  }, [currentUser.role, router]);
+  }, [isAuthenticated, isLoading, router]);
+
+  // Show loading state while checking auth
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Don't render dashboard if not authenticated
-  if (currentUser.role === "public") {
+  if (!isAuthenticated) {
     return null;
   }
 

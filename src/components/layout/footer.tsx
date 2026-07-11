@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { GeoHealthLogo } from "@/components/layout/geohealth-logo";
-import { BRAND } from "@/lib/brand";
+import { BRAND } from "@/lib/constants/brand";
 
 export function Footer() {
   return (

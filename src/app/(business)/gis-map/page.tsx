@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getFacilities, getWardsForLGA } from "@/lib/mock";
-import { NIGER_STATE_LGAS } from "@/lib/constants";
+import { NIGER_STATE_LGAS } from "@/lib/constants/core";
 import { MapLegend, FACILITY_LEGEND } from "@/components/map/map-legend";
 import { MapTooltip } from "@/components/map/map-tooltip";
 import { HelpTooltip } from "@/components/feedback/help-tooltip";

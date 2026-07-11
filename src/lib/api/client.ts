@@ -17,19 +17,33 @@ export class ApiError extends Error {
 
 interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
+  token?: string; // Optional access token for authenticated requests
+}
+
+/**
+ * Get access token from localStorage
+ * Returns null if not found or in SSR context
+ */
+function getAccessToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("accessToken");
 }
 
 export async function apiFetch<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { body, headers, ...rest } = options;
+  const { body, headers, token, ...rest } = options;
+
+  // Use provided token or get from localStorage
+  const accessToken = token ?? getAccessToken();
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...rest,
     credentials: "include", // send httpOnly session cookie
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,

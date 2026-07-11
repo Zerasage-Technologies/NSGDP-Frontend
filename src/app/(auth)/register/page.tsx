@@ -15,6 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PasswordStrengthMeter } from "@/components/forms/password-strength-meter";
 import { FormError } from "@/components/forms/form-error";
 import { registerSchema, type RegisterFormData } from "@/lib/schemas/auth";
+import { register as registerUser } from "@/lib/api";
+import { storeTokens } from "@/lib/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -87,11 +89,46 @@ export default function RegisterPage() {
 
   const password = watch("password", "");
 
-  const onSubmit = async () => {
+  const onSubmit = async (data: RegisterFormData) => {
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    toast.success("Registration successful! Check your email to verify your account.");
-    router.push("/verify-email");
+    
+    try {
+      const response = await registerUser({
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+        phoneNumber: data.phone,
+        accessLevel: data.accessLevel,
+        reason: data.reason,
+      });
+
+      // Check if user needs approval (tokens will be null)
+      if (!response.tokens) {
+        // Account pending approval
+        toast.success(
+          data.accessLevel === "public"
+            ? "Registration successful! You can now login."
+            : "Registration successful! Your account is pending admin approval. You'll receive an email once activated."
+        );
+        router.push("/login");
+        return;
+      }
+
+      // Auto-login for public users
+      storeTokens(
+        response.tokens.accessToken,
+        response.tokens.refreshToken,
+        response.tokens.expiresIn
+      );
+
+      toast.success("Registration successful! Welcome to the portal.");
+      router.push("/dashboard");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Registration failed. Please try again.";
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

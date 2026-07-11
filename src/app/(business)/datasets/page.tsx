@@ -20,7 +20,7 @@ import { Pagination } from "@/components/data/pagination";
 import { DatasetCardSkeleton } from "@/components/feedback/skeletons";
 import { getDatasets, getGroups, getOrganisations } from "@/lib/mock";
 import type { Dataset } from "@/types";
-import { NIGER_STATE_LGAS, FILE_FORMATS } from "@/lib/constants";
+import { NIGER_STATE_LGAS, FILE_FORMATS } from "@/lib/constants/core";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "grid" | "list";

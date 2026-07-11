@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { BRAND } from "@/lib/brand";
+import { BRAND } from "@/lib/constants/brand";
 
 interface GeoHealthLogoProps {
   className?: string;

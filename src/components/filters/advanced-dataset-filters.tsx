@@ -9,7 +9,7 @@ import {
   PROGRAM_FILTER_OPTIONS,
 } from "@/lib/constants/dataset-filters";
 import { HEALTH_CATEGORIES } from "@/lib/constants/health";
-import { NIGER_STATE_LGAS, FILE_FORMATS } from "@/lib/constants";
+import { NIGER_STATE_LGAS, FILE_FORMATS } from "@/lib/constants/core";
 
 export interface AdvancedFilterSection {
   id: string;

@@ -3,7 +3,7 @@
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MockSessionProvider } from "@/lib/auth/mock-session";
+import { AuthProvider } from "@/lib/auth";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -27,7 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <QueryClientProvider client={queryClient}>
-        <MockSessionProvider>{children}</MockSessionProvider>
+        <AuthProvider>{children}</AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

@@ -1,5 +1,5 @@
 import type { Facility, FacilityType } from "@/types";
-import { NIGER_STATE_LGAS } from "@/lib/constants";
+import { NIGER_STATE_LGAS } from "@/lib/constants/core";
 
 const WARDS: Record<string, string[]> = {
   Chanchaga: ["Tudun Wada", "Limawa", "Maitumbi", "Kpakungu"],

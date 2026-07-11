@@ -21,3 +21,23 @@ export function getFreshnessStatus(updatedAt: string, frequency?: string): Fresh
   if (diffDays < 14) return "due_soon";
   return "fresh";
 }
+
+export function getFreshnessLabel(status: FreshnessStatus): string {
+  const labels: Record<FreshnessStatus, string> = {
+    fresh: "Up to date",
+    due_soon: "Update due soon",
+    overdue: "Update overdue",
+    unknown: "Unknown",
+  };
+  return labels[status];
+}
+
+export function getFreshnessColor(status: FreshnessStatus): string {
+  const colors: Record<FreshnessStatus, string> = {
+    fresh: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950",
+    due_soon: "text-amber-600 bg-amber-50 dark:bg-amber-950",
+    overdue: "text-red-600 bg-red-50 dark:bg-red-950",
+    unknown: "text-gray-600 bg-gray-50 dark:bg-gray-950",
+  };
+  return colors[status];
+}

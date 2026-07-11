@@ -4,7 +4,7 @@ import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { RoleSwitcher } from "@/components/dev/role-switcher";
 import { AiAssistantWidget } from "@/components/feedback/ai-assistant-widget";
-import { BRAND } from "@/lib/brand";
+import { BRAND } from "@/lib/constants/brand";
 import "./globals.css";
 
 const inter = Inter({

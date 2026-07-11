@@ -1,5 +1,19 @@
 import { z } from "zod";
 
+/**
+ * Access levels for registration
+ * - public: Registered User - instant access, no approval needed
+ * - partner: Data Contributor - requires admin approval
+ * - administrator: Org Representative - requires admin approval + org verification
+ */
+export const AccessLevel = {
+  PUBLIC: 'public',
+  PARTNER: 'partner',
+  ADMINISTRATOR: 'administrator',
+} as const;
+
+export type AccessLevel = typeof AccessLevel[keyof typeof AccessLevel];
+
 export const loginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),

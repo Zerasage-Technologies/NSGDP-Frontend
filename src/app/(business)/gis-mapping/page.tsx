@@ -33,7 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { getGisBurdenBubbles } from "@/lib/mock";
 import { getTrendData, getLGABurdenTable } from "@/lib/mock/analytics";
 import { ANALYTICS_METRICS, NIGER_STATE_POPULATION } from "@/lib/constants/health";
-import { NIGER_STATE_LGAS } from "@/lib/constants";
+import { NIGER_STATE_LGAS } from "@/lib/constants/core";
 import { getWardsForLGA } from "@/lib/mock/facilities";
 import { MapLegend, DISEASE_BUBBLE_LEGEND } from "@/components/map/map-legend";
 import { LayerComparison, type LayerConfig } from "@/components/map/layer-comparison";

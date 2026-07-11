@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FormError } from "@/components/forms/form-error";
 import { forgotPasswordSchema } from "@/lib/schemas/auth";
+import { forgotPassword } from "@/lib/api";
+import { toast } from "sonner";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +30,19 @@ export default function ForgotPasswordPage() {
     resolver: zodResolver(forgotPasswordSchema),
   });
 
-  const onSubmit = async () => {
+  const onSubmit = async (data: ForgotFormData) => {
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSubmitted(true);
-    setLoading(false);
+    
+    try {
+      await forgotPassword({ email: data.email });
+      setSubmitted(true);
+    } catch (error: unknown) {
+      // Even on error, show success for security (prevent email enumeration)
+      setSubmitted(true);
+      toast.info("If an account exists, you'll receive reset instructions.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {

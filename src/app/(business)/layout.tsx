@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { BRAND } from "@/lib/brand";
+import { BRAND } from "@/lib/constants/brand";
 
 export const metadata: Metadata = {
   title: {

@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Database, Map, Shield, Quote, Flag, Server, 
 import { Container } from "@/components/layout/container";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { NIGER_STATE_LGAS } from "@/lib/constants";
+import { NIGER_STATE_LGAS } from "@/lib/constants/core";
 
 const partners = [
   { name: "NSPHCDA", role: "Project Lead & Data Governance" },

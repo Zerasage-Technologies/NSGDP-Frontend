@@ -4,7 +4,7 @@ import type {
   LGACaseData,
   OutlierFacility,
 } from "@/types";
-import { NIGER_STATE_LGAS } from "@/lib/constants";
+import { NIGER_STATE_LGAS } from "@/lib/constants/core";
 import type { AnalyticsDataSourceId } from "@/lib/constants/analytics-sources";
 import {
   getAnalyticsFacilityShare,

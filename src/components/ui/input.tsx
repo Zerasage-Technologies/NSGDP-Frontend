@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 
 function Input({
   className,
-  type,
+  type = "text",
   surface = "default",
   ...props
 }: React.ComponentProps<"input"> & { surface?: "default" | "hero" }) {

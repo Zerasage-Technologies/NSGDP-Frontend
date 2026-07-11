@@ -8,7 +8,7 @@ import { Search, Lock, FileText, BarChart3, ArrowRight, BarChart2 } from "lucide
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BRAND } from "@/lib/brand";
+import { BRAND } from "@/lib/constants/brand";
 import { useStatistics } from "@/lib/hooks/useStatistics";
 
 const trustFeatures = [
