@@ -17,11 +17,7 @@ const ROLES: { value: UserRole; label: string; group: string }[] = [
   { value: "public",      label: "Public Visitor",            group: "Public" },
   { value: "registered",  label: "Registered User",           group: "Public" },
   { value: "contributor", label: "Data Contributor",          group: "Internal" },
-  { value: "custodian",   label: "Dataset Custodian",         group: "Internal" },
-  { value: "validator",   label: "Data Validator",            group: "Internal" },
-  { value: "org_admin",   label: "Organisation Admin",        group: "Admin" },
-  { value: "repo_admin",  label: "Repository Administrator",  group: "Admin" },
-  { value: "ict_admin",   label: "ICT Administrator",         group: "Admin" },
+  { value: "admin",       label: "Administrator",             group: "Admin" },
   { value: "super_admin", label: "Super Admin (Owner)",       group: "Admin" },
 ];
 

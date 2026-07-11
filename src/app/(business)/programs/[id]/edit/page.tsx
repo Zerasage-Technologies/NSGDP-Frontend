@@ -92,7 +92,7 @@ export default function EditProgramPage() {
               onSubmit={handleSubmit}
               submitLabel="Save Changes"
               organisationIds={
-                currentUser.role === "org_admin" ? currentUser.organisationIds : undefined
+                currentUser.role === "admin" ? currentUser.organisationIds : undefined
               }
             />
           </CardContent>

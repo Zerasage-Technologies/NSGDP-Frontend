@@ -11,7 +11,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { currentUser } = useMockSession();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const ADMIN_ROLES = ["super_admin", "repo_admin", "ict_admin"] as const;
+  const ADMIN_ROLES = ["super_admin", "admin", "admin"] as const;
   const hasAdminAccess = ADMIN_ROLES.includes(
     currentUser.role as (typeof ADMIN_ROLES)[number]
   );

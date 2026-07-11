@@ -67,7 +67,7 @@ export default function NewProgramPage() {
               onSubmit={handleSubmit}
               submitLabel="Create Programme"
               organisationIds={
-                currentUser.role === "org_admin" ? currentUser.organisationIds : undefined
+                currentUser.role === "admin" ? currentUser.organisationIds : undefined
               }
             />
           </CardContent>

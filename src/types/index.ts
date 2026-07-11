@@ -1,15 +1,11 @@
 // NSPHCDA Data Portal — domain types (PRD v3.0)
 
 export type UserRole =
-  | "public"
-  | "registered"
-  | "contributor"
-  | "custodian"      // Dataset Custodian — maintains assigned datasets
-  | "validator"      // Data Validator — reviews & approves submissions
-  | "org_admin"      // Organisation Admin — manages org datasets & team
-  | "repo_admin"     // Repository Administrator — publishes & governs
-  | "ict_admin"      // ICT Administrator — system admin & security
-  | "super_admin";   // Repository Owner — full access + permission delegation
+  | "public"        // Unauthenticated/guest user
+  | "registered"    // Authenticated user (can browse/download)
+  | "contributor"   // Can upload/submit datasets
+  | "admin"         // Organization/Repository administrator
+  | "super_admin";  // Full system access + delegation
 
 export type Visibility = "public" | "restricted" | "private";
 

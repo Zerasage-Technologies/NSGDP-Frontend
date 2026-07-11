@@ -27,7 +27,7 @@ import { alertSurface } from "@/lib/constants/status-surfaces";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const GLOBAL_ADMIN_ROLES: UserRole[] = ["super_admin", "repo_admin", "ict_admin"];
+const GLOBAL_ADMIN_ROLES: UserRole[] = ["super_admin", "admin"];
 
 export default function AdminUsersPage() {
   const { currentUser } = useMockSession();
@@ -38,7 +38,7 @@ export default function AdminUsersPage() {
   const [roleModal, setRoleModal] = useState<AdminUser | null>(null);
   const [newRole, setNewRole] = useState<UserRole>("registered");
 
-  const isOrgScoped = currentUser.role === "org_admin";
+  const isOrgScoped = currentUser.role === "admin";
   const orgId = currentUser.organisationIds[0];
 
   useEffect(() => {
@@ -105,11 +105,11 @@ export default function AdminUsersPage() {
             <SelectItem value="all">All roles</SelectItem>
             <SelectItem value="registered">Registered</SelectItem>
             <SelectItem value="contributor">Contributor</SelectItem>
-            <SelectItem value="custodian">Custodian</SelectItem>
-            <SelectItem value="validator">Validator</SelectItem>
-            <SelectItem value="org_admin">Org Admin</SelectItem>
-            <SelectItem value="repo_admin">Repo Admin</SelectItem>
-            <SelectItem value="ict_admin">ICT Admin</SelectItem>
+            <SelectItem value="contributor">Custodian</SelectItem>
+            <SelectItem value="contributor">Validator</SelectItem>
+            <SelectItem value="admin">Org Admin</SelectItem>
+            <SelectItem value="admin">Repo Admin</SelectItem>
+            <SelectItem value="admin">ICT Admin</SelectItem>
             <SelectItem value="super_admin">Super Admin</SelectItem>
           </SelectContent>
         </Select>
@@ -174,8 +174,8 @@ export default function AdminUsersPage() {
           <Select value={newRole} onValueChange={(v) => v && setNewRole(v as UserRole)}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {(["registered", "contributor", "custodian", "validator", "org_admin"] as UserRole[])
-                .concat(isOrgScoped ? [] : (["repo_admin", "ict_admin", "super_admin"] as UserRole[]))
+              {(["registered", "contributor", "contributor", "contributor", "admin"] as UserRole[])
+                .concat(isOrgScoped ? [] : (["admin", "admin", "super_admin"] as UserRole[]))
                 .map((r) => (
                   <SelectItem key={r} value={r}>{r.replace(/_/g, " ")}</SelectItem>
                 ))}

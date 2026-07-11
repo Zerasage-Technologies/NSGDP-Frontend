@@ -56,7 +56,7 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { currentUser, isAuthenticated, logout } = useMockSession();
-  const isAdmin = ["super_admin", "repo_admin", "ict_admin"].includes(currentUser.role);
+  const isAdmin = ["super_admin", "admin", "admin"].includes(currentUser.role);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {

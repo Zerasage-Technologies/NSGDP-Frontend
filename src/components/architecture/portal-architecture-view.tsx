@@ -42,7 +42,7 @@ const roles = [
     ],
   },
   {
-    id: "validator",
+    id: "contributor",
     label: "Validator / Custodian",
     gate: "+ Elevated Role",
     sub: "Validate · Maintain",
@@ -129,7 +129,7 @@ const userGroups = [
 
 const programRoleBaseline = [
   { role: "Contributor", create: false, edit: false, delete: false, upload: true },
-  { role: "Custodian", create: false, edit: false, delete: false, upload: true },
+  { role: "contributor", create: false, edit: false, delete: false, upload: true },
   { role: "Org Admin", create: true, edit: "org-scoped", delete: false, upload: true },
   { role: "Repo Admin", create: true, edit: true, delete: true, upload: true },
   { role: "Super Admin", create: true, edit: true, delete: true, upload: true },

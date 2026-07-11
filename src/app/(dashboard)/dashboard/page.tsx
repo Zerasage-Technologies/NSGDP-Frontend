@@ -39,7 +39,7 @@ export default function DashboardPage() {
       setLoading(true);
       
       // Get datasets for contributors and org admins
-      if (["contributor", "org_admin", "super_admin"].includes(currentUser.role)) {
+      if (["contributor", "admin", "super_admin"].includes(currentUser.role)) {
         const result = await getDatasets({ pageSize: 6, includePrivate: true });
         setMyDatasets(result.data.slice(0, 6));
       }
@@ -48,7 +48,7 @@ export default function DashboardPage() {
       const downloads = await getDatasets({ pageSize: 4 });
       setRecentDownloads(downloads.data.slice(0, 4));
 
-      if (["custodian", "repo_admin", "super_admin", "org_admin"].includes(currentUser.role)) {
+      if (["contributor", "admin", "super_admin", "admin"].includes(currentUser.role)) {
         const overdue = await getOverdueDatasets();
         setOverdueDatasets(overdue);
       }
@@ -67,7 +67,7 @@ export default function DashboardPage() {
           <p className="mt-2 text-muted-foreground">
             {currentUser.role === "registered" && "Browse datasets and track your downloads"}
             {currentUser.role === "contributor" && "Manage your datasets and contributions"}
-            {currentUser.role === "org_admin" && "Manage your organization and datasets"}
+            {currentUser.role === "admin" && "Manage your organization and datasets"}
             {currentUser.role === "super_admin" && "System overview and administration"}
           </p>
         </Container>
@@ -115,7 +115,7 @@ export default function DashboardPage() {
           />
 
           {/* Contributors+ */}
-          {["contributor", "org_admin", "super_admin"].includes(currentUser.role) && (
+          {["contributor", "admin", "super_admin"].includes(currentUser.role) && (
             <>
               <StatsCard
                 icon={Database}
@@ -137,7 +137,7 @@ export default function DashboardPage() {
           )}
 
           {/* Org Admin+ */}
-          {["org_admin", "super_admin"].includes(currentUser.role) && (
+          {["admin", "super_admin"].includes(currentUser.role) && (
             <StatsCard
               icon={Users}
               label="Team Members"
@@ -167,7 +167,7 @@ export default function DashboardPage() {
           {/* Main Content - 2 columns */}
           <div className="lg:col-span-2 space-y-6">
             {/* My Datasets (Contributors+) */}
-            {["contributor", "org_admin", "super_admin"].includes(currentUser.role) && (
+            {["contributor", "admin", "super_admin"].includes(currentUser.role) && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>My Datasets</CardTitle>
@@ -278,7 +278,7 @@ export default function DashboardPage() {
           {/* Sidebar - 1 column */}
           <div className="space-y-6">
             {/* Pending Actions */}
-            {["contributor", "org_admin", "super_admin"].includes(currentUser.role) && (
+            {["contributor", "admin", "super_admin"].includes(currentUser.role) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Pending Actions</CardTitle>
@@ -336,12 +336,12 @@ export default function DashboardPage() {
             </Card>
 
             {/* Portal Activity */}
-            {["contributor", "org_admin", "super_admin"].includes(currentUser.role) && (
+            {["contributor", "admin", "super_admin"].includes(currentUser.role) && (
               <DatasetActivityPanel />
             )}
 
             {/* My Organizations (Org Admin+) */}
-            {["org_admin", "super_admin"].includes(currentUser.role) && (
+            {["admin", "super_admin"].includes(currentUser.role) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">My Organizations</CardTitle>

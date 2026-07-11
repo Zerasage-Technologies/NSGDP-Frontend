@@ -12,11 +12,11 @@ const ROLE_DEFINITIONS: Array<{
   { role: "public",      label: "Public Visitor",           basePermissions: [],                                                                                           delegatable: false },
   { role: "registered",  label: "Registered User",          basePermissions: [],                                                                                           delegatable: true  },
   { role: "contributor", label: "Data Contributor",         basePermissions: ["upload:programs"],                                                                          delegatable: true  },
-  { role: "custodian",   label: "Dataset Custodian",        basePermissions: ["upload:programs", "archive:datasets"],                                                      delegatable: true  },
-  { role: "validator",   label: "Data Validator",           basePermissions: ["approve:datasets", "view:restricted"],                                                      delegatable: true  },
-  { role: "org_admin",   label: "Organisation Admin",       basePermissions: ["create:programs", "edit:programs", "upload:programs", "approve:datasets", "manage:users", "view:restricted"], delegatable: true  },
-  { role: "repo_admin",  label: "Repository Admin",         basePermissions: ["create:programs", "edit:programs", "delete:programs", "upload:programs", "approve:datasets", "publish:datasets", "archive:datasets", "view:restricted", "download:restricted"], delegatable: false },
-  { role: "ict_admin",   label: "ICT Administrator",        basePermissions: ["manage:users", "view:restricted"],                                                          delegatable: false },
+  { role: "contributor",   label: "Dataset Custodian",        basePermissions: ["upload:programs", "archive:datasets"],                                                      delegatable: true  },
+  { role: "contributor",   label: "Data Validator",           basePermissions: ["approve:datasets", "view:restricted"],                                                      delegatable: true  },
+  { role: "admin",   label: "Organisation Admin",       basePermissions: ["create:programs", "edit:programs", "upload:programs", "approve:datasets", "manage:users", "view:restricted"], delegatable: true  },
+  { role: "admin",  label: "Repository Admin",         basePermissions: ["create:programs", "edit:programs", "delete:programs", "upload:programs", "approve:datasets", "publish:datasets", "archive:datasets", "view:restricted", "download:restricted"], delegatable: false },
+  { role: "admin",   label: "ICT Administrator",        basePermissions: ["manage:users", "view:restricted"],                                                          delegatable: false },
   { role: "super_admin", label: "Super Admin (Owner)",      basePermissions: Object.keys(PERMISSION_ACTION_LABELS) as PermissionAction[],                                  delegatable: false },
 ];
 

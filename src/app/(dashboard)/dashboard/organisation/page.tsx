@@ -125,7 +125,7 @@ export default function MyOrganisationPage() {
   }
 
   // Only org admins and super admins can access
-  if (currentUser.role !== "org_admin" && currentUser.role !== "super_admin") {
+  if (currentUser.role !== "admin" && currentUser.role !== "super_admin") {
     return (
       <main className="flex-1 bg-muted/40">
         <Container className="py-12">

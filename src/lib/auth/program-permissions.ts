@@ -8,16 +8,7 @@ export const ROLE_PROGRAM_BASE: Record<UserRole, PermissionAction[]> = {
   public: [],
   registered: [],
   contributor: ["upload:programs"],
-  custodian: ["upload:programs"],
-  validator: [],
-  org_admin: ["create:programs", "edit:programs", "upload:programs"],
-  repo_admin: [
-    "create:programs",
-    "edit:programs",
-    "delete:programs",
-    "upload:programs",
-  ],
-  ict_admin: [],
+  admin: ["create:programs", "edit:programs", "upload:programs"],
   super_admin: [...PROGRAM_PERMISSION_ACTIONS],
 };
 
@@ -76,7 +67,7 @@ export function canEditProgram(
   programOrganisationId?: string
 ): boolean {
   if (!canProgram(role, userId, "edit")) return false;
-  if (role === "org_admin" && programOrganisationId) {
+  if (role === "admin" && programOrganisationId) {
     return organisationIds.includes(programOrganisationId);
   }
   return true;
