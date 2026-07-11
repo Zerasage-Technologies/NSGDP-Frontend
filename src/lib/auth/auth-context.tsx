@@ -38,7 +38,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check if token is expired
       if (tokenStorage.isTokenExpired()) {
         // Try to refresh
-        await refreshSession();
+        const refreshToken = tokenStorage.getRefreshToken();
+        
+        if (!refreshToken) {
+          tokenStorage.clearTokens();
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          const response = await authApi.refreshAccessToken({ refreshToken });
+          tokenStorage.updateAccessToken(response.accessToken, response.expiresIn);
+          
+          const userProfile = await authApi.getCurrentUser();
+          setUser(userProfile);
+        } catch (error) {
+          // Refresh failed, clear everything
+          tokenStorage.clearTokens();
+          setUser(null);
+        } finally {
+          setIsLoading(false);
+        }
         return;
       }
 
@@ -46,8 +66,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userProfile = await authApi.getCurrentUser();
         setUser(userProfile);
       } catch (error) {
-        // Token invalid, clear and try refresh
-        await refreshSession();
+        // Token invalid, try refresh
+        const refreshToken = tokenStorage.getRefreshToken();
+        
+        if (!refreshToken) {
+          tokenStorage.clearTokens();
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          const response = await authApi.refreshAccessToken({ refreshToken });
+          tokenStorage.updateAccessToken(response.accessToken, response.expiresIn);
+          
+          const userProfile = await authApi.getCurrentUser();
+          setUser(userProfile);
+        } catch (refreshError) {
+          // Refresh failed, clear everything
+          tokenStorage.clearTokens();
+          setUser(null);
+        }
       } finally {
         setIsLoading(false);
       }

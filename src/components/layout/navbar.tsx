@@ -15,7 +15,7 @@ import {
   Database,
   Upload,
 } from "lucide-react";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { GeoHealthLogo } from "@/components/layout/geohealth-logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -55,12 +55,12 @@ const GIS_LINKS = [
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { currentUser, isAuthenticated, logout } = useMockSession();
-  const isAdmin = ["super_admin", "admin", "admin"].includes(currentUser.role);
+  const { user, isAuthenticated, logout } = useAuth();
+  const isAdmin = user && ["super_admin", "admin"].includes(user.role);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast.success("Logged out successfully");
     router.push("/");
     setMobileOpen(false);
@@ -154,12 +154,12 @@ export function Navbar() {
                   aria-label="User menu"
                 >
                   <div className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-                    {currentUser.fullName.charAt(0)}
+                    {user?.fullName?.charAt(0) || "U"}
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuGroup>
-                    <DropdownMenuLabel>{currentUser.fullName}</DropdownMenuLabel>
+                    <DropdownMenuLabel>{user?.fullName || "User"}</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                       <LayoutDashboard className="size-4" /> Dashboard
                     </DropdownMenuItem>
@@ -287,11 +287,11 @@ export function Navbar() {
                 <>
                   <div className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2.5">
                     <div className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-                      {currentUser.fullName.charAt(0)}
+                      {user?.fullName?.charAt(0) || "U"}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{currentUser.fullName}</p>
-                      <p className="truncate text-xs text-muted-foreground capitalize">{currentUser.role.replace("_", " ")}</p>
+                      <p className="truncate text-sm font-medium">{user?.fullName || "User"}</p>
+                      <p className="truncate text-xs text-muted-foreground capitalize">{user?.role.replace("_", " ") || ""}</p>
                     </div>
                   </div>
                   <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted">

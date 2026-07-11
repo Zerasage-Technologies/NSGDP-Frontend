@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
-import { RoleSwitcher } from "@/components/dev/role-switcher";
+// import { RoleSwitcher } from "@/components/dev/role-switcher"; // Disabled: using real auth now
 import { AiAssistantWidget } from "@/components/feedback/ai-assistant-widget";
 import { BRAND } from "@/lib/constants/brand";
 import "./globals.css";
@@ -61,7 +61,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <AiAssistantWidget />
-          <RoleSwitcher />
+          {/* <RoleSwitcher /> */} {/* Disabled: using real auth now */}
         </Providers>
         <Toaster />
       </body>

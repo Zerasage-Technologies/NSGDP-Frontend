@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Save } from "lucide-react";
-import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,33 +11,36 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PasswordStrengthMeter } from "@/components/forms/password-strength-meter";
 import { FormError } from "@/components/forms/form-error";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import {
   profileSchema,
   changePasswordSchema,
 } from "@/lib/schemas/auth";
 import { toast } from "sonner";
 import { z } from "zod";
+import {
+  DashboardPage,
+  DashboardPageHeader,
+  DashboardPageContent,
+} from "@/components/layout/dashboard-page-header";
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 type PasswordFormData = z.infer<typeof changePasswordSchema>;
 
 export default function ProfilePage() {
-  const { currentUser } = useMockSession();
+  const { user } = useAuth();
   const [saving, setSaving] = useState(false);
 
-  return (
-    <main className="flex-1 bg-muted/40">
-      <div className="border-b bg-background">
-        <Container size="wide" className="py-8">
-          <h1 className="text-3xl font-bold">Profile & Settings</h1>
-          <p className="mt-2 text-muted-foreground">
-            Manage your account information and preferences
-          </p>
-        </Container>
-      </div>
+  if (!user) return null;
 
-      <Container size="wide" className="py-8">
+  return (
+    <DashboardPage>
+      <DashboardPageHeader
+        title="Profile & Settings"
+        description="Manage your account information and preferences"
+      />
+
+      <DashboardPageContent>
         <div className="max-w-4xl mx-auto">
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3">
@@ -56,7 +58,7 @@ export default function ProfilePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ProfileForm currentUser={currentUser} setSaving={setSaving} saving={saving} />
+                  <ProfileForm currentUser={user} setSaving={setSaving} saving={saving} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -86,12 +88,12 @@ export default function ProfilePage() {
                     <div>
                       <p className="font-medium mb-1">2FA Status</p>
                       <p className="text-sm text-muted-foreground">
-                        {currentUser.role === "super_admin" || currentUser.role === "admin"
+                        {user.role === "super_admin" || user.role === "admin"
                           ? "Enabled (Required for your role)"
                           : "Not enabled"}
                       </p>
                     </div>
-                    {currentUser.role !== "super_admin" && currentUser.role !== "admin" && (
+                    {user.role !== "super_admin" && user.role !== "admin" && (
                       <Button variant="outline">Enable 2FA</Button>
                     )}
                   </div>
@@ -163,8 +165,8 @@ export default function ProfilePage() {
             </TabsContent>
           </Tabs>
         </div>
-      </Container>
-    </main>
+      </DashboardPageContent>
+    </DashboardPage>
   );
 }
 

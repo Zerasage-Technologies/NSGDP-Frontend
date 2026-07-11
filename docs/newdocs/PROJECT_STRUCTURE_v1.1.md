@@ -316,11 +316,15 @@ frontend/
 
 ## User Roles
 
-1. **Public** - Not authenticated
-2. **Registered** - Basic authenticated user
-3. **Contributor** - Can upload datasets
-4. **Org Admin** - Manages organisation
-5. **Super Admin** - System administrator
+**Simplified 5-Role System (aligned with PRD):**
+
+1. **Public** - Unauthenticated/guest user (browse only)
+2. **Registered** - Authenticated user (download, request restricted access)
+3. **Contributor** - Upload/submit datasets  
+4. **Admin** - Organization/Repository administrator (org-scoped via permissions)
+5. **Super Admin** - Full system access + permission delegation
+
+**Note:** Fine-grained control (dataset custodian, QA validator, org-specific admin) is handled via **permission flags** rather than separate roles.
 
 ## Features
 

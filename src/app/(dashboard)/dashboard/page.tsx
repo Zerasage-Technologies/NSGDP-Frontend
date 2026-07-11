@@ -14,32 +14,38 @@ import {
   AlertCircle,
   FileText,
 } from "lucide-react";
-import { Container } from "@/components/layout/container";
 import { StatusBadge } from "@/components/data/status-badge";
 import { DatasetActivityPanel } from "@/components/data/dataset-activity-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import { getDatasets, getOverdueDatasets } from "@/lib/mock";
 import { OutbreakAlertBanner } from "@/components/home/outbreak-alert-banner";
 import { mockAlerts } from "@/lib/mock/alerts";
 import { alertSurface } from "@/lib/constants/status-surfaces";
 import { cn } from "@/lib/utils";
 import type { Dataset } from "@/types";
+import {
+  DashboardPage,
+  DashboardPageHeader,
+  DashboardPageContent,
+} from "@/components/layout/dashboard-page-header";
 
 export default function DashboardPage() {
-  const { currentUser } = useMockSession();
+  const { user } = useAuth();
   const [myDatasets, setMyDatasets] = useState<Dataset[]>([]);
   const [recentDownloads, setRecentDownloads] = useState<Dataset[]>([]);
   const [overdueDatasets, setOverdueDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
+    
     const loadData = async () => {
       setLoading(true);
       
       // Get datasets for contributors and org admins
-      if (["contributor", "admin", "super_admin"].includes(currentUser.role)) {
+      if (["contributor", "admin", "super_admin"].includes(user.role)) {
         const result = await getDatasets({ pageSize: 6, includePrivate: true });
         setMyDatasets(result.data.slice(0, 6));
       }
@@ -48,7 +54,7 @@ export default function DashboardPage() {
       const downloads = await getDatasets({ pageSize: 4 });
       setRecentDownloads(downloads.data.slice(0, 4));
 
-      if (["contributor", "admin", "super_admin", "admin"].includes(currentUser.role)) {
+      if (["contributor", "admin", "super_admin"].includes(user.role)) {
         const overdue = await getOverdueDatasets();
         setOverdueDatasets(overdue);
       }
@@ -57,23 +63,21 @@ export default function DashboardPage() {
     };
 
     loadData();
-  }, [currentUser.role]);
+  }, [user]);
 
   return (
-    <main className="flex-1 bg-muted/40">
-      <div className="border-b bg-background">
-        <Container size="wide" className="py-8">
-          <h1 className="text-3xl font-bold">Welcome back, {currentUser.fullName}!</h1>
-          <p className="mt-2 text-muted-foreground">
-            {currentUser.role === "registered" && "Browse datasets and track your downloads"}
-            {currentUser.role === "contributor" && "Manage your datasets and contributions"}
-            {currentUser.role === "admin" && "Manage your organization and datasets"}
-            {currentUser.role === "super_admin" && "System overview and administration"}
-          </p>
-        </Container>
-      </div>
+    <DashboardPage>
+      <DashboardPageHeader
+        title={`Welcome back, ${user?.fullName}!`}
+        description={
+          user?.role === "registered" ? "Browse datasets and track your downloads" :
+          user?.role === "contributor" ? "Manage your datasets and contributions" :
+          user?.role === "admin" ? "Manage your organization and datasets" :
+          user?.role === "super_admin" ? "System overview and administration" : ""
+        }
+      />
 
-      <Container size="wide" className="py-8">
+      <DashboardPageContent className="space-y-6">
         <OutbreakAlertBanner alerts={mockAlerts} />
 
         {overdueDatasets.length > 0 && (
@@ -115,7 +119,7 @@ export default function DashboardPage() {
           />
 
           {/* Contributors+ */}
-          {["contributor", "admin", "super_admin"].includes(currentUser.role) && (
+          {user && ["contributor", "admin", "super_admin"].includes(user.role) && (
             <>
               <StatsCard
                 icon={Database}
@@ -137,7 +141,7 @@ export default function DashboardPage() {
           )}
 
           {/* Org Admin+ */}
-          {["admin", "super_admin"].includes(currentUser.role) && (
+          {user && ["admin", "super_admin"].includes(user.role) && (
             <StatsCard
               icon={Users}
               label="Team Members"
@@ -149,7 +153,7 @@ export default function DashboardPage() {
           )}
 
           {/* Super Admin */}
-          {currentUser.role === "super_admin" && (
+          {user?.role === "super_admin" && (
             <StatsCard
               icon={FileText}
               label="Review Queue"
@@ -167,7 +171,7 @@ export default function DashboardPage() {
           {/* Main Content - 2 columns */}
           <div className="lg:col-span-2 space-y-6">
             {/* My Datasets (Contributors+) */}
-            {["contributor", "admin", "super_admin"].includes(currentUser.role) && (
+            {user && ["contributor", "admin", "super_admin"].includes(user.role) && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>My Datasets</CardTitle>
@@ -278,7 +282,7 @@ export default function DashboardPage() {
           {/* Sidebar - 1 column */}
           <div className="space-y-6">
             {/* Pending Actions */}
-            {["contributor", "admin", "super_admin"].includes(currentUser.role) && (
+            {user && ["contributor", "admin", "super_admin"].includes(user.role) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Pending Actions</CardTitle>
@@ -290,7 +294,7 @@ export default function DashboardPage() {
                     color="text-orange-600"
                     href="/dashboard/my-datasets?status=pending"
                   />
-                  {currentUser.role !== "contributor" && (
+                  {user.role !== "contributor" && (
                     <ActionItem
                       icon={Users}
                       text="3 access requests pending"
@@ -336,12 +340,12 @@ export default function DashboardPage() {
             </Card>
 
             {/* Portal Activity */}
-            {["contributor", "admin", "super_admin"].includes(currentUser.role) && (
+            {user && ["contributor", "admin", "super_admin"].includes(user.role) && (
               <DatasetActivityPanel />
             )}
 
             {/* My Organizations (Org Admin+) */}
-            {["admin", "super_admin"].includes(currentUser.role) && (
+            {user && ["admin", "super_admin"].includes(user.role) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">My Organizations</CardTitle>
@@ -364,8 +368,8 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-      </Container>
-    </main>
+      </DashboardPageContent>
+    </DashboardPage>
   );
 }
 
