@@ -175,7 +175,7 @@ function ProfileForm({
   setSaving,
   saving,
 }: {
-  currentUser: { fullName: string; email: string; role: string };
+  currentUser: { firstName: string; lastName: string; email: string; role: string };
   setSaving: (v: boolean) => void;
   saving: boolean;
 }) {
@@ -186,7 +186,7 @@ function ProfileForm({
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      fullName: currentUser.fullName,
+      fullName: `${currentUser.firstName} ${currentUser.lastName}`,
       email: currentUser.email,
       bio: "",
       phone: "",

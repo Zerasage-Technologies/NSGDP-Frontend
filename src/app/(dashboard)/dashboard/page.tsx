@@ -26,7 +26,7 @@ import { alertSurface } from "@/lib/constants/status-surfaces";
 import { cn } from "@/lib/utils";
 import type { Dataset } from "@/types";
 import {
-  DashboardPage,
+  DashboardPage as DashboardPageLayout,
   DashboardPageHeader,
   DashboardPageContent,
 } from "@/components/layout/dashboard-page-header";
@@ -66,9 +66,9 @@ export default function DashboardPage() {
   }, [user]);
 
   return (
-    <DashboardPage>
+    <DashboardPageLayout>
       <DashboardPageHeader
-        title={`Welcome back, ${user?.fullName}!`}
+        title={`Welcome back, ${user?.firstName} ${user?.lastName}!`}
         description={
           user?.role === "registered" ? "Browse datasets and track your downloads" :
           user?.role === "contributor" ? "Manage your datasets and contributions" :
@@ -369,7 +369,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </DashboardPageContent>
-    </DashboardPage>
+    </DashboardPageLayout>
   );
 }
 

@@ -154,12 +154,12 @@ export function Navbar() {
                   aria-label="User menu"
                 >
                   <div className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-                    {user?.fullName?.charAt(0) || "U"}
+                    {user?.firstName?.charAt(0) || user?.lastName?.charAt(0) || "U"}
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuGroup>
-                    <DropdownMenuLabel>{user?.fullName || "User"}</DropdownMenuLabel>
+                    <DropdownMenuLabel>{user?.firstName} {user?.lastName}</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                       <LayoutDashboard className="size-4" /> Dashboard
                     </DropdownMenuItem>
@@ -287,10 +287,10 @@ export function Navbar() {
                 <>
                   <div className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2.5">
                     <div className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-                      {user?.fullName?.charAt(0) || "U"}
+                      {user?.firstName?.charAt(0) || user?.lastName?.charAt(0) || "U"}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{user?.fullName || "User"}</p>
+                      <p className="truncate text-sm font-medium">{user?.firstName} {user?.lastName}</p>
                       <p className="truncate text-xs text-muted-foreground capitalize">{user?.role.replace("_", " ") || ""}</p>
                     </div>
                   </div>
