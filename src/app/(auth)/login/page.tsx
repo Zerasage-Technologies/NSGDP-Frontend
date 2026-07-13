@@ -13,13 +13,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FormError } from "@/components/forms/form-error";
 import { loginSchema, type LoginFormData } from "@/lib/schemas/auth";
-import { login as loginUser } from "@/lib/api";
-import { storeTokens } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -38,20 +38,16 @@ function LoginContent() {
     setLoading(true);
     
     try {
-      const response = await loginUser({
+      await login({
         email: data.email,
         password: data.password,
       });
-
-      // Store tokens
-      storeTokens(
-        response.tokens!.accessToken,
-        response.tokens!.refreshToken,
-        response.tokens!.expiresIn
-      );
-
-      toast.success("Login successful! Welcome back.");
-      router.push(returnTo);
+      
+      // Login function in auth context handles redirect to /dashboard
+      // If we have a different returnTo, redirect there
+      if (returnTo !== "/dashboard") {
+        router.push(returnTo);
+      }
     } catch (error: unknown) {
       // Handle specific error messages from backend
       const errorMessage = error instanceof Error ? error.message : "Invalid credentials. Please try again.";

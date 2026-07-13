@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useRouter } from "next/navigation";
 import * as authApi from "@/lib/api/auth";
 import * as tokenStorage from "@/lib/utils/token-storage";
-import type { UserProfile, AuthResponse } from "@/lib/types/auth";
+import type { UserProfile } from "@/lib/types/auth";
 import type { LoginFormData, RegisterFormData } from "@/lib/schemas/auth";
 import { toast } from "sonner";
 
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           const userProfile = await authApi.getCurrentUser();
           setUser(userProfile);
-        } catch (error) {
+        } catch {
           // Refresh failed, clear everything
           tokenStorage.clearTokens();
           setUser(null);
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const userProfile = await authApi.getCurrentUser();
         setUser(userProfile);
-      } catch (error) {
+      } catch {
         // Token invalid, try refresh
         const refreshToken = tokenStorage.getRefreshToken();
         
@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           const userProfile = await authApi.getCurrentUser();
           setUser(userProfile);
-        } catch (refreshError) {
+        } catch {
           // Refresh failed, clear everything
           tokenStorage.clearTokens();
           setUser(null);
@@ -190,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Fetch updated user profile
       const userProfile = await authApi.getCurrentUser();
       setUser(userProfile);
-    } catch (error) {
+    } catch {
       // Refresh failed, clear everything
       tokenStorage.clearTokens();
       setUser(null);

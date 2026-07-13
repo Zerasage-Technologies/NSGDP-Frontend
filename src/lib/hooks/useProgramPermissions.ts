@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import {
   canEditProgram,
   canProgram,
@@ -10,24 +10,27 @@ import {
 import type { ProgramCapability } from "@/lib/auth/program-permissions";
 
 export function useProgramPermissions() {
-  const { currentUser } = useMockSession();
+  const { user } = useAuth();
+  const role = user?.role ?? "public";
+  const userId = user?.id ?? "";
+  const organisationId = user?.organisationId;
 
   return useMemo(
     () => ({
-      permissions: getEffectiveProgramPermissions(currentUser.role, currentUser.id),
+      permissions: getEffectiveProgramPermissions(role, userId),
       can: (capability: ProgramCapability) =>
-        canProgram(currentUser.role, currentUser.id, capability),
+        canProgram(role, userId, capability),
       canEdit: (programOrganisationId?: string) =>
         canEditProgram(
-          currentUser.role,
-          currentUser.id,
-          currentUser.organisationIds,
+          role,
+          userId,
+          organisationId ? [organisationId] : [],
           programOrganisationId
         ),
-      canCreate: canProgram(currentUser.role, currentUser.id, "create"),
-      canUpload: canProgram(currentUser.role, currentUser.id, "upload"),
-      canDelete: canProgram(currentUser.role, currentUser.id, "delete"),
+      canCreate: canProgram(role, userId, "create"),
+      canUpload: canProgram(role, userId, "upload"),
+      canDelete: canProgram(role, userId, "delete"),
     }),
-    [currentUser]
+    [role, userId, organisationId]
   );
 }

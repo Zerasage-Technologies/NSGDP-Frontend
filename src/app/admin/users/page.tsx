@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { getAdminUsers } from "@/lib/mock";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import type { AdminUser } from "@/types/admin";
 import type { UserRole } from "@/types";
 import { RoleBadge } from "@/components/data/role-badge";
@@ -27,10 +27,9 @@ import { alertSurface } from "@/lib/constants/status-surfaces";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const GLOBAL_ADMIN_ROLES: UserRole[] = ["super_admin", "admin"];
-
 export default function AdminUsersPage() {
-  const { currentUser } = useMockSession();
+  const { user } = useAuth();
+
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -38,8 +37,8 @@ export default function AdminUsersPage() {
   const [roleModal, setRoleModal] = useState<AdminUser | null>(null);
   const [newRole, setNewRole] = useState<UserRole>("registered");
 
-  const isOrgScoped = currentUser.role === "admin";
-  const orgId = currentUser.organisationIds[0];
+  const isOrgScoped = user?.role === "admin";
+  const orgId = user?.organisationId;
 
   useEffect(() => {
     getAdminUsers().then((data) => {

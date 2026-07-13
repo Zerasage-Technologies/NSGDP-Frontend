@@ -1,27 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { Settings } from "lucide-react";
-import { useMockSession } from "@/lib/auth/mock-session";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { UserRole } from "@/types";
-
-const ROLES: { value: UserRole; label: string; group: string }[] = [
-  { value: "public",      label: "Public Visitor",            group: "Public" },
-  { value: "registered",  label: "Registered User",           group: "Public" },
-  { value: "contributor", label: "Data Contributor",          group: "Internal" },
-  { value: "admin",       label: "Administrator",             group: "Admin" },
-  { value: "super_admin", label: "Super Admin (Owner)",       group: "Admin" },
-];
-
 export function RoleSwitcher() {
+  // Role switcher is incompatible with real authentication
+  // It was designed for mock session only
+  // Keeping the component but disabling it
+  return null;
+
+  /* Original mock session code - disabled
   const { currentUser, setRole } = useMockSession();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -69,4 +54,5 @@ export function RoleSwitcher() {
       </DropdownMenu>
     </div>
   );
+  */
 }

@@ -58,7 +58,7 @@ export default function ProfilePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ProfileForm currentUser={user} setSaving={setSaving} saving={saving} />
+                  <ProfileForm user={user} setSaving={setSaving} saving={saving} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -171,11 +171,11 @@ export default function ProfilePage() {
 }
 
 function ProfileForm({
-  currentUser,
+  user: currentUser,
   setSaving,
   saving,
 }: {
-  currentUser: { firstName: string; lastName: string; email: string; role: string };
+  user: { firstName: string; lastName: string; email: string; role: string };
   setSaving: (v: boolean) => void;
   saving: boolean;
 }) {

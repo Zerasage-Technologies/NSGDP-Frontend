@@ -2,6 +2,7 @@
 // Clean, typed functions for all authentication endpoints
 
 import { apiFetch } from "./client";
+import { API_ROUTES } from "./routes";
 import type { ApiResponse } from "@/lib/types/common";
 import type {
   AuthResponse,
@@ -13,15 +14,13 @@ import type {
   RefreshTokenPayload,
 } from "@/lib/types/auth";
 
-const AUTH_BASE = "/v1/auth";
-
 /**
  * Register a new user
  * @returns AuthResponse with tokens (or null tokens if pending approval)
  */
 export async function register(payload: RegisterPayload): Promise<AuthResponse> {
   const response = await apiFetch<ApiResponse<AuthResponse>>(
-    `${AUTH_BASE}/register`,
+    API_ROUTES.auth.register,
     {
       method: "POST",
       body: payload,
@@ -37,7 +36,7 @@ export async function register(payload: RegisterPayload): Promise<AuthResponse> 
  */
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
   const response = await apiFetch<ApiResponse<AuthResponse>>(
-    `${AUTH_BASE}/login`,
+    API_ROUTES.auth.login,
     {
       method: "POST",
       body: payload,
@@ -51,7 +50,7 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
  * @param refreshToken - The refresh token to revoke
  */
 export async function logout(refreshToken: string): Promise<void> {
-  await apiFetch<ApiResponse<void>>(`${AUTH_BASE}/logout`, {
+  await apiFetch<ApiResponse<void>>(API_ROUTES.auth.logout, {
     method: "POST",
     body: { refreshToken },
   });
@@ -63,7 +62,7 @@ export async function logout(refreshToken: string): Promise<void> {
  */
 export async function forgotPassword(payload: ForgotPasswordPayload): Promise<{ message: string }> {
   const response = await apiFetch<ApiResponse<{ message: string }>>(
-    `${AUTH_BASE}/forgot-password`,
+    API_ROUTES.auth.forgotPassword,
     {
       method: "POST",
       body: payload,
@@ -78,7 +77,7 @@ export async function forgotPassword(payload: ForgotPasswordPayload): Promise<{ 
  */
 export async function resetPassword(payload: ResetPasswordPayload): Promise<{ message: string }> {
   const response = await apiFetch<ApiResponse<{ message: string }>>(
-    `${AUTH_BASE}/reset-password`,
+    API_ROUTES.auth.resetPassword,
     {
       method: "POST",
       body: payload,
@@ -97,7 +96,7 @@ export async function refreshAccessToken(payload: RefreshTokenPayload): Promise<
 }> {
   const response = await apiFetch<
     ApiResponse<{ accessToken: string; expiresIn: number }>
-  >(`${AUTH_BASE}/refresh`, {
+  >(API_ROUTES.auth.refresh, {
     method: "POST",
     body: payload,
   });
@@ -110,7 +109,7 @@ export async function refreshAccessToken(payload: RefreshTokenPayload): Promise<
  */
 export async function getCurrentUser(): Promise<UserProfile> {
   const response = await apiFetch<ApiResponse<UserProfile>>(
-    `${AUTH_BASE}/me`,
+    API_ROUTES.auth.me,
     {
       method: "GET",
     }

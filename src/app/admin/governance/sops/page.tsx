@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { BookOpen, Plus, Upload, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +27,7 @@ const CATEGORY_LABELS: Record<SOPCategory, string> = {
 };
 
 export default function AdminSOPsPage() {
-  const [sops, setSops] = useState<SOP[]>(mockSOPs);
+  const sops: SOP[] = mockSOPs;
 
   return (
     <div className="space-y-6">

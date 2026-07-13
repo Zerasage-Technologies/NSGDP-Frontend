@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -9,14 +10,24 @@ import { Button } from "@/components/ui/button";
 import { ProgramForm } from "@/components/programs/program-form";
 import { createProgram } from "@/lib/mock/programs";
 import { useProgramPermissions } from "@/lib/hooks/useProgramPermissions";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import type { ProgramFormData } from "@/lib/schemas/program";
 import { toast } from "sonner";
 
 export default function NewProgramPage() {
   const router = useRouter();
   const { canCreate } = useProgramPermissions();
-  const { currentUser } = useMockSession();
+  const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/login");
+    }
+  }, [isLoading, router, user]);
+
+  if (isLoading || !user) {
+    return null;
+  }
 
   if (!canCreate) {
     return (
@@ -67,7 +78,7 @@ export default function NewProgramPage() {
               onSubmit={handleSubmit}
               submitLabel="Create Programme"
               organisationIds={
-                currentUser.role === "admin" ? currentUser.organisationIds : undefined
+                user.role === "admin" && user.organisationId ? [user.organisationId] : undefined
               }
             />
           </CardContent>

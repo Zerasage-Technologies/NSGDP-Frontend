@@ -65,3 +65,57 @@ export async function apiFetch<T>(
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+/**
+ * API client with axios-like interface
+ * Wraps apiFetch to provide a familiar API
+ */
+export const apiClient = {
+  get: async <T>(url: string, options?: { params?: Record<string, unknown> }) => {
+    const queryString = options?.params
+      ? "?" + new URLSearchParams(
+          Object.entries(options.params)
+            .filter(([, value]) => value !== undefined && value !== null)
+            .map(([key, value]) => [key, String(value)])
+        ).toString()
+      : "";
+    
+    const data = await apiFetch<T>(url + queryString, { method: "GET" });
+    return { data };
+  },
+
+  post: async <T>(url: string, data?: unknown, options?: RequestOptions) => {
+    const responseData = await apiFetch<T>(url, {
+      method: "POST",
+      body: data,
+      ...options,
+    });
+    return { data: responseData };
+  },
+
+  patch: async <T>(url: string, data?: unknown, options?: RequestOptions) => {
+    const responseData = await apiFetch<T>(url, {
+      method: "PATCH",
+      body: data,
+      ...options,
+    });
+    return { data: responseData };
+  },
+
+  put: async <T>(url: string, data?: unknown, options?: RequestOptions) => {
+    const responseData = await apiFetch<T>(url, {
+      method: "PUT",
+      body: data,
+      ...options,
+    });
+    return { data: responseData };
+  },
+
+  delete: async <T>(url: string, options?: RequestOptions) => {
+    const responseData = await apiFetch<T>(url, {
+      method: "DELETE",
+      ...options,
+    });
+    return { data: responseData };
+  },
+};

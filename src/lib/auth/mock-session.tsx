@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import type { User, UserRole } from "@/types";
-import type { AccessRequestStatus } from "@/types/admin";
 import { mockUsers } from "@/lib/mock/users";
 import { toast } from "sonner";
 

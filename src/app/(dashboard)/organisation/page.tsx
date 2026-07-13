@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import { getOrganisations } from "@/lib/mock";
 import { toast } from "sonner";
 import type { Organisation } from "@/types";
@@ -30,7 +30,8 @@ type TeamMember = {
 };
 
 export default function MyOrganisationPage() {
-  const { currentUser } = useMockSession();
+  const { user } = useAuth();
+
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,8 +64,8 @@ export default function MyOrganisationPage() {
   const [teamMembers] = useState<TeamMember[]>([
     {
       id: "1",
-      name: currentUser.fullName,
-      email: currentUser.email,
+      name: `${user?.firstName} ${user?.lastName}`,
+      email: user?.email || "",
       role: "Administrator",
       joinedAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000),
     },
@@ -125,7 +126,7 @@ export default function MyOrganisationPage() {
   }
 
   // Only org admins and super admins can access
-  if (currentUser.role !== "admin" && currentUser.role !== "super_admin") {
+  if (user && user.role !== "admin" && user.role !== "super_admin") {
     return (
       <main className="flex-1 bg-muted/40">
         <Container className="py-12">

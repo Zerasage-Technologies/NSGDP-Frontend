@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload } from "lucide-react";
@@ -22,7 +22,7 @@ import { FileUploadArea, type UploadedFile } from "@/components/forms/file-uploa
 import { FormError } from "@/components/forms/form-error";
 import { getProgramById, addProgramReport } from "@/lib/mock/programs";
 import { useProgramPermissions } from "@/lib/hooks/useProgramPermissions";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import { programReportSchema, type ProgramReportFormData } from "@/lib/schemas/program";
 import { toast } from "sonner";
 
@@ -30,7 +30,7 @@ export default function UploadProgramReportPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { canUpload } = useProgramPermissions();
-  const { currentUser } = useMockSession();
+  const { user, isLoading } = useAuth();
   const program = getProgramById(id);
   const [files, setFiles] = useState<UploadedFile[]>([]);
 
@@ -43,6 +43,16 @@ export default function UploadProgramReportPage() {
     resolver: zodResolver(programReportSchema),
     defaultValues: { fileFormat: "PDF" },
   });
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/login");
+    }
+  }, [isLoading, router, user]);
+
+  if (isLoading || !user) {
+    return null;
+  }
 
   if (!program) {
     return (
@@ -74,7 +84,7 @@ export default function UploadProgramReportPage() {
     const file = files[0];
     addProgramReport(program.id, {
       title: data.title,
-      uploadedBy: currentUser.fullName,
+      uploadedBy: `${user.firstName} ${user.lastName}`,
       fileSizeBytes: file.size,
       fileFormat: data.fileFormat,
       url: `/reports/${program.slug}-${Date.now()}.${data.fileFormat.toLowerCase()}`,

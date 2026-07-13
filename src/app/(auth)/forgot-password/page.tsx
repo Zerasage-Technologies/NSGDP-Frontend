@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
     try {
       await forgotPassword({ email: data.email });
       setSubmitted(true);
-    } catch (error: unknown) {
+    } catch {
       // Even on error, show success for security (prevent email enumeration)
       setSubmitted(true);
       toast.info("If an account exists, you'll receive reset instructions.");

@@ -49,7 +49,7 @@ export function AiAssistantWidget() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3" suppressHydrationWarning>
       {open && (
         <div
           className="w-[min(100vw-2rem,380px)] rounded-xl border bg-background shadow-2xl flex flex-col max-h-[min(70vh,520px)]"
@@ -125,6 +125,7 @@ export function AiAssistantWidget() {
         onClick={() => setOpen(!open)}
         className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
         aria-label={open ? "Close AI assistant" : "Open AI assistant"}
+        suppressHydrationWarning
       >
         {open ? <X className="size-6" /> : <MessageCircle className="size-6" />}
       </button>

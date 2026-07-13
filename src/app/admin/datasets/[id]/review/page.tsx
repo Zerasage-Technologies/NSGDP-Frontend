@@ -12,7 +12,7 @@ import { QA_DIMENSIONS, isQAChecklistPassed } from "@/lib/constants/qa-checklist
 import { normalizeLifecycleStage } from "@/lib/constants/dataset-lifecycle";
 import { getDatasets, archiveDataset } from "@/lib/mock";
 import type { Dataset, LifecycleStage } from "@/types";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import { LifecycleBadge } from "@/components/data/lifecycle-badge";
 import { toast } from "sonner";
 import {
@@ -36,7 +36,8 @@ function initQAState(): QAState {
 export default function AdminDatasetReviewPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { currentUser } = useMockSession();
+  const { user } = useAuth();
+
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [stage, setStage] = useState<LifecycleStage>("under_review");
   const [qa, setQA] = useState<QAState>(initQAState());
@@ -81,10 +82,10 @@ export default function AdminDatasetReviewPage() {
 
   const handleArchive = () => {
     if (!archiveReason.trim()) { toast.error("Archive reason required"); return; }
-    if (!dataset) return;
+    if (!dataset || !user) return;
     archiveDataset(dataset.id, {
       archivedAt: new Date().toISOString(),
-      archivedBy: currentUser.fullName,
+      archivedBy: `${user.firstName} ${user.lastName}`,
       reason: archiveReason,
     });
     setStage("archived");

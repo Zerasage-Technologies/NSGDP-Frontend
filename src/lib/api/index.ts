@@ -14,3 +14,22 @@ export {
   refreshAccessToken,
   getCurrentUser,
 } from "./auth";
+
+// Organisations API functions
+export {
+  getOrganisations,
+  getOrganisationBySlug,
+  type Organisation,
+  type OrganisationType,
+  type OrganisationWithDatasets,
+  type GetOrganisationsParams,
+} from "./organisations";
+
+// Categories API functions
+export {
+  getCategories,
+  getCategoryBySlug,
+  type Category,
+  type CategoryWithDatasets,
+  type GetCategoriesParams,
+} from "./categories";

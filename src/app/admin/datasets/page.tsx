@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, Archive } from "lucide-react";
 import { getReviewQueue, archiveDataset } from "@/lib/mock";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import type { Dataset, DatasetStatus } from "@/types";
 import { AgeBadge } from "@/components/data/age-badge";
 import { StatusBadge } from "@/components/data/status-badge";
@@ -28,7 +28,8 @@ const TABS: Array<{ key: DatasetStatus | "all"; label: string }> = [
 ];
 
 export default function AdminReviewQueuePage() {
-  const { currentUser } = useMockSession();
+  const { user } = useAuth();
+
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<DatasetStatus | "all">("all");
@@ -44,9 +45,10 @@ export default function AdminReviewQueuePage() {
   }, [tab, query]);
 
   const handleArchive = (d: Dataset) => {
+    if (!user) return;
     archiveDataset(d.id, {
       archivedAt: new Date().toISOString(),
-      archivedBy: currentUser.fullName,
+      archivedBy: `${user.firstName} ${user.lastName}`,
       reason: "Archived from review queue",
     });
     setDatasets((prev) => prev.map((x) => x.id === d.id ? { ...x, status: "archived" as const, lifecycleStage: "archived" } : x));

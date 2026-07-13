@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ProgramForm, programToFormDefaults } from "@/components/programs/program-form";
 import { getProgramById, updateProgram, deleteProgram } from "@/lib/mock/programs";
 import { useProgramPermissions } from "@/lib/hooks/useProgramPermissions";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import type { ProgramFormData } from "@/lib/schemas/program";
 import { toast } from "sonner";
 
@@ -17,8 +18,18 @@ export default function EditProgramPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { canEdit, canDelete } = useProgramPermissions();
-  const { currentUser } = useMockSession();
+  const { user, isLoading } = useAuth();
   const program = getProgramById(id);
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/login");
+    }
+  }, [isLoading, router, user]);
+
+  if (isLoading || !user) {
+    return null;
+  }
 
   if (!program) {
     return (
@@ -92,7 +103,7 @@ export default function EditProgramPage() {
               onSubmit={handleSubmit}
               submitLabel="Save Changes"
               organisationIds={
-                currentUser.role === "admin" ? currentUser.organisationIds : undefined
+                user.role === "admin" && user.organisationId ? [user.organisationId] : undefined
               }
             />
           </CardContent>

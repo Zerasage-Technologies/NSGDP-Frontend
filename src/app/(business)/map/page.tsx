@@ -28,7 +28,6 @@ import {
 import { getDatasets, getGroups } from "@/lib/mock";
 import { Search, Filter, MapPin, Database } from "lucide-react";
 import { MapLegend } from "@/components/map/map-legend";
-import { HelpTooltip } from "@/components/feedback/help-tooltip";
 import type { Dataset } from "@/types";
 import Link from "next/link";
 

@@ -6,7 +6,7 @@ import { Shield } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
 // Force dynamic rendering
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default function VerifyOTPPage() {
   const router = useRouter();
-  const { currentUser } = useMockSession();
+  const { user, isLoading } = useAuth();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(60);
@@ -45,6 +45,12 @@ export default function VerifyOTPPage() {
       handleSubmit();
     }
   }, [otp, handleSubmit]);
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/login");
+    }
+  }, [isLoading, router, user]);
 
   const handleChange = (index: number, value: string) => {
     // Only allow digits
@@ -92,6 +98,10 @@ export default function VerifyOTPPage() {
     setResendCooldown(60);
   };
 
+  if (isLoading || !user) {
+    return null;
+  }
+
   return (
     <main className="flex-1 bg-muted/40">
       <Container className="py-12">
@@ -102,7 +112,7 @@ export default function VerifyOTPPage() {
             </div>
             <CardTitle className="text-2xl">Two-Factor Authentication</CardTitle>
             <CardDescription>
-              Enter the 6-digit code sent to {currentUser.email || "your email"}
+              Enter the 6-digit code sent to {user.email || "your email"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

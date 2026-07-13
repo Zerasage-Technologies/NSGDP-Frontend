@@ -7,7 +7,7 @@ import { GeoHealthLogo } from "@/components/layout/geohealth-logo";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const SECTION_LABELS: Array<{ href: string; label: string; exact?: boolean }> = [
@@ -49,7 +49,7 @@ interface AdminHeaderProps {
 
 export function AdminHeader({ onMenuClick, menuOpen, className }: AdminHeaderProps) {
   const pathname = usePathname();
-  const { isAuthenticated } = useMockSession();
+  const { isAuthenticated } = useAuth();
   const sectionLabel = getSectionLabel(pathname);
 
   return (

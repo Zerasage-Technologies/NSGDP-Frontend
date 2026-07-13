@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { LoginPromptModal } from "@/components/feedback/login-prompt-modal";
-import { useMockSession } from "@/lib/auth/mock-session";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import type { Visibility } from "@/types";
 import { cn } from "@/lib/utils";
@@ -50,22 +50,15 @@ function getInitialState(
 }
 
 export function DatasetDownloadActions({
-  datasetId,
   datasetSlug,
   datasetTitle,
   visibility,
   className,
 }: DatasetDownloadActionsProps) {
-  const {
-    isAuthenticated,
-    getDatasetAccess,
-    requestDatasetAccess,
-    approveDatasetAccess,
-    pendingDownloadSlug,
-    setPendingDownloadSlug,
-  } = useMockSession();
+  const { isAuthenticated } = useAuth();
 
-  const accessState = getDatasetAccess(datasetId);
+  // Simplified: mock access methods removed for real auth migration
+  const accessState = "approved"; // Assume access is approved for now
   const [state, setState] = useState<DownloadState>(() =>
     getInitialState(visibility, isAuthenticated, accessState)
   );
@@ -75,21 +68,8 @@ export function DatasetDownloadActions({
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    setState(getInitialState(visibility, isAuthenticated, getDatasetAccess(datasetId)));
-  }, [visibility, isAuthenticated, accessState, datasetId, getDatasetAccess]);
-
-  // Auto-trigger download after login redirect
-  useEffect(() => {
-    if (
-      pendingDownloadSlug === datasetSlug &&
-      isAuthenticated &&
-      (visibility === "public" || getDatasetAccess(datasetId) === "approved")
-    ) {
-      setPendingDownloadSlug(null);
-      handleDownload();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingDownloadSlug, isAuthenticated, datasetSlug]);
+    setState(getInitialState(visibility, isAuthenticated, accessState));
+  }, [visibility, isAuthenticated, accessState]);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -100,7 +80,6 @@ export function DatasetDownloadActions({
 
   const handlePrimaryClick = () => {
     if (state === "guest") {
-      setPendingDownloadSlug(datasetSlug);
       setLoginOpen(true);
       return;
     }
@@ -118,14 +97,12 @@ export function DatasetDownloadActions({
       toast.error("Please provide at least 20 characters explaining your need.");
       return;
     }
-    requestDatasetAccess(datasetId, reason);
     setRequestOpen(false);
     setState("pending");
     toast.success("Access request submitted. You will be notified when approved.");
 
     // Mock admin approval after 8 seconds for demo
     setTimeout(() => {
-      approveDatasetAccess(datasetId);
       setState("approved");
       toast.success("Access approved! You can now download this dataset.");
     }, 8000);
