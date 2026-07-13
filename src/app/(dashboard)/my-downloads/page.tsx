@@ -3,13 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Download, Calendar, FileText, Search } from "lucide-react";
-import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { getDatasets } from "@/lib/mock";
 import type { Dataset } from "@/types";
+import {
+  DashboardPage,
+  DashboardPageHeader,
+  DashboardPageContent,
+} from "@/components/layout/dashboard-page-header";
 
 type DownloadHistory = {
   id: string;
@@ -58,17 +62,13 @@ export default function MyDownloadsPage() {
   }, [searchQuery, downloads]);
 
   return (
-    <main className="flex-1 bg-muted/40">
-      <div className="border-b bg-background">
-        <Container size="wide" className="py-8">
-          <h1 className="text-3xl font-bold">My Downloads</h1>
-          <p className="mt-2 text-muted-foreground">
-            View and re-download your dataset history
-          </p>
-        </Container>
-      </div>
+    <DashboardPage>
+      <DashboardPageHeader
+        title="My Downloads"
+        description="View and re-download your dataset history"
+      />
 
-      <Container size="wide" className="py-8">
+      <DashboardPageContent>
         {/* Search Bar */}
         <div className="mb-6">
           <div className="relative max-w-md">
@@ -207,7 +207,7 @@ export default function MyDownloadsPage() {
             </p>
           </>
         )}
-      </Container>
-    </main>
+      </DashboardPageContent>
+    </DashboardPage>
   );
 }
