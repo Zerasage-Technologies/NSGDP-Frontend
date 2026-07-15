@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, CheckCircle2, Clock, Download, Upload, Users } from "lucide-react";
+import { Eye, EyeOff, CheckCircle2, Download } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 const ACCESS_LEVELS = [
   {
     value: "public",
-    title: "Registered User",
+    title: "Public User",
     tagline: "For researchers, planners, health officials & the public",
     capabilities: [
       "Browse and search all published datasets",
@@ -35,36 +35,6 @@ const ACCESS_LEVELS = [
     activationIcon: CheckCircle2,
     activationClass: "text-emerald-600",
     icon: Download,
-  },
-  {
-    value: "partner",
-    title: "Data Contributor",
-    tagline: "For data officers, programme teams & partner organisations",
-    capabilities: [
-      "Everything a Registered User can do",
-      "Upload and submit datasets for review",
-      "Submit programme and campaign reports",
-      "Track submission status through the approval workflow",
-    ],
-    activation: "Requires admin approval",
-    activationIcon: Clock,
-    activationClass: "text-amber-600",
-    icon: Upload,
-  },
-  {
-    value: "administrator",
-    title: "Organisation Representative",
-    tagline: "For heads of unit and organisation focal points",
-    capabilities: [
-      "Everything a Data Contributor can do",
-      "Manage your organisation's dataset catalogue",
-      "Request user management for your team members",
-      "Organisation profile and data-sharing agreement management",
-    ],
-    activation: "Requires admin approval & org. verification",
-    activationIcon: Clock,
-    activationClass: "text-amber-600",
-    icon: Users,
   },
 ];
 
@@ -234,7 +204,7 @@ export default function RegisterPage() {
                 name="accessLevel"
                 control={control}
                 render={({ field }) => (
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-3">
                     {ACCESS_LEVELS.map((level) => {
                       const isSelected = field.value === level.value;
                       const ActivationIcon = level.activationIcon;
@@ -245,7 +215,7 @@ export default function RegisterPage() {
                           type="button"
                           onClick={() => field.onChange(level.value)}
                           className={cn(
-                            "text-left rounded-xl border-2 p-4 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                            "w-full text-left rounded-xl border-2 p-4 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                             isSelected
                               ? "border-primary bg-primary/5 shadow-sm"
                               : "border-input bg-background hover:border-primary/50 hover:bg-muted/40"
@@ -286,6 +256,17 @@ export default function RegisterPage() {
                 )}
               />
               <FormError message={errors.accessLevel?.message} />
+              <div className="mt-3 p-3 bg-muted/50 rounded-lg border border-muted">
+                <p className="text-xs text-muted-foreground">
+                  <strong className="font-medium text-foreground">Need to contribute data?</strong><br />
+                  Data Contributors and Organisation Admins must be invited by their organisation. 
+                  Contact your organisation administrator or reach out to{" "}
+                  <a href="mailto:admin@nigerstate-geohealth.ng" className="text-primary hover:underline">
+                    admin@nigerstate-geohealth.ng
+                  </a>
+                  {" "}for assistance.
+                </p>
+              </div>
             </div>
 
             <div>
