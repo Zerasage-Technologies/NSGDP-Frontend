@@ -1,45 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ActivityGraph } from "@/components/charts/activity-graph";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getDatasetActivity } from "@/lib/mock";
+import { BarChart3 } from "lucide-react";
 
 export function DatasetActivityPanel() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<Awaited<ReturnType<typeof getDatasetActivity>> | null>(null);
-
-  useEffect(() => {
-    getDatasetActivity().then((d) => {
-      setData(d);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-48 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Views & Downloads</CardTitle>
       </CardHeader>
       <CardContent>
-        <ActivityGraph
-          data7d={data?.activity7d ?? []}
-          data30d={data?.activity30d ?? []}
-        />
+        <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+          <BarChart3 className="size-12 mb-3 opacity-50" />
+          <p className="text-sm">Activity tracking coming soon</p>
+        </div>
       </CardContent>
     </Card>
   );

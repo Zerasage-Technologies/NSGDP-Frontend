@@ -2,25 +2,11 @@
 // These will be replaced with real API calls when backend is ready
 
 import type { Dataset, Organisation, Group, Visibility, DatasetStatus, HealthCategory, AnalyticsMetric, DatasetArchiveInfo } from "@/types";
-import type { AuditAction } from "@/types/admin";
 import { mockDatasets } from "./datasets";
 import { mockOrganisations } from "./organisations";
 import { mockGroups } from "./groups";
 import { simulateDelay } from "./delay";
 import {
-  mockActivityFeed,
-  mockAuditLog,
-  mockAccessRequests,
-  mockAdminUsers,
-  mockSystemHealth,
-  mockNotifications,
-  generateActivityData,
-} from "./activity";
-import {
-  mockPlatformKPIs,
-  mockUploadsOverTime,
-  mockDownloadsByDataset,
-  mockNewUsersOverTime,
   getAnalyticsDashboard,
   getGisBurdenBubbles as getGisBurdenBubblesSync,
 } from "./analytics";
@@ -335,127 +321,6 @@ export async function getStatistics() {
     organisations: mockOrganisations.length,
     downloads: mockDatasets.reduce((sum, d) => sum + d.downloadCount, 0),
     lgasCovered: 25,
-  };
-}
-
-// ============================================================================
-// ADMIN & ACTIVITY (Phase A)
-// ============================================================================
-
-export async function getActivityFeed() {
-  await simulateDelay();
-  return mockActivityFeed;
-}
-
-export async function getNotifications() {
-  await simulateDelay();
-  return mockNotifications;
-}
-
-export async function getAuditLog(filters?: {
-  action?: AuditAction;
-  query?: string;
-  page?: number;
-  pageSize?: number;
-}) {
-  await simulateDelay();
-
-  let results = [...mockAuditLog];
-
-  if (filters?.action) {
-    results = results.filter((e) => e.action === filters.action);
-  }
-
-  if (filters?.query) {
-    const q = filters.query.toLowerCase();
-    results = results.filter(
-      (e) =>
-        e.userName.toLowerCase().includes(q) ||
-        e.resource.toLowerCase().includes(q)
-    );
-  }
-
-  const page = filters?.page ?? 1;
-  const pageSize = filters?.pageSize ?? 20;
-  const total = results.length;
-
-  return {
-    data: results.slice((page - 1) * pageSize, page * pageSize),
-    meta: { total, page, pageSize, totalPages: Math.ceil(total / pageSize) },
-  };
-}
-
-export async function getAccessRequests(status?: "pending" | "approved" | "denied") {
-  await simulateDelay();
-  if (!status) return mockAccessRequests;
-  return mockAccessRequests.filter((r) => r.status === status);
-}
-
-export async function getAdminUsers() {
-  await simulateDelay();
-  return mockAdminUsers;
-}
-
-export async function getSystemHealth() {
-  await simulateDelay();
-  return mockSystemHealth;
-}
-
-export async function getPlatformKPIs() {
-  await simulateDelay();
-  return mockPlatformKPIs;
-}
-
-export async function getAdminAnalytics() {
-  await simulateDelay();
-  return {
-    kpis: mockPlatformKPIs,
-    uploadsOverTime: mockUploadsOverTime,
-    downloadsByDataset: mockDownloadsByDataset,
-    newUsersOverTime: mockNewUsersOverTime,
-    activity7d: generateActivityData(7),
-    activity30d: generateActivityData(30),
-  };
-}
-
-export async function getReviewQueue(filters?: {
-  status?: DatasetStatus | "all";
-  query?: string;
-}) {
-  await simulateDelay();
-
-  let results = mockDatasets.map(withArchiveInfo);
-
-  if (filters?.status && filters.status !== "all") {
-    results = results.filter((d) => d.status === filters.status);
-  } else if (!filters?.status || filters.status === "all") {
-    // default: show review-relevant statuses plus published/archived when browsing all
-    results = results.filter((d) =>
-      ["submitted", "under_review", "needs_revision", "published", "archived"].includes(d.status)
-    );
-  }
-
-  if (filters?.query) {
-    const q = filters.query.toLowerCase();
-    results = results.filter(
-      (d) =>
-        d.title.toLowerCase().includes(q) ||
-        d.organisation.name.toLowerCase().includes(q)
-    );
-  }
-
-  results.sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  );
-
-  return results;
-}
-
-export async function getDatasetActivity() {
-  await simulateDelay();
-  return {
-    activity7d: generateActivityData(7),
-    activity30d: generateActivityData(30),
   };
 }
 

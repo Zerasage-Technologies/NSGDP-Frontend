@@ -15,7 +15,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { RoleBadge } from "@/components/data/role-badge";
 import { InviteModal } from "@/components/shared/invite/invite-modal";
-import { useUsers } from "@/lib/hooks/useAdmin";
 import { useOrganisationInvites, useRevokeInvite, useResendInvite } from "@/lib/hooks/useInvites";
 import type { InviteResponse } from "@/lib/api/invites";
 import { toast } from "sonner";
@@ -33,13 +32,6 @@ export default function TeamPage() {
 
   const orgId = user?.organisationId;
 
-  // Fetch team members (users in this org)
-  const { data: usersData, isLoading: usersLoading } = useUsers({
-    page: 1,
-    limit: 100,
-    organisationId: orgId,
-  });
-
   // Fetch invites for this org
   const { data: invites } = useOrganisationInvites(orgId || "");
 
@@ -52,7 +44,6 @@ export default function TeamPage() {
     return null;
   }
 
-  const teamMembers = usersData?.data || [];
   const pendingInvites = invites?.filter((inv) => inv.status === "pending") || [];
   const acceptedInvites = invites?.filter((inv) => inv.status === "accepted") || [];
 
@@ -121,18 +112,7 @@ export default function TeamPage() {
       <DashboardPageContent>
         <div className="grid gap-6">
           {/* Team Overview Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-                <Users className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{teamMembers.length}</div>
-                <p className="text-xs text-muted-foreground">Active users in your organisation</p>
-              </CardContent>
-            </Card>
-
+          <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pending Invites</CardTitle>
@@ -155,51 +135,6 @@ export default function TeamPage() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Team Members List */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Team Members</CardTitle>
-              <CardDescription>People currently in your organisation</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {usersLoading ? (
-                <p className="text-muted-foreground">Loading team members...</p>
-              ) : teamMembers.length === 0 ? (
-                <p className="text-muted-foreground">No team members yet</p>
-              ) : (
-                <div className="space-y-3">
-                  {teamMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-sm font-medium text-primary">
-                            {member.firstName.charAt(0)}
-                            {member.lastName.charAt(0)}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium">
-                            {member.firstName} {member.lastName}
-                          </p>
-                          <p className="text-sm text-muted-foreground">{member.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <RoleBadge role={member.role} />
-                        <Badge variant={member.status === "active" ? "default" : "secondary"}>
-                          {member.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Pending Invites */}
           {pendingInvites.length > 0 && (

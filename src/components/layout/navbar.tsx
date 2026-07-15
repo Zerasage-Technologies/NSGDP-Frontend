@@ -8,7 +8,6 @@ import {
   LogOut,
   LayoutDashboard,
   Settings,
-  ShieldCheck,
   Menu,
   X,
   Map,
@@ -56,7 +55,6 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
-  const isAdmin = user && ["super_admin", "admin"].includes(user.role);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -126,14 +124,6 @@ export function Navbar() {
               <div className="hidden sm:block">
                 <NotificationBell />
               </div>
-            )}
-
-            {isAdmin && (
-              <Link href="/admin" className="hidden sm:block">
-                <Button variant="outline" size="sm">
-                  <ShieldCheck className="size-4" />
-                </Button>
-              </Link>
             )}
 
             {!isAuthenticated ? (
@@ -297,11 +287,6 @@ export function Navbar() {
                   <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted">
                     <LayoutDashboard className="size-4" /> Dashboard
                   </Link>
-                  {isAdmin && (
-                    <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted">
-                      <ShieldCheck className="size-4" /> Admin Panel
-                    </Link>
-                  )}
                   <button
                     onClick={handleLogout}
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"

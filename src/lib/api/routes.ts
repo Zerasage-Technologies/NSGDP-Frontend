@@ -69,27 +69,6 @@ export const API_ROUTES = {
     markAllRead: '/notifications/read-all',
   },
 
-  // Admin endpoints
-  admin: {
-    users: {
-      list: '/admin/users',
-      stats: '/admin/users/stats',
-      byId: (id: string) => `/admin/users/${id}`,
-      updateRole: (id: string) => `/admin/users/${id}/role`,
-      updateStatus: (id: string) => `/admin/users/${id}/status`,
-    },
-    datasets: {
-      reviewQueue: '/admin/review-queue',
-      approve: (id: string) => `/admin/datasets/${id}/approve`,
-      reject: (id: string) => `/admin/datasets/${id}/reject`,
-      revise: (id: string) => `/admin/datasets/${id}/revise`,
-    },
-    audit: {
-      logs: '/admin/audit-logs',
-      export: '/admin/audit-logs/export',
-    },
-  },
-
   // Search endpoints
   search: {
     query: '/search',
