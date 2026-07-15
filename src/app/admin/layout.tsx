@@ -11,18 +11,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const ADMIN_ROLES = ["super_admin", "admin"] as const;
-  const hasAdminAccess = user && ADMIN_ROLES.includes(
-    user.role as (typeof ADMIN_ROLES)[number]
-  );
+  // Only super_admin can access admin area
+  const isSuperAdmin = user?.role === "super_admin";
 
   useEffect(() => {
-    if (!user || !hasAdminAccess) {
+    if (!user) {
+      // No user at all - go to login
+      router.replace("/login");
+    } else if (!isSuperAdmin) {
+      // User exists but not super admin - go to dashboard
       router.replace("/dashboard");
     }
-  }, [user, hasAdminAccess, router]);
+  }, [user, isSuperAdmin, router]);
 
-  if (!user || !hasAdminAccess) {
+  if (!user || !isSuperAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-muted-foreground">Redirecting…</p>

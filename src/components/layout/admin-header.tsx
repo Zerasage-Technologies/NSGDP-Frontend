@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, ExternalLink, Menu } from "lucide-react";
+import { ArrowLeft, ExternalLink, Menu, User } from "lucide-react";
 import { GeoHealthLogo } from "@/components/layout/geohealth-logo";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -101,21 +101,36 @@ export function AdminHeader({ onMenuClick, menuOpen, className }: AdminHeaderPro
 
 /** Sidebar brand block — links back to the public portal */
 export function AdminSidebarBrand() {
+  const { user } = useAuth();
+
+  const roleLabels: Record<string, string> = {
+    super_admin: "Super Admin",
+    admin: "Organization Admin",
+    contributor: "Contributor",
+    registered: "Registered User",
+    public: "Guest",
+  };
+
+  const roleLabel = user?.role ? roleLabels[user.role] : "Admin";
+
   return (
     <div className="mb-6 space-y-3 border-b border-border pb-5 px-1">
-      <div>
+      <div className="flex justify-center">
         <GeoHealthLogo compact />
-        <Link
-          href="/"
-          className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary hover:underline"
-        >
-          <ArrowLeft className="size-3" />
-          Return to portal
-        </Link>
       </div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
-        Admin Console
-      </p>
+      {user && (
+        <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+            <User className="size-4 text-primary" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-foreground">
+              {user.firstName} {user.lastName}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{roleLabel}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

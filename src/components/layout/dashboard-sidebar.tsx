@@ -10,7 +10,11 @@ import {
   Bell,
   Building2,
   User,
+  Users,
   X,
+  FileCheck,
+  KeyRound,
+  ActivitySquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -51,12 +55,38 @@ const NAV_LINKS: NavLink[] = [
     icon: Upload,
     roles: ["contributor", "admin", "super_admin"],
   },
+  // Org Admin Section
+  {
+    href: "/dashboard/datasets",
+    label: "Review Queue",
+    icon: FileCheck,
+    roles: ["admin"], // Only org admins
+  },
+  {
+    href: "/dashboard/access-requests",
+    label: "Access Requests",
+    icon: KeyRound,
+    roles: ["admin"], // Only org admins
+  },
+  {
+    href: "/dashboard/governance",
+    label: "Governance",
+    icon: ActivitySquare,
+    roles: ["admin"], // Only org admins
+  },
+  {
+    href: "/team",
+    label: "Team Management",
+    icon: Users,
+    roles: ["admin"], // Only org admins
+  },
   {
     href: "/organisation",
     label: "Organization",
     icon: Building2,
     roles: ["admin", "super_admin"],
   },
+  // Common Section
   {
     href: "/notifications",
     label: "Notifications",

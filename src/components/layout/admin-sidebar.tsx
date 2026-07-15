@@ -14,9 +14,13 @@ import {
   ShieldCheck,
   UsersRound,
   ActivitySquare,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdminPortalLinks, AdminSidebarBrand } from "@/components/layout/admin-header";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 export const adminNavItems: Array<{
   href: string;
@@ -24,16 +28,11 @@ export const adminNavItems: Array<{
   icon: typeof LayoutDashboard;
   exact?: boolean;
 }> = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/admin/datasets", label: "Review Queue", icon: FileCheck },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/user-groups", label: "User Groups", icon: UsersRound },
-  { href: "/admin/permissions", label: "Permissions", icon: ShieldCheck },
+  { href: "/admin", label: "Platform Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/admin/datasets", label: "All Datasets", icon: FileCheck },
   { href: "/admin/organisations", label: "Organisations", icon: Building2 },
-  { href: "/admin/groups", label: "Groups", icon: FolderOpen },
-  { href: "/admin/access-requests", label: "Access Requests", icon: KeyRound },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/admin/governance", label: "Governance", icon: ActivitySquare },
+  { href: "/admin/users", label: "All Users", icon: Users },
+  { href: "/admin/analytics", label: "Platform Analytics", icon: BarChart3 },
   { href: "/admin/audit-logs", label: "Audit Log", icon: ScrollText },
 ];
 
@@ -67,11 +66,33 @@ function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      if (onNavigate) onNavigate();
+    } catch (error) {
+      toast.error("Failed to logout");
+    }
+  };
+
   return (
-    <nav className="flex h-full flex-col gap-1 p-4" aria-label="Admin navigation">
+    <nav className="flex h-full flex-col gap-1 p-4 overflow-y-auto" aria-label="Admin navigation">
       <AdminSidebarBrand />
-      <AdminNavLinks onNavigate={onNavigate} />
-      <AdminPortalLinks onNavigate={onNavigate} />
+      <div className="flex-1 space-y-1 overflow-y-auto">
+        <AdminNavLinks onNavigate={onNavigate} />
+      </div>
+      <div className="border-t pt-4">
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+          onClick={handleLogout}
+        >
+          <LogOut className="size-4 shrink-0" />
+          Logout
+        </Button>
+      </div>
     </nav>
   );
 }
@@ -79,7 +100,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 /** Desktop sidebar — fixed left */
 export function AdminSidebar() {
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-full w-64 border-r bg-card lg:block">
+    <aside className="fixed left-0 top-0 z-40 hidden h-full w-64 border-r bg-card lg:block overflow-hidden">
       <SidebarNav />
     </aside>
   );
@@ -102,7 +123,7 @@ export function AdminMobileSidebar({
         onClick={onClose}
         aria-hidden="true"
       />
-      <aside className="fixed left-0 top-0 z-50 h-full w-64 border-r bg-card lg:hidden">
+      <aside className="fixed left-0 top-0 z-50 h-full w-64 border-r bg-card lg:hidden overflow-hidden">
         <SidebarNav onNavigate={onClose} />
       </aside>
     </>

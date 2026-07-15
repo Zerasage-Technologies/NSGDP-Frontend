@@ -76,3 +76,27 @@ export async function getOrganisationBySlug(
   const response = await apiClient.get<ApiResponse<OrganisationWithDatasets>>(`/organisations/${slug}`);
   return response.data.data;
 }
+
+export interface CreateOrganisationPayload {
+  name: string;
+  description?: string;
+  type: OrganisationType;
+  website?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  logoUrl?: string;
+}
+
+/**
+ * Create a new organisation (Super Admin only)
+ */
+export async function createOrganisation(
+  payload: CreateOrganisationPayload
+): Promise<Organisation> {
+  const response = await apiClient.post<ApiResponse<Organisation>>(
+    '/organisations',
+    payload
+  );
+  return response.data.data;
+}

@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { getOrganisations, getOrganisationBySlug } from '../api/organisations';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getOrganisations, getOrganisationBySlug, createOrganisation, type CreateOrganisationPayload } from '../api/organisations';
 
 /**
  * Hook to fetch all organisations with pagination
@@ -21,5 +21,21 @@ export function useOrganisationBySlug(slug: string) {
     queryFn: () => getOrganisationBySlug(slug),
     enabled: !!slug,
     staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+/**
+ * Create a new organisation (Super Admin only)
+ */
+export function useCreateOrganisation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateOrganisationPayload) => createOrganisation(data),
+    onSuccess: () => {
+      // Invalidate organisations list to refetch
+      queryClient.invalidateQueries({
+        queryKey: ['organisations'],
+      });
+    },
   });
 }

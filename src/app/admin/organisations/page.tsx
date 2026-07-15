@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { useOrganisations } from "@/lib/hooks/useOrganisations";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { TableRowSkeleton } from "@/components/feedback/skeletons";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { statusPill } from "@/lib/constants/status-surfaces";
+import { CreateOrganisationModal } from "@/components/admin/create-organisation-modal";
 
 const TYPE_STYLES = {
   government: statusPill.emerald,
@@ -21,6 +22,7 @@ const TYPE_STYLES = {
 
 export default function AdminOrganisationsPage() {
   const { data, isLoading } = useOrganisations(1, 100);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const orgs = useMemo(() => {
     return data?.data || [];
@@ -35,7 +37,7 @@ export default function AdminOrganisationsPage() {
             {orgs.length} organisations · manage partner organisations
           </p>
         </div>
-        <Button onClick={() => toast.info("Create organisation UI not yet implemented")}>
+        <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="size-4" />
           Add New Org
         </Button>
@@ -92,6 +94,11 @@ export default function AdminOrganisationsPage() {
           </tbody>
         </table>
       </div>
+
+      <CreateOrganisationModal 
+        open={createModalOpen} 
+        onClose={() => setCreateModalOpen(false)} 
+      />
     </div>
   );
 }
