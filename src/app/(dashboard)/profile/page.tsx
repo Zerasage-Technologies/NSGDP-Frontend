@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PasswordStrengthMeter } from "@/components/forms/password-strength-meter";
 import { FormError } from "@/components/forms/form-error";
 import { useAuth } from "@/lib/auth";
+import { updateProfile, changePassword } from "@/lib/api/users";
 import {
   profileSchema,
   changePasswordSchema,
@@ -179,6 +181,24 @@ function ProfileForm({
   setSaving: (v: boolean) => void;
   saving: boolean;
 }) {
+  const queryClient = useQueryClient();
+  
+  const updateProfileMutation = useMutation({
+    mutationFn: updateProfile,
+    onSuccess: () => {
+      // Invalidate auth queries to refresh user data
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
+      toast.success("Profile updated successfully");
+      setSaving(false);
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to update profile";
+      toast.error(message);
+      setSaving(false);
+    },
+  });
+
   const {
     register,
     handleSubmit,
@@ -194,11 +214,20 @@ function ProfileForm({
     },
   });
 
-  const onSubmit = async () => {
+  const onSubmit = async (data: ProfileFormData) => {
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success("Profile updated successfully");
-    setSaving(false);
+    
+    // Parse fullName into firstName and lastName
+    const nameParts = data.fullName.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || nameParts[0];
+    
+    updateProfileMutation.mutate({
+      firstName,
+      lastName,
+      phoneNumber: data.phone || undefined,
+      // Note: bio and organization fields may need to be added to backend
+    });
   };
 
   return (
@@ -215,8 +244,8 @@ function ProfileForm({
           <label htmlFor="email" className="block text-sm font-medium mb-1.5">
             Email Address
           </label>
-          <Input id="email" type="email" {...register("email")} />
-          <FormError message={errors.email?.message} />
+          <Input id="email" type="email" {...register("email")} disabled />
+          <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
         </div>
       </div>
 
@@ -231,7 +260,8 @@ function ProfileForm({
           <label htmlFor="organization" className="block text-sm font-medium mb-1.5">
             Organization
           </label>
-          <Input id="organization" placeholder="Your organization" {...register("organization")} />
+          <Input id="organization" placeholder="Your organization" {...register("organization")} disabled />
+          <p className="text-xs text-muted-foreground mt-1">Contact admin to change</p>
         </div>
       </div>
 
@@ -267,6 +297,20 @@ function PasswordForm({
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const changePasswordMutation = useMutation({
+    mutationFn: changePassword,
+    onSuccess: () => {
+      toast.success("Password changed successfully. Please login with your new password.");
+      reset();
+      setSaving(false);
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to change password";
+      toast.error(message);
+      setSaving(false);
+    },
+  });
+
   const {
     register,
     handleSubmit,
@@ -279,12 +323,13 @@ function PasswordForm({
 
   const newPassword = watch("newPassword", "");
 
-  const onSubmit = async () => {
+  const onSubmit = async (data: PasswordFormData) => {
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success("Password changed successfully");
-    reset();
-    setSaving(false);
+    changePasswordMutation.mutate({
+      currentPassword: data.currentPassword,
+      newPassword: data.newPassword,
+      confirmPassword: data.confirmPassword,
+    });
   };
 
   return (
