@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Database,
   Download,
@@ -13,17 +14,23 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText,
+  Search,
+  ArrowRight,
 } from "lucide-react";
 import { StatusBadge } from "@/components/data/status-badge";
 import { DatasetActivityPanel } from "@/components/data/dataset-activity-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
+import { useDashboardSummary } from "@/lib/hooks/useDashboardSummary";
+import { useDownloadHistory } from "@/lib/hooks/useDownloadHistory";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { getDatasets, getOverdueDatasets } from "@/lib/mock";
 import { OutbreakAlertBanner } from "@/components/home/outbreak-alert-banner";
 import { mockAlerts } from "@/lib/mock/alerts";
 import { alertSurface } from "@/lib/constants/status-surfaces";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 import type { Dataset } from "@/types";
 import {
   DashboardPage as DashboardPageLayout,
@@ -32,9 +39,12 @@ import {
 } from "@/components/layout/dashboard-page-header";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user } = useAuth();
+  const { data: summary, isLoading: summaryLoading } = useDashboardSummary();
+  const { data: downloadHistory, isLoading: downloadsLoading } = useDownloadHistory(1, 4);
+  const { data: notifications, isLoading: notificationsLoading } = useNotifications(1, 3);
   const [myDatasets, setMyDatasets] = useState<Dataset[]>([]);
-  const [recentDownloads, setRecentDownloads] = useState<Dataset[]>([]);
   const [overdueDatasets, setOverdueDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,10 +60,6 @@ export default function DashboardPage() {
         setMyDatasets(result.data.slice(0, 6));
       }
 
-      // Get recent downloads for all authenticated users
-      const downloads = await getDatasets({ pageSize: 4 });
-      setRecentDownloads(downloads.data.slice(0, 4));
-
       if (["contributor", "admin", "super_admin"].includes(user.role)) {
         const overdue = await getOverdueDatasets();
         setOverdueDatasets(overdue);
@@ -64,6 +70,8 @@ export default function DashboardPage() {
 
     loadData();
   }, [user]);
+
+  const statsLoading = summaryLoading || loading;
 
   return (
     <DashboardPageLayout>
@@ -96,7 +104,7 @@ export default function DashboardPage() {
 
         {/* Stats Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          {loading ? (
+          {statsLoading ? (
             [...Array(4)].map((_, i) => (
               <Card key={i}>
                 <CardContent className="pt-6">
@@ -112,11 +120,44 @@ export default function DashboardPage() {
           <StatsCard
             icon={Download}
             label="My Downloads"
-            value="23"
-            trend="+3 this week"
+            value={summary?.totalDownloads.toString() || "0"}
+            trend={`${summary?.availableDatasets || 0} available datasets`}
             iconColor="text-blue-600"
             bgColor="bg-blue-50 dark:bg-blue-950"
+            clickable
+            onClick={() => router.push('/dataportal')}
           />
+
+          {/* Explore Datasets Card (Registered Users Only) */}
+          {user?.role === "registered" && (
+            <div className="sm:col-span-1 lg:col-span-3">
+              <Card className="h-full border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+                <CardContent className="pt-6 h-full flex items-center">
+                  <div className="flex items-center gap-4 w-full">
+                    <div className="p-3 rounded-lg bg-primary/10 shrink-0">
+                      <Search className="size-8 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold mb-1">
+                        Explore Available Datasets
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Browse {summary?.availableDatasets || 0} health datasets from across Nigeria
+                      </p>
+                      <Button 
+                        onClick={() => router.push('/dataportal')}
+                        size="sm"
+                        className="gap-2"
+                      >
+                        Browse All Datasets
+                        <ArrowRight className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Contributors+ */}
           {user && ["contributor", "admin", "super_admin"].includes(user.role) && (
@@ -124,7 +165,7 @@ export default function DashboardPage() {
               <StatsCard
                 icon={Database}
                 label="My Datasets"
-                value="8"
+                value={myDatasets.length.toString()}
                 trend="2 pending review"
                 iconColor="text-green-600"
                 bgColor="bg-green-50 dark:bg-green-950"
@@ -239,31 +280,31 @@ export default function DashboardPage() {
                 <CardTitle>Recent Downloads</CardTitle>
               </CardHeader>
               <CardContent>
-                {loading ? (
+                {downloadsLoading ? (
                   <div className="space-y-4">
                     {[...Array(2)].map((_, i) => (
                       <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
                     ))}
                   </div>
-                ) : recentDownloads.length > 0 ? (
+                ) : downloadHistory && downloadHistory.data.length > 0 ? (
                   <div className="space-y-4">
-                    {recentDownloads.map((dataset) => (
-                      <div key={dataset.id} className="flex items-start gap-4 p-4 rounded-lg border">
+                    {downloadHistory.data.map((download) => (
+                      <div key={download.id} className="flex items-start gap-4 p-4 rounded-lg border">
                         <Download className="size-5 text-blue-600 shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <Link
-                            href={`/dataportal/${dataset.slug}`}
+                            href={`/dataportal/${download.dataset.slug}`}
                             className="font-medium hover:text-primary transition-colors block mb-1"
                           >
-                            {dataset.title}
+                            {download.dataset.title}
                           </Link>
                           <p className="text-sm text-muted-foreground">
-                            Downloaded 2 days ago • {dataset.resources?.length || 0} files
+                            Downloaded {new Date(download.downloadedAt).toLocaleDateString()} • {download.dataset.format} file
                           </p>
                         </div>
                       </div>
                     ))}
-                    <Link href="/dashboard/my-downloads">
+                    <Link href="/my-downloads">
                       <Button variant="outline" className="w-full">
                         View All Downloads
                       </Button>
@@ -299,14 +340,14 @@ export default function DashboardPage() {
                       icon={Users}
                       text="3 access requests pending"
                       color="text-blue-600"
-                      href="/dashboard/organisation"
+                      href="/organisation"
                     />
                   )}
                   <ActionItem
                     icon={CheckCircle2}
                     text="Complete your profile"
                     color="text-green-600"
-                    href="/dashboard/profile"
+                    href="/profile"
                   />
                 </CardContent>
               </Card>
@@ -317,25 +358,47 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center justify-between">
                   Notifications
-                  <Bell className="size-5 text-muted-foreground" />
+                  {summary && summary.unreadNotifications > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Bell className="size-5 text-muted-foreground" />
+                      <span className="text-xs bg-red-500 text-white rounded-full px-2 py-0.5">
+                        {summary.unreadNotifications}
+                      </span>
+                    </span>
+                  )}
+                  {!summary?.unreadNotifications && <Bell className="size-5 text-muted-foreground" />}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <NotificationItem
-                  text="Your dataset 'Health Facilities' was approved"
-                  time="2 hours ago"
-                />
-                <NotificationItem
-                  text="New comment on 'Population Data 2024'"
-                  time="1 day ago"
-                />
-                <NotificationItem
-                  text="Access granted to 'Education Statistics'"
-                  time="3 days ago"
-                />
-                <Button variant="ghost" size="sm" className="w-full">
-                  View All Notifications
-                </Button>
+                {notificationsLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
+                    ))}
+                  </div>
+                ) : notifications && notifications.data.length > 0 ? (
+                  <>
+                    {notifications.data.map((notification) => (
+                      <NotificationItem
+                        key={notification.id}
+                        title={notification.title}
+                        message={notification.message}
+                        time={formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                        isRead={notification.is_read}
+                      />
+                    ))}
+                    <Link href="/notifications">
+                      <Button variant="ghost" size="sm" className="w-full">
+                        View All Notifications
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <Bell className="size-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+                    <p className="text-sm text-muted-foreground">No notifications yet</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -344,25 +407,23 @@ export default function DashboardPage() {
               <DatasetActivityPanel />
             )}
 
-            {/* My Organizations (Org Admin+) */}
-            {user && ["admin", "super_admin"].includes(user.role) && (
+            {/* Member Since */}
+            {summary && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">My Organizations</CardTitle>
+                  <CardTitle className="text-lg">Account Info</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <Link
-                    href="/dashboard/organisation"
-                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
-                      MH
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Member since</span>
+                    <span className="font-medium">{new Date(summary.memberSince).toLocaleDateString()}</span>
+                  </div>
+                  {summary.lastLoginAt && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Last login</span>
+                      <span className="font-medium">{new Date(summary.lastLoginAt).toLocaleDateString()}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium">Ministry of Health</p>
-                      <p className="text-xs text-muted-foreground">15 datasets</p>
-                    </div>
-                  </Link>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -381,6 +442,8 @@ function StatsCard({
   trend,
   iconColor,
   bgColor,
+  clickable = false,
+  onClick,
 }: {
   icon: React.ElementType;
   label: string;
@@ -388,18 +451,35 @@ function StatsCard({
   trend: string;
   iconColor: string;
   bgColor: string;
+  clickable?: boolean;
+  onClick?: () => void;
 }) {
+  const CardWrapper = clickable ? 'button' : 'div';
+  
   return (
-    <Card>
+    <Card className={cn(clickable && "transition-all hover:shadow-md hover:scale-[1.02] active:scale-[0.98]")}>
       <CardContent className="pt-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className={`p-3 rounded-lg ${bgColor}`}>
-            <Icon className={`size-6 ${iconColor}`} />
+        <CardWrapper
+          onClick={onClick}
+          className={cn(
+            "w-full text-left",
+            clickable && "cursor-pointer"
+          )}
+        >
+          <div className="flex items-start justify-between mb-4">
+            <div className={`p-3 rounded-lg ${bgColor}`}>
+              <Icon className={`size-6 ${iconColor}`} />
+            </div>
           </div>
-        </div>
-        <p className="text-2xl font-bold mb-1">{value}</p>
-        <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
-        <p className="text-xs text-muted-foreground">{trend}</p>
+          <p className="text-2xl font-bold mb-1">{value}</p>
+          <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
+          <p className={cn(
+            "text-xs text-muted-foreground",
+            clickable && "underline decoration-dotted underline-offset-2"
+          )}>
+            {trend}
+          </p>
+        </CardWrapper>
       </CardContent>
     </Card>
   );
@@ -427,12 +507,40 @@ function ActionItem({
   );
 }
 
-function NotificationItem({ text, time }: { text: string; time: string }) {
+function NotificationItem({ 
+  title, 
+  message, 
+  time, 
+  isRead 
+}: { 
+  title: string;
+  message: string;
+  time: string;
+  isRead: boolean;
+}) {
   return (
-    <div className="flex items-start gap-3 p-3 rounded-lg border">
+    <div className={cn(
+      "flex items-start gap-3 p-3 rounded-lg border transition-colors",
+      !isRead && "bg-primary/5 border-primary/20"
+    )}>
       <Clock className="size-4 text-muted-foreground shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm mb-1">{text}</p>
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <p className={cn(
+            "text-sm",
+            !isRead && "font-semibold"
+          )}>
+            {title}
+          </p>
+          {!isRead && (
+            <span className="size-2 rounded-full bg-primary shrink-0 mt-1.5" />
+          )}
+        </div>
+        {message && (
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
+            {message}
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">{time}</p>
       </div>
     </div>

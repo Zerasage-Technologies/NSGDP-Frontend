@@ -1,65 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Download, Calendar, FileText, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/feedback/empty-state";
-import { getDatasets } from "@/lib/mock";
-import type { Dataset } from "@/types";
+import { useDownloadHistory } from "@/lib/hooks/useDownloadHistory";
 import {
   DashboardPage,
   DashboardPageHeader,
   DashboardPageContent,
 } from "@/components/layout/dashboard-page-header";
 
-type DownloadHistory = {
-  id: string;
-  dataset: Dataset;
-  downloadedAt: Date;
-  fileCount: number;
-};
-
 export default function MyDownloadsPage() {
-  const [downloads, setDownloads] = useState<DownloadHistory[]>([]);
-  const [filteredDownloads, setFilteredDownloads] = useState<DownloadHistory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: downloadHistory, isLoading } = useDownloadHistory(page, 20);
 
-  useEffect(() => {
-    const loadDownloads = async () => {
-      setLoading(true);
-      
-      // Mock download history
-      const result = await getDatasets({ pageSize: 12 });
-      const mockHistory: DownloadHistory[] = result.data.map((dataset, index) => ({
-        id: `download-${index}`,
-        dataset,
-        downloadedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Random date within last 30 days
-        fileCount: dataset.resources?.length || 0,
-      }));
+  const filteredDownloads = downloadHistory?.data.filter((item) =>
+    searchQuery
+      ? item.dataset.title.toLowerCase().includes(searchQuery.toLowerCase())
+      : true
+  );
 
-      setDownloads(mockHistory);
-      setFilteredDownloads(mockHistory);
-      setLoading(false);
-    };
-
-    loadDownloads();
-  }, []);
-
-  useEffect(() => {
-    if (searchQuery) {
-      const filtered = downloads.filter((item) =>
-        item.dataset.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.dataset.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredDownloads(filtered);
-    } else {
-      setFilteredDownloads(downloads);
-    }
-  }, [searchQuery, downloads]);
+  const totalDownloads = downloadHistory?.meta.total || 0;
+  const thisWeekCount = downloadHistory?.data.filter(
+    (d) =>
+      new Date().getTime() - new Date(d.downloadedAt).getTime() <
+      7 * 24 * 60 * 60 * 1000
+  ).length || 0;
 
   return (
     <DashboardPage>
@@ -82,13 +53,13 @@ export default function MyDownloadsPage() {
           </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="h-32 rounded-lg bg-muted animate-pulse" />
             ))}
           </div>
-        ) : filteredDownloads.length === 0 ? (
+        ) : !filteredDownloads || filteredDownloads.length === 0 ? (
           <EmptyState
             icon={Download}
             title={searchQuery ? "No downloads found" : "No downloads yet"}
@@ -111,23 +82,17 @@ export default function MyDownloadsPage() {
             {/* Summary Stats */}
             <div className="grid gap-6 sm:grid-cols-3 mb-6">
               <Card className="p-6">
-                <p className="text-3xl font-bold mb-1">{downloads.length}</p>
+                <p className="text-3xl font-bold mb-1">{totalDownloads}</p>
                 <p className="text-sm text-muted-foreground">Total Downloads</p>
               </Card>
               <Card className="p-6">
                 <p className="text-3xl font-bold mb-1">
-                  {downloads.reduce((sum, d) => sum + d.fileCount, 0)}
+                  {downloadHistory?.data.length || 0}
                 </p>
-                <p className="text-sm text-muted-foreground">Files Downloaded</p>
+                <p className="text-sm text-muted-foreground">On This Page</p>
               </Card>
               <Card className="p-6">
-                <p className="text-3xl font-bold mb-1">
-                  {downloads.filter(
-                    (d) =>
-                      new Date().getTime() - d.downloadedAt.getTime() <
-                      7 * 24 * 60 * 60 * 1000
-                  ).length}
-                </p>
+                <p className="text-3xl font-bold mb-1">{thisWeekCount}</p>
                 <p className="text-sm text-muted-foreground">This Week</p>
               </Card>
             </div>
@@ -139,7 +104,7 @@ export default function MyDownloadsPage() {
                   <thead className="border-b bg-muted/50">
                     <tr>
                       <th className="px-6 py-3 text-left text-sm font-medium">Dataset</th>
-                      <th className="px-6 py-3 text-left text-sm font-medium">Files</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium">Format</th>
                       <th className="px-6 py-3 text-left text-sm font-medium">Downloaded</th>
                       <th className="px-6 py-3 text-right text-sm font-medium">Actions</th>
                     </tr>
@@ -160,21 +125,21 @@ export default function MyDownloadsPage() {
                               >
                                 {item.dataset.title}
                               </Link>
-                              <p className="text-sm text-muted-foreground line-clamp-1">
-                                {item.dataset.organisation.name}
+                              <p className="text-sm text-muted-foreground">
+                                Version {item.dataset.version}
                               </p>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-sm text-muted-foreground">
-                            {item.fileCount} {item.fileCount === 1 ? "file" : "files"}
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            {item.dataset.format.toUpperCase()}
                           </span>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="size-4" />
-                            {item.downloadedAt.toLocaleDateString("en-US", {
+                            {new Date(item.downloadedAt).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
                               year: "numeric",
@@ -183,10 +148,12 @@ export default function MyDownloadsPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button size="sm" variant="outline">
-                              <Download className="size-4 mr-2" />
-                              Re-download
-                            </Button>
+                            <Link href={`/dataportal/${item.dataset.slug}`}>
+                              <Button size="sm" variant="outline">
+                                <Download className="size-4 mr-2" />
+                                Re-download
+                              </Button>
+                            </Link>
                             <Link href={`/dataportal/${item.dataset.slug}`}>
                               <Button size="sm" variant="ghost">
                                 View Dataset
@@ -201,9 +168,34 @@ export default function MyDownloadsPage() {
               </div>
             </Card>
 
+            {/* Pagination */}
+            {downloadHistory && downloadHistory.meta.totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {page} of {downloadHistory.meta.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(downloadHistory.meta.totalPages, p + 1))}
+                  disabled={page === downloadHistory.meta.totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+
             {/* Show count */}
             <p className="text-sm text-muted-foreground text-center mt-6">
-              Showing {filteredDownloads.length} of {downloads.length} downloads
+              Showing {filteredDownloads.length} of {totalDownloads} downloads
             </p>
           </>
         )}

@@ -18,8 +18,16 @@ export const API_ROUTES = {
     logout: '/auth/logout',
     refresh: '/auth/refresh',
     me: '/auth/me',
+    updateProfile: '/auth/me',
+    changePassword: '/auth/change-password',
     forgotPassword: '/auth/forgot-password',
     resetPassword: '/auth/reset-password',
+  },
+
+  // User endpoints
+  users: {
+    downloads: '/users/me/downloads',
+    dashboardSummary: '/users/me/dashboard-summary',
   },
 
   // Organisation endpoints

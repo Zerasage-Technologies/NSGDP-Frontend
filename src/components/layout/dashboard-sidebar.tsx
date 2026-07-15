@@ -30,6 +30,11 @@ const NAV_LINKS: NavLink[] = [
     icon: LayoutDashboard,
   },
   {
+    href: "/dataportal",
+    label: "Browse Datasets",
+    icon: Database,
+  },
+  {
     href: "/my-datasets",
     label: "My Datasets",
     icon: Database,
