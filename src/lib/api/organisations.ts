@@ -1,6 +1,14 @@
 import { apiClient } from './client';
 import type { PaginatedResponse } from '../types/common';
 
+interface ApiResponse<T> {
+  success: boolean;
+  statusCode: number;
+  timestamp: string;
+  path: string;
+  data: T;
+}
+
 export type OrganisationType = 
   | 'government' 
   | 'ngo' 
@@ -13,14 +21,19 @@ export interface Organisation {
   id: string;
   name: string;
   slug: string;
-  description: string | null;
+  description?: string;
   type: OrganisationType;
+  /** Alias for `type` — used by the centralized @/types Organisation */
+  sector: string;
   website: string | null;
   email: string | null;
   phone: string | null;
   address: string | null;
-  logoUrl: string | null;
+  logoUrl?: string;
+  brandColor?: string;
+  acronym?: string;
   isActive: boolean;
+  datasetCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,16 +58,13 @@ export interface GetOrganisationsParams {
 export async function getOrganisations(
   params?: GetOrganisationsParams
 ): Promise<PaginatedResponse<Organisation>> {
-  const response = await apiClient.get<{ data: PaginatedResponse<Organisation> }>('/organisations', {
+  const response = await apiClient.get<ApiResponse<PaginatedResponse<Organisation>>>('/organisations', {
     params: {
       page: params?.page || 1,
       limit: params?.limit || 20,
     },
   });
-  // Backend wraps response in ApiResponse { success, statusCode, timestamp, path, data }
-  // apiClient.get returns { data: ApiResponse }
-  // So we need response.data.data to get the actual PaginatedResponse
-  return (response.data as any).data;
+  return response.data.data;
 }
 
 /**
@@ -63,6 +73,6 @@ export async function getOrganisations(
 export async function getOrganisationBySlug(
   slug: string
 ): Promise<OrganisationWithDatasets> {
-  const response = await apiClient.get<{ data: OrganisationWithDatasets }>(`/organisations/${slug}`);
-  return (response.data as any).data;
+  const response = await apiClient.get<ApiResponse<OrganisationWithDatasets>>(`/organisations/${slug}`);
+  return response.data.data;
 }

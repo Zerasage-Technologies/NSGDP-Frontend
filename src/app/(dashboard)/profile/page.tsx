@@ -192,8 +192,8 @@ function ProfileForm({
       toast.success("Profile updated successfully");
       setSaving(false);
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || "Failed to update profile";
+    onError: (error: unknown) => {
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to update profile";
       toast.error(message);
       setSaving(false);
     },
@@ -304,8 +304,8 @@ function PasswordForm({
       reset();
       setSaving(false);
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || "Failed to change password";
+    onError: (error: unknown) => {
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to change password";
       toast.error(message);
       setSaving(false);
     },

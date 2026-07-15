@@ -14,6 +14,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { LoginPromptModal } from "@/components/feedback/login-prompt-modal";
 import { useAuth } from "@/lib/auth";
+import { useDownloadDataset } from "@/lib/hooks/useDatasets";
 import { toast } from "sonner";
 import type { Visibility } from "@/types";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ export function DatasetDownloadActions({
   className,
 }: DatasetDownloadActionsProps) {
   const { isAuthenticated } = useAuth();
+  const downloadMutation = useDownloadDataset();
 
   // Simplified: mock access methods removed for real auth migration
   const accessState = "approved"; // Assume access is approved for now
@@ -65,17 +67,24 @@ export function DatasetDownloadActions({
   const [loginOpen, setLoginOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
   const [reason, setReason] = useState("");
-  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     setState(getInitialState(visibility, isAuthenticated, accessState));
   }, [visibility, isAuthenticated, accessState]);
 
   const handleDownload = async () => {
-    setDownloading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setDownloading(false);
-    toast.success(`Download started: ${datasetTitle}`);
+    downloadMutation.mutate(datasetSlug, {
+      onSuccess: (data) => {
+        // Backend returns { downloadUrl, expiresIn, fileName }
+        // Trigger browser download
+        window.location.href = data.downloadUrl;
+        toast.success(`Download started: ${datasetTitle}`);
+      },
+      onError: (error: Error) => {
+        const message = error.message || "Failed to generate download link";
+        toast.error(message);
+      },
+    });
   };
 
   const handlePrimaryClick = () => {
@@ -129,14 +138,14 @@ export function DatasetDownloadActions({
         className="w-full"
         variant={cfg.variant}
         onClick={handlePrimaryClick}
-        disabled={cfg.disabled || downloading}
+        disabled={cfg.disabled || downloadMutation.isPending}
       >
-        {downloading ? (
+        {downloadMutation.isPending ? (
           <Loader2 className="size-4 animate-spin" />
         ) : (
           cfg.icon
         )}
-        {downloading ? "Preparing download…" : cfg.label}
+        {downloadMutation.isPending ? "Preparing download…" : cfg.label}
       </Button>
 
       {visibility === "restricted" && state === "request" && (

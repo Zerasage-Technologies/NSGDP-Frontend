@@ -1,6 +1,15 @@
 import { apiClient } from './client';
 import { API_ROUTES } from './routes';
 
+// Backend wraps all responses in this structure
+interface ApiResponse<T> {
+  success: boolean;
+  statusCode: number;
+  timestamp: string;
+  path: string;
+  data: T;
+}
+
 export interface DownloadHistoryItem {
   id: string;
   downloadedAt: string;
@@ -53,7 +62,7 @@ export async function getDownloadHistory(
   page = 1,
   limit = 20
 ): Promise<DownloadHistoryResponse> {
-  const response = await apiClient.get<{ data: DownloadHistoryResponse }>(
+  const response = await apiClient.get<ApiResponse<DownloadHistoryResponse>>(
     `${API_ROUTES.users.downloads}?page=${page}&limit=${limit}`
   );
   return response.data.data;
@@ -63,7 +72,7 @@ export async function getDownloadHistory(
  * Get dashboard summary statistics
  */
 export async function getDashboardSummary(): Promise<DashboardSummary> {
-  const response = await apiClient.get<{ data: DashboardSummary }>(
+  const response = await apiClient.get<ApiResponse<DashboardSummary>>(
     API_ROUTES.users.dashboardSummary
   );
   return response.data.data;
@@ -73,7 +82,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
  * Update user profile
  */
 export async function updateProfile(data: UpdateProfileData) {
-  const response = await apiClient.patch(API_ROUTES.auth.updateProfile, data);
+  const response = await apiClient.patch<ApiResponse<unknown>>(API_ROUTES.auth.updateProfile, data);
   return response.data.data;
 }
 
@@ -81,7 +90,7 @@ export async function updateProfile(data: UpdateProfileData) {
  * Change password
  */
 export async function changePassword(data: ChangePasswordData): Promise<{ message: string }> {
-  const response = await apiClient.post<{ data: { message: string } }>(
+  const response = await apiClient.post<ApiResponse<{ message: string }>>(
     API_ROUTES.auth.changePassword,
     data
   );

@@ -1,23 +1,25 @@
 import { useQuery } from '@tanstack/react-query';
-import { getOrganisations, getOrganisationBySlug, type GetOrganisationsParams } from '@/lib/api';
+import { getOrganisations, getOrganisationBySlug } from '../api/organisations';
 
 /**
- * Hook to fetch organisations list
+ * Hook to fetch all organisations with pagination
  */
-export function useOrganisations(params?: GetOrganisationsParams) {
+export function useOrganisations(page: number = 1, limit: number = 50) {
   return useQuery({
-    queryKey: ['organisations', params],
-    queryFn: () => getOrganisations(params),
+    queryKey: ['organisations', page, limit],
+    queryFn: () => getOrganisations({ page, limit }),
+    staleTime: 10 * 60 * 1000, // 10 minutes - organisations don't change often
   });
 }
 
 /**
- * Hook to fetch a single organisation by slug
+ * Hook to fetch a single organisation by slug with datasets
  */
-export function useOrganisation(slug: string) {
+export function useOrganisationBySlug(slug: string) {
   return useQuery({
-    queryKey: ['organisations', slug],
+    queryKey: ['organisation', slug],
     queryFn: () => getOrganisationBySlug(slug),
     enabled: !!slug,
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }

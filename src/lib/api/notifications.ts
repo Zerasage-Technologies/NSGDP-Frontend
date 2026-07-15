@@ -1,6 +1,14 @@
 import { apiClient } from './client';
 import { API_ROUTES } from './routes';
 
+interface ApiResponse<T> {
+  success: boolean;
+  statusCode: number;
+  timestamp: string;
+  path: string;
+  data: T;
+}
+
 export interface Notification {
   id: string;
   user_id: string;
@@ -10,7 +18,7 @@ export interface Notification {
   is_read: boolean;
   read_at: string | null;
   created_at: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface NotificationsResponse {
@@ -40,7 +48,7 @@ export async function getNotifications(
     params.append('unread_only', 'true');
   }
 
-  const response = await apiClient.get<{ data: NotificationsResponse }>(
+  const response = await apiClient.get<ApiResponse<NotificationsResponse>>(
     `${API_ROUTES.notifications.list}?${params.toString()}`
   );
   return response.data.data;
@@ -50,7 +58,7 @@ export async function getNotifications(
  * Mark notification as read
  */
 export async function markNotificationAsRead(id: string): Promise<{ message: string }> {
-  const response = await apiClient.patch<{ data: { message: string } }>(
+  const response = await apiClient.patch<ApiResponse<{ message: string }>>(
     API_ROUTES.notifications.markRead(id)
   );
   return response.data.data;
@@ -60,7 +68,7 @@ export async function markNotificationAsRead(id: string): Promise<{ message: str
  * Mark all notifications as read
  */
 export async function markAllNotificationsAsRead(): Promise<{ message: string; updated: number }> {
-  const response = await apiClient.patch<{ data: { message: string; updated: number } }>(
+  const response = await apiClient.patch<ApiResponse<{ message: string; updated: number }>>(
     API_ROUTES.notifications.markAllRead
   );
   return response.data.data;

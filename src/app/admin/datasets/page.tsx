@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, Archive } from "lucide-react";
-import { getReviewQueue, archiveDataset } from "@/lib/mock";
 import { useAuth } from "@/lib/auth";
-import type { Dataset, DatasetStatus } from "@/types";
+import { useDatasets } from "@/lib/hooks/useDatasets";
+import { useCategories } from "@/lib/hooks/useCategories";
+import { useOrganisations } from "@/lib/hooks/useOrganisations";
+import { transformDatasets } from "@/lib/adapters/dataset-adapter";
+import type { Dataset } from "@/types";
+import type { DatasetStatus as BackendDatasetStatus } from "@/lib/api/datasets";
 import { AgeBadge } from "@/components/data/age-badge";
 import { StatusBadge } from "@/components/data/status-badge";
 import { LifecycleBadge } from "@/components/data/lifecycle-badge";
@@ -18,7 +22,7 @@ import { EmptyState } from "@/components/feedback/empty-state";
 import { FileCheck } from "lucide-react";
 import { toast } from "sonner";
 
-const TABS: Array<{ key: DatasetStatus | "all"; label: string }> = [
+const TABS: Array<{ key: string; label: string }> = [
   { key: "all", label: "All" },
   { key: "submitted", label: "Submitted" },
   { key: "under_review", label: "Under Review" },
@@ -27,32 +31,57 @@ const TABS: Array<{ key: DatasetStatus | "all"; label: string }> = [
   { key: "archived", label: "Archived" },
 ];
 
+// Map frontend status to backend status
+const STATUS_MAP: Record<string, BackendDatasetStatus | undefined> = {
+  all: undefined,
+  submitted: 'pending',
+  under_review: 'under_review',
+  needs_revision: 'rejected',
+  published: 'approved',
+  archived: 'archived',
+};
+
 export default function AdminReviewQueuePage() {
   const { user } = useAuth();
 
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<DatasetStatus | "all">("all");
+  const [tab, setTab] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    setLoading(true);
-    getReviewQueue({ status: tab, query }).then((data) => {
-      setDatasets(data);
-      setLoading(false);
-    });
+  // Fetch reference data
+  const { data: categoriesData } = useCategories();
+  const { data: organisationsData } = useOrganisations(1, 100);
+
+  // Build API query params
+  const datasetParams = useMemo(() => {
+    const backendStatus = STATUS_MAP[tab];
+    return {
+      page: 1,
+      limit: 100,
+      status: backendStatus,
+      search: query || undefined,
+      sortBy: 'created_at' as const,
+      sortOrder: 'DESC' as const,
+    };
   }, [tab, query]);
+
+  // Fetch datasets from real API
+  const { data: datasetsData, isLoading } = useDatasets(datasetParams);
+
+  // Transform backend datasets to frontend format
+  const datasets = useMemo(() => {
+    if (!datasetsData?.data) return [];
+    return transformDatasets(
+      datasetsData.data,
+      categoriesData?.data,
+      organisationsData?.data
+    );
+  }, [datasetsData, categoriesData, organisationsData]);
 
   const handleArchive = (d: Dataset) => {
     if (!user) return;
-    archiveDataset(d.id, {
-      archivedAt: new Date().toISOString(),
-      archivedBy: `${user.firstName} ${user.lastName}`,
-      reason: "Archived from review queue",
-    });
-    setDatasets((prev) => prev.map((x) => x.id === d.id ? { ...x, status: "archived" as const, lifecycleStage: "archived" } : x));
-    toast.success(`"${d.title}" archived`);
+    // TODO: Wire to real archive API when available
+    toast.info(`Archive API not yet wired - would archive "${d.title}"`);
   };
 
   return (
@@ -102,7 +131,7 @@ export default function AdminReviewQueuePage() {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
+            {isLoading ? (
               [...Array(5)].map((_, i) => <TableRowSkeleton key={i} cols={8} />)
             ) : datasets.length === 0 ? (
               <tr>

@@ -1,64 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, FileCheck } from "lucide-react";
-import { getOrganisations } from "@/lib/mock";
-import type { Organisation } from "@/types";
+import { useMemo } from "react";
+import { Plus } from "lucide-react";
+import { useOrganisations } from "@/lib/hooks/useOrganisations";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { TableRowSkeleton } from "@/components/feedback/skeletons";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { statusPill } from "@/lib/constants/status-surfaces";
 
-const AGREEMENT_STYLES = {
-  active: statusPill.emerald,
-  pending: statusPill.amber,
-  expired: "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-300",
-  none: "bg-muted text-muted-foreground",
+const TYPE_STYLES = {
+  government: statusPill.emerald,
+  ngo: statusPill.amber,
+  private: statusPill.blue,
+  international: statusPill.purple,
+  academic: statusPill.blue,
+  community: statusPill.emerald,
 };
 
 export default function AdminOrganisationsPage() {
-  const [orgs, setOrgs] = useState<Organisation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [acronym, setAcronym] = useState("");
-  const [sector, setSector] = useState("");
+  const { data, isLoading } = useOrganisations(1, 100);
 
-  useEffect(() => {
-    getOrganisations().then((data) => {
-      setOrgs(data);
-      setLoading(false);
-    });
-  }, []);
-
-  const addOrg = () => {
-    if (!name.trim()) return;
-    const newOrg: Organisation = {
-      id: `org-new-${Date.now()}`,
-      slug: name.toLowerCase().replace(/\s+/g, "-"),
-      name,
-      acronym,
-      sector: sector || "Other",
-      datasetCount: 0,
-      dataSharingAgreement: { status: "pending", contactName: "Pending assignment" },
-    };
-    setOrgs((prev) => [...prev, newOrg]);
-    toast.success(`Organisation "${name}" created`);
-    setModalOpen(false);
-    setName("");
-    setAcronym("");
-    setSector("");
-  };
+  const orgs = useMemo(() => {
+    return data?.data || [];
+  }, [data]);
 
   return (
     <div className="space-y-6">
@@ -66,10 +32,10 @@ export default function AdminOrganisationsPage() {
         <div>
           <h1 className="text-2xl font-bold">Organisation Management</h1>
           <p className="text-muted-foreground mt-1">
-            {orgs.length} organisations · track data-sharing agreements for partner access
+            {orgs.length} organisations · manage partner organisations
           </p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
+        <Button onClick={() => toast.info("Create organisation UI not yet implemented")}>
           <Plus className="size-4" />
           Add New Org
         </Button>
@@ -80,39 +46,44 @@ export default function AdminOrganisationsPage() {
           <thead>
             <tr className="border-b bg-muted/50 text-left">
               <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Acronym</th>
-              <th className="px-4 py-3 font-medium">Sector</th>
-              <th className="px-4 py-3 font-medium">Datasets</th>
-              <th className="px-4 py-3 font-medium">Data-Sharing Agreement</th>
+              <th className="px-4 py-3 font-medium">Type</th>
+              <th className="px-4 py-3 font-medium">Website</th>
+              <th className="px-4 py-3 font-medium">Email</th>
+              <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {loading
+            {isLoading
               ? [...Array(5)].map((_, i) => <TableRowSkeleton key={i} cols={6} />)
               : orgs.map((o) => {
-                  const agreement = o.dataSharingAgreement;
-                  const status = agreement?.status ?? "none";
+                  const typeStyle = TYPE_STYLES[o.type as keyof typeof TYPE_STYLES] || statusPill.blue;
                   return (
                     <tr key={o.id} className="border-b hover:bg-muted/30">
                       <td className="px-4 py-3 font-medium">{o.name}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{o.acronym ?? "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{o.sector}</td>
-                      <td className="px-4 py-3">{o.datasetCount}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="secondary" className={cn("border-0 capitalize text-xs", AGREEMENT_STYLES[status])}>
-                          <FileCheck className="size-3 mr-1" />
-                          {status}
+                        <Badge variant="secondary" className={cn("border-0 capitalize text-xs", typeStyle)}>
+                          {o.type}
                         </Badge>
-                        {agreement?.expiryDate && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Expires {new Date(agreement.expiryDate).toLocaleDateString()}
-                          </p>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {o.website ? (
+                          <a href={o.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                            {new URL(o.website).hostname}
+                          </a>
+                        ) : (
+                          "—"
                         )}
                       </td>
+                      <td className="px-4 py-3 text-muted-foreground">{o.email ?? "—"}</td>
                       <td className="px-4 py-3">
-                        <Button size="sm" variant="outline" onClick={() => toast.success(`Agreement details for ${o.name} (mock)`)}>
-                          View Agreement
+                        <Badge variant={o.isActive ? "default" : "secondary"} className="text-xs">
+                          {o.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Button size="sm" variant="outline" onClick={() => toast.info(`View details for ${o.name}`)}>
+                          View Details
                         </Button>
                       </td>
                     </tr>
@@ -121,21 +92,6 @@ export default function AdminOrganisationsPage() {
           </tbody>
         </table>
       </div>
-
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Add Organisation</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <Input placeholder="Organisation name" value={name} onChange={(e) => setName(e.target.value)} />
-            <Input placeholder="Acronym" value={acronym} onChange={(e) => setAcronym(e.target.value)} />
-            <Input placeholder="Sector" value={sector} onChange={(e) => setSector(e.target.value)} />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={addOrg}>Create</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -18,16 +18,22 @@ export interface AdvancedFilterSection {
 }
 
 export function buildAdvancedFilterSections(
-  orgs: Array<{ value: string; label: string }>
+  orgs: Array<{ value: string; label: string }>,
+  categories: Array<{ value: string; label: string; count?: number }> = []
 ): AdvancedFilterSection[] {
+  // Use real categories if provided, otherwise fall back to mock categories
+  const categoryOptions = categories.length > 0
+    ? categories
+    : HEALTH_CATEGORIES.map((c) => ({
+        value: c.id,
+        label: `${c.emoji} ${c.label}`,
+      }));
+
   return [
     {
       id: "categories",
       label: "Category",
-      options: HEALTH_CATEGORIES.map((c) => ({
-        value: c.id,
-        label: `${c.emoji} ${c.label}`,
-      })),
+      options: categoryOptions,
     },
     { id: "organisations", label: "Organisations", options: orgs },
     { id: "lgas", label: "LGAs", options: NIGER_STATE_LGAS.map((l) => ({ value: l, label: l })) },
@@ -72,6 +78,7 @@ interface AdvancedDatasetFiltersProps {
   filters: Record<string, string[]>;
   onFilterChange: (filterId: string, values: string[]) => void;
   orgs: Array<{ value: string; label: string }>;
+  categoryOptions?: Array<{ value: string; label: string; count?: number }>;
   className?: string;
 }
 
@@ -80,13 +87,14 @@ export function AdvancedDatasetFilters({
   filters,
   onFilterChange,
   orgs,
+  categoryOptions,
   className,
 }: AdvancedDatasetFiltersProps) {
   return (
     <FilterSidebar
       filters={filters}
       onFilterChange={onFilterChange}
-      sections={buildAdvancedFilterSections(orgs)}
+      sections={buildAdvancedFilterSections(orgs, categoryOptions)}
       className={className}
     />
   );

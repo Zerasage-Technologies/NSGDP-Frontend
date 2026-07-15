@@ -1,23 +1,25 @@
 import { useQuery } from '@tanstack/react-query';
-import { getCategories, getCategoryBySlug, type GetCategoriesParams } from '@/lib/api';
+import { getCategories, getCategoryBySlug } from '../api/categories';
 
 /**
- * Hook to fetch categories list
+ * Hook to fetch all categories
  */
-export function useCategories(params?: GetCategoriesParams) {
+export function useCategories() {
   return useQuery({
-    queryKey: ['categories', params],
-    queryFn: () => getCategories(params),
+    queryKey: ['categories'],
+    queryFn: () => getCategories(),
+    staleTime: 10 * 60 * 1000, // 10 minutes - categories don't change often
   });
 }
 
 /**
  * Hook to fetch a single category by slug
  */
-export function useCategory(slug: string) {
+export function useCategoryBySlug(slug: string) {
   return useQuery({
-    queryKey: ['categories', slug],
+    queryKey: ['category', slug],
     queryFn: () => getCategoryBySlug(slug),
     enabled: !!slug,
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }

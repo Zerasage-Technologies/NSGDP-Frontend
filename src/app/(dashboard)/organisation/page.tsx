@@ -9,9 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
-import { getOrganisations } from "@/lib/mock";
-import { toast } from "sonner";
 import type { Organisation } from "@/types";
+import { toast } from "sonner";
 
 type AccessRequest = {
   id: string;
@@ -32,7 +31,7 @@ type TeamMember = {
 export default function MyOrganisationPage() {
   const { user } = useAuth();
 
-  const [organisation, setOrganisation] = useState<Organisation | null>(null);
+  const [organisation] = useState<Organisation | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -86,12 +85,15 @@ export default function MyOrganisationPage() {
   ]);
 
   useEffect(() => {
+    // In a real app, we would fetch the organisation that the user belongs to
+    // For now, the user's organisation ID should come from the user profile
+    // This is a placeholder showing the pattern
     const loadOrganisation = async () => {
       setLoading(true);
-      const orgs = await getOrganisations();
-      // Get first org for demo (in real app, would match user's org)
-      setOrganisation(orgs[0] || null);
+      // TODO: Replace with user.organisationId when available
+      // For now, showing message that this feature requires organisation assignment
       setLoading(false);
+      toast.info("Organisation management requires user-org assignment");
     };
 
     loadOrganisation();

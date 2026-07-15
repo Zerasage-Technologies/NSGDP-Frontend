@@ -1,78 +1,81 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { mockNotifications } from "@/lib/mock/notifications";
-import type { PortalNotification, NotificationType } from "@/types";
+import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead } from "@/lib/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import { statusPill } from "@/lib/constants/status-surfaces";
+import { toast } from "sonner";
 import {
   DashboardPage,
   DashboardPageHeader,
   DashboardPageContent,
 } from "@/components/layout/dashboard-page-header";
 
-const TYPE_LABEL: Record<NotificationType, string> = {
-  dataset_published: "Publication",
-  dataset_updated:   "Update",
-  approval_request:  "Approval",
-  revision_request:  "Revision",
-  access_granted:    "Access",
-  disease_alert:     "Alert",
-  qa_flag:           "QA",
-  sop_updated:       "SOP",
-};
-
-const TYPE_BADGE_CLASS: Record<NotificationType, string> = {
-  dataset_published: statusPill.emerald,
-  dataset_updated:   statusPill.blue,
-  approval_request:  statusPill.amber,
-  revision_request:  "bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300",
-  access_granted:    statusPill.teal,
-  disease_alert:     "bg-destructive/10 text-destructive dark:bg-destructive/20",
-  qa_flag:           "bg-yellow-50 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-300",
-  sop_updated:       statusPill.purple,
+const TYPE_COLORS: Record<string, string> = {
+  info: "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+  success: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+  warning: "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+  error: "bg-destructive/10 text-destructive dark:bg-destructive/20",
 };
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<PortalNotification[]>(mockNotifications);
-  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [page, setPage] = useState(1);
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
+  const limit = 20;
 
-  const visible = filter === "unread" ? notifications.filter((n) => !n.read) : notifications;
+  // Fetch notifications
+  const { data, isLoading, error } = useNotifications(page, limit, showUnreadOnly);
+  
+  // Mutation hooks
+  const markAsReadMutation = useMarkNotificationAsRead();
+  const markAllAsReadMutation = useMarkAllNotificationsAsRead();
 
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const notifications = data?.data || [];
+  const meta = data?.meta;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  const handleMarkAllRead = () => {
+    markAllAsReadMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success("All notifications marked as read");
+      },
+      onError: () => {
+        toast.error("Failed to mark notifications as read");
+      },
+    });
   };
 
-  const markRead = (id: string) => {
-    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+  const handleMarkRead = (id: string) => {
+    markAsReadMutation.mutate(id);
   };
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const filterActions = (
     <>
       <Button
-        variant={filter === "all" ? "default" : "outline"}
+        variant={!showUnreadOnly ? "default" : "outline"}
         size="sm"
-        onClick={() => setFilter("all")}
+        onClick={() => setShowUnreadOnly(false)}
       >
         All
       </Button>
       <Button
-        variant={filter === "unread" ? "default" : "outline"}
+        variant={showUnreadOnly ? "default" : "outline"}
         size="sm"
-        onClick={() => setFilter("unread")}
+        onClick={() => setShowUnreadOnly(true)}
       >
         Unread {unreadCount > 0 && `(${unreadCount})`}
       </Button>
       {unreadCount > 0 && (
-        <Button variant="ghost" size="sm" onClick={markAllRead}>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleMarkAllRead}
+          disabled={markAllAsReadMutation.isPending}
+        >
           <CheckCheck className="size-4 mr-1.5" />
-          Mark all read
+          {markAllAsReadMutation.isPending ? "Marking..." : "Mark all read"}
         </Button>
       )}
     </>
@@ -92,41 +95,84 @@ export default function NotificationsPage() {
       />
 
       <DashboardPageContent>
-        {visible.length === 0 ? (
-          <div className="flex flex-col items-center py-20 text-muted-foreground gap-3">
-            <Bell className="size-12 opacity-20" />
-            <p className="font-medium">No {filter === "unread" ? "unread " : ""}notifications</p>
-          </div>
-        ) : (
+        {isLoading ? (
           <div className="space-y-2">
-            {visible.map((n) => (
-              <Link
-                key={n.id}
-                href={n.link ?? "#"}
-                onClick={() => markRead(n.id)}
-                className={cn(
-                  "flex items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/40",
-                  !n.read && "bg-primary/5 border-primary/20"
-                )}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={cn("text-xs font-medium rounded-full px-2 py-0.5", TYPE_BADGE_CLASS[n.type])}>
-                      {TYPE_LABEL[n.type]}
-                    </span>
-                    {!n.read && (
-                      <span className="size-2 rounded-full bg-primary" aria-label="Unread" />
-                    )}
-                  </div>
-                  <p className={cn("text-sm", !n.read && "font-semibold")}>{n.title}</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">{n.message}</p>
-                  <p className="text-xs text-muted-foreground/60 mt-1.5">
-                    {formatDistanceToNow(new Date(n.timestamp), { addSuffix: true })}
-                  </p>
-                </div>
-              </Link>
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
             ))}
           </div>
+        ) : error ? (
+          <div className="flex flex-col items-center py-20 text-destructive gap-3">
+            <Bell className="size-12 opacity-20" />
+            <p className="font-medium">Failed to load notifications</p>
+            <Button onClick={() => window.location.reload()} variant="outline" size="sm">
+              Retry
+            </Button>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="flex flex-col items-center py-20 text-muted-foreground gap-3">
+            <Bell className="size-12 opacity-20" />
+            <p className="font-medium">No {showUnreadOnly ? "unread " : ""}notifications</p>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              {notifications.map((n) => (
+                <button
+                  key={n.id}
+                  onClick={() => !n.is_read && handleMarkRead(n.id)}
+                  className={cn(
+                    "w-full text-left flex items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/40",
+                    !n.is_read && "bg-primary/5 border-primary/20"
+                  )}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={cn(
+                        "text-xs font-medium rounded-full px-2 py-0.5",
+                        TYPE_COLORS[n.type] || TYPE_COLORS.info
+                      )}>
+                        {n.type.toUpperCase()}
+                      </span>
+                      {!n.is_read && (
+                        <span className="size-2 rounded-full bg-primary" aria-label="Unread" />
+                      )}
+                    </div>
+                    <p className={cn("text-sm", !n.is_read && "font-semibold")}>{n.title}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{n.message}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1.5">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {meta && meta.totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {page} of {meta.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
+                  disabled={page === meta.totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </DashboardPageContent>
     </DashboardPage>

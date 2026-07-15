@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { Download } from "lucide-react";
-import { getAdminUsers } from "@/lib/mock";
 import { useAuth } from "@/lib/auth";
-import type { AdminUser } from "@/types/admin";
-import type { UserRole } from "@/types";
+import { useUsers, useUpdateUserRole } from "@/lib/hooks/useAdmin";
+import type { AdminUser } from "@/lib/api/admin";
 import { RoleBadge } from "@/components/data/role-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,26 +29,26 @@ import { toast } from "sonner";
 export default function AdminUsersPage() {
   const { user } = useAuth();
 
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [roleModal, setRoleModal] = useState<AdminUser | null>(null);
-  const [newRole, setNewRole] = useState<UserRole>("registered");
+  const [newRole, setNewRole] = useState<AdminUser['role']>("contributor");
 
   const isOrgScoped = user?.role === "admin";
   const orgId = user?.organisationId;
 
-  useEffect(() => {
-    getAdminUsers().then((data) => {
-      setUsers(
-        isOrgScoped && orgId
-          ? data.filter((u) => u.organisationId === orgId)
-          : data
-      );
-      setLoading(false);
-    });
-  }, [isOrgScoped, orgId]);
+  // Fetch users from real API
+  const { data: usersData, isLoading } = useUsers({
+    page: 1,
+    limit: 100,
+    organisationId: isOrgScoped ? orgId : undefined,
+  });
+
+  const updateRoleMutation = useUpdateUserRole();
+
+  const users = useMemo(() => {
+    return usersData?.data || [];
+  }, [usersData]);
 
   const filtered = users.filter((u) => {
     if (roleFilter !== "all" && u.role !== roleFilter) return false;
@@ -58,20 +57,28 @@ export default function AdminUsersPage() {
   });
 
   const exportCsv = () => {
-    toast.success("CSV export started (mock download)");
+    toast.info("CSV export functionality coming soon");
   };
 
   const changeRole = () => {
     if (!roleModal) return;
-    if (isOrgScoped && roleModal.organisationId !== orgId) {
+    if (isOrgScoped && roleModal.organisation_id !== orgId) {
       toast.error("You can only manage users within your organisation");
       return;
     }
-    setUsers((prev) =>
-      prev.map((u) => (u.id === roleModal.id ? { ...u, role: newRole } : u))
+    
+    updateRoleMutation.mutate(
+      { userId: roleModal.id, data: { role: newRole } },
+      {
+        onSuccess: () => {
+          toast.success(`Role updated for ${roleModal.firstName} ${roleModal.lastName}`);
+          setRoleModal(null);
+        },
+        onError: () => {
+          toast.error("Failed to update role");
+        },
+      }
     );
-    toast.success(`Role updated for ${roleModal.fullName}`);
-    setRoleModal(null);
   };
 
   return (
@@ -137,23 +144,23 @@ export default function AdminUsersPage() {
             </tr>
           </thead>
           <tbody>
-            {loading
+            {isLoading
               ? [...Array(5)].map((_, i) => <TableRowSkeleton key={i} cols={7} />)
               : filtered.map((u) => (
                   <tr key={u.id} className="border-b hover:bg-muted/30">
-                    <td className="px-4 py-3 font-medium">{u.fullName}</td>
+                    <td className="px-4 py-3 font-medium">{u.firstName} {u.lastName}</td>
                     <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{u.organisationName ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{u.organisation_id || "—"}</td>
                     <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
                     <td className="px-4 py-3 capitalize">{u.status}</td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(u.lastLogin).toLocaleDateString()}
+                      {u.last_login_at ? new Date(u.last_login_at).toLocaleDateString() : "Never"}
                     </td>
                     <td className="px-4 py-3">
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={isOrgScoped && u.organisationId !== orgId}
+                        disabled={isOrgScoped && u.organisation_id !== orgId}
                         onClick={() => { setRoleModal(u); setNewRole(u.role); }}
                       >
                         Change Role
@@ -168,21 +175,24 @@ export default function AdminUsersPage() {
       <Dialog open={!!roleModal} onOpenChange={(o) => !o && setRoleModal(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change Role — {roleModal?.fullName}</DialogTitle>
+            <DialogTitle>Change Role — {roleModal?.firstName} {roleModal?.lastName}</DialogTitle>
           </DialogHeader>
-          <Select value={newRole} onValueChange={(v) => v && setNewRole(v as UserRole)}>
+          <Select value={newRole} onValueChange={(v) => v && setNewRole(v as AdminUser['role'])}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {(["registered", "contributor", "contributor", "contributor", "admin"] as UserRole[])
-                .concat(isOrgScoped ? [] : (["admin", "admin", "super_admin"] as UserRole[]))
-                .map((r) => (
-                  <SelectItem key={r} value={r}>{r.replace(/_/g, " ")}</SelectItem>
-                ))}
+              {(isOrgScoped
+                ? (["viewer", "contributor", "data_manager"] as AdminUser['role'][])
+                : (["viewer", "contributor", "data_manager", "admin", "super_admin"] as AdminUser['role'][])
+              ).map((r) => (
+                <SelectItem key={r} value={r}>{r.replace(/_/g, " ")}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRoleModal(null)}>Cancel</Button>
-            <Button onClick={changeRole}>Save</Button>
+            <Button onClick={changeRole} disabled={updateRoleMutation.isPending}>
+              {updateRoleMutation.isPending ? "Saving..." : "Save"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

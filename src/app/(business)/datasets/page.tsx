@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Pagination } from "@/components/data/pagination";
 import { DatasetCardSkeleton } from "@/components/feedback/skeletons";
-import { getDatasets, getGroups, getOrganisations } from "@/lib/mock";
+import { getDatasets, getGroups } from "@/lib/mock";
+import { useOrganisations } from "@/lib/hooks/useOrganisations";
 import type { Dataset } from "@/types";
 import { NIGER_STATE_LGAS, FILE_FORMATS } from "@/lib/constants/core";
 import { cn } from "@/lib/utils";
@@ -65,25 +66,18 @@ function DatasetsContent() {
 
   // Fetch filter options
   const [groups, setGroups] = useState<Array<{ value: string; label: string }>>([]);
-  const [orgs, setOrgs] = useState<Array<{ value: string; label: string }>>([]);
+  
+  // Fetch organisations from real API
+  const { data: organisationsData } = useOrganisations(1, 100);
+  const orgs = (organisationsData?.data || [])
+    .filter((o) => o.isActive)
+    .map((o) => ({ value: o.slug, label: o.name }));
 
   useEffect(() => {
-    // Load filter options
-    const loadFilterOptions = async () => {
-      const [groupsData, orgsData] = await Promise.all([
-        getGroups(),
-        getOrganisations(),
-      ]);
-
-      setGroups(
-        groupsData.map((g) => ({ value: g.slug, label: g.name }))
-      );
-      setOrgs(
-        orgsData.map((o) => ({ value: o.slug, label: o.name }))
-      );
-    };
-
-    loadFilterOptions();
+    // Load groups (still mock for now - will be integrated in Phase 2)
+    getGroups().then((groupsData) => {
+      setGroups(groupsData.map((g) => ({ value: g.slug, label: g.name })));
+    });
   }, []);
 
   useEffect(() => {

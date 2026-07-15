@@ -13,8 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default function ApiTestPage() {
-  const { data: organisations, isLoading: orgsLoading, error: orgsError } = useOrganisations({ limit: 10 });
-  const { data: categories, isLoading: catsLoading, error: catsError } = useCategories({ limit: 10 });
+  const { data: organisations, isLoading: orgsLoading, error: orgsError } = useOrganisations(1, 10);
+  const { data: categories, isLoading: catsLoading, error: catsError } = useCategories();
 
   return (
     <DashboardPage>

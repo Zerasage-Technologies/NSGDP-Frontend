@@ -1,6 +1,14 @@
 import { apiClient } from './client';
 import type { PaginatedResponse } from '../types/common';
 
+interface ApiResponse<T> {
+  success: boolean;
+  statusCode: number;
+  timestamp: string;
+  path: string;
+  data: T;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -35,16 +43,13 @@ export interface GetCategoriesParams {
 export async function getCategories(
   params?: GetCategoriesParams
 ): Promise<PaginatedResponse<Category>> {
-  const response = await apiClient.get<{ data: PaginatedResponse<Category> }>('/categories', {
+  const response = await apiClient.get<ApiResponse<PaginatedResponse<Category>>>('/categories', {
     params: {
       page: params?.page || 1,
       limit: params?.limit || 50,
     },
   });
-  // Backend wraps response in ApiResponse { success, statusCode, timestamp, path, data }
-  // apiClient.get returns { data: ApiResponse }
-  // So we need response.data.data to get the actual PaginatedResponse
-  return (response.data as any).data;
+  return response.data.data;
 }
 
 /**
@@ -53,6 +58,6 @@ export async function getCategories(
 export async function getCategoryBySlug(
   slug: string
 ): Promise<CategoryWithDatasets> {
-  const response = await apiClient.get<{ data: CategoryWithDatasets }>(`/categories/${slug}`);
-  return (response.data as any).data;
+  const response = await apiClient.get<ApiResponse<CategoryWithDatasets>>(`/categories/${slug}`);
+  return response.data.data;
 }

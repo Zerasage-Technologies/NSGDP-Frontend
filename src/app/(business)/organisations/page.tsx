@@ -1,43 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { OrgCard } from "@/components/data/org-card";
 import { Input } from "@/components/ui/input";
 import { OrgCardSkeleton } from "@/components/feedback/skeletons";
-import { getOrganisations } from "@/lib/mock";
-import type { Organisation } from "@/types";
-import { SECTORS } from "@/lib/constants/core";
+import { useOrganisations } from "@/lib/hooks/useOrganisations";
 import { cn } from "@/lib/utils";
+
+// Organisation types from API
+const ORG_TYPES = [
+  { value: "government", label: "Government" },
+  { value: "ngo", label: "NGO" },
+  { value: "private", label: "Private" },
+  { value: "international", label: "International" },
+  { value: "academic", label: "Academic" },
+  { value: "community", label: "Community" },
+];
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic";
 
 export default function OrganisationsPage() {
-  const [organisations, setOrganisations] = useState<Organisation[]>([]);
-  const [filteredOrgs, setFilteredOrgs] = useState<Organisation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedSector, setSelectedSector] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    const fetchOrganisations = async () => {
-      setLoading(true);
-      const data = await getOrganisations();
-      setOrganisations(data);
-      setFilteredOrgs(data);
-      setLoading(false);
-    };
+  // Fetch organisations from real API (fetch all with high limit)
+  const { data, isLoading } = useOrganisations(1, 100);
 
-    fetchOrganisations();
-  }, []);
+  // Get active organisations from API
+  const organisations = useMemo(() => {
+    return data?.data?.filter((org) => org.isActive) || [];
+  }, [data]);
 
-  useEffect(() => {
+  // Filter organisations by type and search
+  const filteredOrgs = useMemo(() => {
     let filtered = organisations;
 
-    if (selectedSector) {
-      filtered = filtered.filter((org) => org.sector === selectedSector);
+    if (selectedType) {
+      filtered = filtered.filter((org) => org.type === selectedType);
     }
 
     if (searchQuery) {
@@ -45,19 +47,20 @@ export default function OrganisationsPage() {
       filtered = filtered.filter(
         (org) =>
           org.name.toLowerCase().includes(query) ||
-          org.acronym?.toLowerCase().includes(query) ||
           org.description?.toLowerCase().includes(query)
       );
     }
 
-    setFilteredOrgs(filtered);
-  }, [organisations, selectedSector, searchQuery]);
+    return filtered;
+  }, [organisations, selectedType, searchQuery]);
 
-  // Count orgs per sector
-  const sectorCounts = organisations.reduce((acc, org) => {
-    acc[org.sector] = (acc[org.sector] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  // Count orgs per type
+  const typeCounts = useMemo(() => {
+    return organisations.reduce((acc, org) => {
+      acc[org.type] = (acc[org.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [organisations]);
 
   return (
     <main className="flex-1">
@@ -83,13 +86,13 @@ export default function OrganisationsPage() {
           />
         </div>
 
-        {/* Sector Filter Tabs */}
+        {/* Type Filter Tabs */}
         <div className="mb-8 flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setSelectedSector(null)}
+            onClick={() => setSelectedType(null)}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-              selectedSector === null
+              selectedType === null
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted hover:bg-muted/80"
             )}
@@ -97,27 +100,27 @@ export default function OrganisationsPage() {
             All
             <span className="text-xs opacity-75">({organisations.length})</span>
           </button>
-          {SECTORS.map((sector) => (
+          {ORG_TYPES.map((type) => (
             <button
-              key={sector}
-              onClick={() => setSelectedSector(sector)}
+              key={type.value}
+              onClick={() => setSelectedType(type.value)}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                selectedSector === sector
+                selectedType === type.value
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted hover:bg-muted/80"
               )}
             >
-              {sector}
+              {type.label}
               <span className="text-xs opacity-75">
-                ({sectorCounts[sector] || 0})
+                ({typeCounts[type.value] || 0})
               </span>
             </button>
           ))}
         </div>
 
         {/* Results */}
-        {loading ? (
+        {isLoading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
               <OrgCardSkeleton key={i} />

@@ -1,3 +1,6 @@
+"use client";
+
+import { use } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,26 +14,65 @@ import { DatasetMapSection } from "@/components/data/dataset-map-section";
 import { DatasetActivityPanel } from "@/components/data/dataset-activity-panel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getDatasetBySlug, getDatasets } from "@/lib/mock";
+import { useDataset, useDatasets } from "@/lib/hooks/useDatasets";
+import { useCategories } from "@/lib/hooks/useCategories";
+import { useOrganisations } from "@/lib/hooks/useOrganisations";
+import { transformDataset } from "@/lib/adapters/dataset-adapter";
+import { DatasetCardSkeleton } from "@/components/feedback/skeletons";
+import type { PaginatedResponse } from "@/lib/types/common";
+import type { Category } from "@/lib/api/categories";
+import type { Organisation } from "@/lib/api/organisations";
 
 interface DatasetPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export default async function DatasetPage({ params }: DatasetPageProps) {
-  const { slug } = await params;
-  const dataset = await getDatasetBySlug(slug);
+export default function DatasetPage({ params }: DatasetPageProps) {
+  const { slug } = use(params);
+  
+  // Fetch dataset by slug
+  const { data: backendDataset, isLoading, error } = useDataset(slug);
+  
+  // Fetch reference data for transformation
+  const { data: categoriesResponse } = useCategories() as { data?: PaginatedResponse<Category> };
+  const { data: organisationsResponse } = useOrganisations(1, 100) as { data?: PaginatedResponse<Organisation> };
+  
+  // Transform backend dataset to frontend format
+  const dataset = backendDataset
+    ? transformDataset(backendDataset, categoriesResponse?.data ?? [], organisationsResponse?.data ?? [])
+    : null;
+  
+  // Fetch related datasets (same category)
+  const { data: relatedData } = useDatasets(
+    dataset?.healthCategory && backendDataset?.category_id
+      ? {
+          categoryId: backendDataset.category_id,
+          limit: 4,
+          status: 'approved',
+        }
+      : undefined
+  );
+  
+  const relatedDatasets = relatedData?.data
+    ? relatedData.data
+        .filter((d) => d.id !== dataset?.id)
+        .slice(0, 3)
+        .map((d) => transformDataset(d, categoriesResponse?.data ?? [], organisationsResponse?.data ?? []))
+    : [];
 
-  if (!dataset) {
-    notFound();
+  if (isLoading) {
+    return (
+      <main className="flex-1">
+        <Container size="wide" className="py-8">
+          <DatasetCardSkeleton />
+        </Container>
+      </main>
+    );
   }
 
-  // Get related datasets (same group)
-  const relatedResult = await getDatasets({
-    groups: dataset.groups.length > 0 ? [dataset.groups[0].slug] : [],
-    pageSize: 3,
-  });
-  const relatedDatasets = relatedResult.data.filter((d) => d.id !== dataset.id);
+  if (error || !dataset) {
+    notFound();
+  }
 
   // Format file size
   const formatBytes = (bytes: number) => {
