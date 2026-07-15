@@ -15,6 +15,21 @@ export {
   getCurrentUser,
 } from "./auth";
 
+// Invites API functions
+export {
+  validateInvite,
+  acceptInvite,
+  createInvite,
+  getOrganisationInvites,
+  revokeInvite,
+  resendInvite,
+  type ValidateInviteResponse,
+  type AcceptInviteRequest,
+  type AcceptInviteResponse,
+  type CreateInviteRequest,
+  type InviteResponse,
+} from "./invites";
+
 // Organisations API functions
 export {
   getOrganisations,

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, CheckCircle2, Download } from "lucide-react";
@@ -38,10 +38,17 @@ const ACCESS_LEVELS = [
   },
 ];
 
-export const dynamic = "force-dynamic";
-
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams.get("invite");
+
+  // Redirect to invite page if token is present
+  useEffect(() => {
+    if (inviteToken) {
+      router.push(`/register/invite?token=${inviteToken}`);
+    }
+  }, [inviteToken, router]);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -322,5 +329,15 @@ export default function RegisterPage() {
         </CardContent>
       </Card>
     </Container>
+  );
+}
+
+export const dynamic = "force-dynamic";
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }
