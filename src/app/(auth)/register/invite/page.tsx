@@ -76,15 +76,26 @@ function InviteRegistrationForm() {
     setLoading(true);
 
     try {
-      await acceptInvite(inviteToken, {
+      const response = await acceptInvite(inviteToken, {
         firstName: data.firstName,
         lastName: data.lastName,
         password: data.password,
         phoneNumber: data.phone,
       });
 
-      toast.success("Account created successfully! You can now login.");
-      router.push("/login");
+      // Store tokens for auto-login
+      if (response.tokens) {
+        localStorage.setItem('accessToken', response.tokens.accessToken);
+        localStorage.setItem('refreshToken', response.tokens.refreshToken);
+        localStorage.setItem('tokenExpiry', 
+          (Date.now() + response.tokens.expiresIn * 1000).toString()
+        );
+      }
+
+      toast.success("Account created successfully! Welcome to the portal.");
+      
+      // Force a page reload to trigger auth context to load the user
+      window.location.href = "/dashboard";
     } catch (error) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
       const errorMessage = err?.response?.data?.message || err?.message || "Failed to accept invite";

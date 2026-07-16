@@ -19,6 +19,7 @@ export interface UserProfile {
   role: UserRole;
   status: 'pending' | 'active' | 'suspended' | 'archived';
   organisationId?: string;
+  organisationName?: string; // Add organization name
   lga?: string;
   ward?: string;
   avatarUrl?: string;

@@ -20,14 +20,19 @@ export interface AcceptInviteRequest {
 export interface AcceptInviteResponse {
   message: string;
   userId: string;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+  };
 }
 
 /**
  * Validate an invite token
  */
 export async function validateInvite(token: string): Promise<ValidateInviteResponse> {
-  const response = await apiClient.get<ValidateInviteResponse>(`/invites/${token}/validate`);
-  return response.data;
+  const response = await apiClient.get<{ data: ValidateInviteResponse }>(`/invites/${token}/validate`);
+  return response.data.data;
 }
 
 /**
@@ -37,8 +42,8 @@ export async function acceptInvite(
   token: string,
   data: AcceptInviteRequest
 ): Promise<AcceptInviteResponse> {
-  const response = await apiClient.post<AcceptInviteResponse>(`/invites/${token}/accept`, data);
-  return response.data;
+  const response = await apiClient.post<{ data: AcceptInviteResponse }>(`/invites/${token}/accept`, data);
+  return response.data.data;
 }
 
 /**

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { RoleBadge } from "@/components/ui/role-badge";
 import { useAuth } from "@/lib/auth";
 
 interface NavLink {
@@ -113,8 +114,20 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
   });
 
   return (
-    <aside className={cn("w-64 border-r bg-background", className)}>
-      <nav className="flex flex-col gap-1 p-4">
+    <aside className={cn("w-64 border-r bg-background flex flex-col", className)}>
+      {/* Organization Name at Top */}
+      {user?.organisationName && (
+        <div className="border-b px-4 py-3 bg-muted/30">
+          <div className="flex items-center gap-2">
+            <Building2 className="size-4 text-muted-foreground flex-shrink-0" />
+            <p className="text-sm font-semibold text-foreground truncate">
+              {user.organisationName}
+            </p>
+          </div>
+        </div>
+      )}
+      
+      <nav className="flex-1 flex flex-col gap-1 p-4 overflow-y-auto">
         {visibleLinks.map((link) => {
           const isActive = pathname === link.href;
           const Icon = link.icon;
@@ -135,6 +148,23 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
           );
         })}
       </nav>
+      
+      {/* User Info with Role Badge */}
+      {user && (
+        <div className="border-t p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold text-sm">
+              {user.firstName?.[0]}{user.lastName?.[0]}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
+                {user.firstName} {user.lastName}
+              </p>
+              <RoleBadge role={user.role} className="mt-1" />
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
@@ -183,7 +213,19 @@ export function DashboardMobileSidebar({
           </button>
         </div>
 
-        <div className="flex flex-col gap-1 p-4">
+        {/* Organization Name at Top */}
+        {user?.organisationName && (
+          <div className="border-b px-4 py-3 bg-muted/30">
+            <div className="flex items-center gap-2">
+              <Building2 className="size-4 text-muted-foreground flex-shrink-0" />
+              <p className="text-sm font-semibold text-foreground truncate">
+                {user.organisationName}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 flex flex-col gap-1 p-4 overflow-y-auto">
           {visibleLinks.map((link) => {
             const isActive = pathname === link.href;
             const Icon = link.icon;
@@ -204,6 +246,23 @@ export function DashboardMobileSidebar({
             );
           })}
         </div>
+
+        {/* User Info with Role Badge */}
+        {user && (
+          <div className="border-t p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold text-sm">
+                {user.firstName?.[0]}{user.lastName?.[0]}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {user.firstName} {user.lastName}
+                </p>
+                <RoleBadge role={user.role} className="mt-1" />
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
     </div>
   );

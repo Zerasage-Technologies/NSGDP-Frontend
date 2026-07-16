@@ -46,9 +46,23 @@ function RegisterForm() {
   // Redirect to invite page if token is present
   useEffect(() => {
     if (inviteToken) {
-      router.push(`/register/invite?token=${inviteToken}`);
+      router.replace(`/register/invite?token=${inviteToken}`);
     }
   }, [inviteToken, router]);
+
+  // Don't render form if redirecting
+  if (inviteToken) {
+    return (
+      <Container className="py-12">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="pt-12 pb-12 text-center">
+            <p className="text-muted-foreground">Redirecting to invite page...</p>
+          </CardContent>
+        </Card>
+      </Container>
+    );
+  }
+
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
