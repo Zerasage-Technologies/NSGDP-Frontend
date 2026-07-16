@@ -6,15 +6,10 @@ import {
   LayoutDashboard,
   Database,
   Download,
-  Upload,
   Bell,
   Building2,
   User,
-  Users,
   X,
-  FileCheck,
-  KeyRound,
-  ActivitySquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -50,42 +45,12 @@ const NAV_LINKS: NavLink[] = [
     label: "My Downloads",
     icon: Download,
   },
-  {
-    href: "/upload",
-    label: "Upload Dataset",
-    icon: Upload,
-    roles: ["contributor", "admin", "super_admin"],
-  },
-  // Org Admin Section
-  {
-    href: "/dashboard/datasets",
-    label: "Review Queue",
-    icon: FileCheck,
-    roles: ["admin"], // Only org admins
-  },
-  {
-    href: "/dashboard/access-requests",
-    label: "Access Requests",
-    icon: KeyRound,
-    roles: ["admin"], // Only org admins
-  },
-  {
-    href: "/dashboard/governance",
-    label: "Governance",
-    icon: ActivitySquare,
-    roles: ["admin"], // Only org admins
-  },
-  {
-    href: "/team",
-    label: "Team Management",
-    icon: Users,
-    roles: ["admin"], // Only org admins
-  },
+  // Org Admin Section (M2 Scope: Team Management + Organization Profile)
   {
     href: "/organisation",
     label: "Organization",
     icon: Building2,
-    roles: ["admin", "super_admin"],
+    roles: ["admin"], // Only org admins (M2 scope)
   },
   // Common Section
   {

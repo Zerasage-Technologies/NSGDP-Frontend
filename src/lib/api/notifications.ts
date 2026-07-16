@@ -9,16 +9,30 @@ interface ApiResponse<T> {
   data: T;
 }
 
+// Backend notification types
+export type BackendNotificationType = 
+  | 'dataset_approved'
+  | 'dataset_rejected'
+  | 'dataset_revision_requested'
+  | 'account_approved'
+  | 'account_suspended'
+  | 'new_dataset_available'
+  | 'system_announcement';
+
+// Display types for UI
+export type DisplayNotificationType = 'info' | 'success' | 'warning' | 'error';
+
 export interface Notification {
   id: string;
   user_id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: BackendNotificationType; // Backend type
   is_read: boolean;
   read_at: string | null;
   created_at: string;
-  metadata?: Record<string, unknown>;
+  link?: string;
+  data?: Record<string, unknown>;
 }
 
 export interface NotificationsResponse {
@@ -29,6 +43,26 @@ export interface NotificationsResponse {
     limit: number;
     totalPages: number;
   };
+}
+
+/**
+ * Map backend notification type to display type for styling
+ */
+export function getDisplayType(type: BackendNotificationType): DisplayNotificationType {
+  switch (type) {
+    case 'dataset_approved':
+    case 'account_approved':
+    case 'new_dataset_available':
+      return 'success';
+    case 'dataset_rejected':
+    case 'account_suspended':
+      return 'error';
+    case 'dataset_revision_requested':
+      return 'warning';
+    case 'system_announcement':
+    default:
+      return 'info';
+  }
 }
 
 /**

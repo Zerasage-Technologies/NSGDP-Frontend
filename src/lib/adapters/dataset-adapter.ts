@@ -60,8 +60,8 @@ export function transformDataset(
     
     visibility: backendDataset.visibility,
     
-    // Map backend status to frontend status
-    status: mapBackendStatusToFrontend(backendDataset.status),
+    // Use backend status directly (no mapping needed anymore)
+    status: backendDataset.status as FrontendDataset['status'],
     
     // Backend has single format, frontend expects array
     formats: [backendDataset.format.toUpperCase() as FileFormat],
@@ -118,25 +118,8 @@ export function transformDataset(
 }
 
 /**
- * Map backend status to frontend status
- */
-function mapBackendStatusToFrontend(
-  backendStatus: string
-): FrontendDataset['status'] {
-  const statusMap: Record<string, FrontendDataset['status']> = {
-    draft: 'draft',
-    pending: 'submitted',
-    under_review: 'under_review',
-    approved: 'published',
-    rejected: 'rejected',
-    archived: 'archived',
-  };
-  
-  return statusMap[backendStatus] || 'draft';
-}
-
-/**
  * Map backend status to lifecycle stage
+ * Backend statuses: draft, pending, under_review, approved, rejected, archived
  */
 function mapStatusToLifecycleStage(
   backendStatus: string

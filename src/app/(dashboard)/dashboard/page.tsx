@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -25,13 +24,12 @@ import { useAuth } from "@/lib/auth";
 import { useDashboardSummary } from "@/lib/hooks/useDashboardSummary";
 import { useDownloadHistory } from "@/lib/hooks/useDownloadHistory";
 import { useNotifications } from "@/lib/hooks/useNotifications";
-import { getDatasets, getOverdueDatasets } from "@/lib/mock";
+import { useDatasets } from "@/lib/hooks/useDatasets";
 import { OutbreakAlertBanner } from "@/components/home/outbreak-alert-banner";
 import { mockAlerts } from "@/lib/mock/alerts";
-import { alertSurface } from "@/lib/constants/status-surfaces";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import type { Dataset } from "@/types";
+import type { Dataset } from "@/lib/api/datasets"; // Use backend Dataset type
 import {
   DashboardPage as DashboardPageLayout,
   DashboardPageHeader,
@@ -44,32 +42,21 @@ export default function DashboardPage() {
   const { data: summary, isLoading: summaryLoading } = useDashboardSummary();
   const { data: downloadHistory, isLoading: downloadsLoading } = useDownloadHistory(1, 4);
   const { data: notifications, isLoading: notificationsLoading } = useNotifications(1, 3);
-  const [myDatasets, setMyDatasets] = useState<Dataset[]>([]);
-  const [overdueDatasets, setOverdueDatasets] = useState<Dataset[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Fetch user's organization datasets
+  const { data: datasetsData, isLoading: datasetsLoading } = useDatasets(
+    {
+      page: 1,
+      limit: 6,
+      organisationId: user?.organisationId,
+      sortBy: 'created_at',
+      sortOrder: 'DESC',
+    },
+    { enabled: !!user?.organisationId }
+  );
 
-  useEffect(() => {
-    if (!user) return;
-    
-    const loadData = async () => {
-      setLoading(true);
-      
-      // Get datasets for contributors and org admins
-      if (["contributor", "admin", "super_admin"].includes(user.role)) {
-        const result = await getDatasets({ pageSize: 6, includePrivate: true });
-        setMyDatasets(result.data.slice(0, 6));
-      }
-
-      if (["contributor", "admin", "super_admin"].includes(user.role)) {
-        const overdue = await getOverdueDatasets();
-        setOverdueDatasets(overdue);
-      }
-
-      setLoading(false);
-    };
-
-    loadData();
-  }, [user]);
+  const myDatasets = datasetsData?.data || [];
+  const loading = summaryLoading || datasetsLoading;
 
   const statsLoading = summaryLoading || loading;
 
@@ -87,20 +74,6 @@ export default function DashboardPage() {
 
       <DashboardPageContent className="space-y-6">
         <OutbreakAlertBanner alerts={mockAlerts} />
-
-        {overdueDatasets.length > 0 && (
-          <div className={cn("mb-6 rounded-lg border px-4 py-3 text-sm", alertSurface.amber)}>
-            <p className="font-semibold flex items-center gap-2">
-              <AlertCircle className="size-4" />
-              {overdueDatasets.length} dataset{overdueDatasets.length > 1 ? "s" : ""} overdue for update
-            </p>
-            <ul className="mt-2 space-y-1 text-xs">
-              {overdueDatasets.slice(0, 3).map((d) => (
-                <li key={d.id}>· {d.title} — last updated {new Date(d.updatedAt).toLocaleDateString()}</li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         {/* Stats Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -247,14 +220,13 @@ export default function DashboardPage() {
                               {dataset.description}
                             </p>
                             <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                              <span>{dataset.resources?.length || 0} resources</span>
-                              <span>{dataset.downloadCount} downloads</span>
-                              <span>Updated {new Date(dataset.updatedAt).toLocaleDateString()}</span>
+                              <span>{dataset.download_count} downloads</span>
+                              <span>Updated {new Date(dataset.updated_at).toLocaleDateString()}</span>
                             </div>
                           </div>
                         </div>
                       ))}
-                      <Link href="/dashboard/my-datasets">
+                      <Link href="/my-datasets">
                         <Button variant="outline" className="w-full">
                           View All My Datasets
                         </Button>

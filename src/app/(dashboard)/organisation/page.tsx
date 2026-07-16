@@ -1,374 +1,407 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Users, Database, UserPlus, Mail, CheckCircle, XCircle, Clock } from "lucide-react";
-import { Container } from "@/components/layout/container";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Building2,
+  Users,
+  Mail,
+  Phone,
+  Globe,
+  MapPin,
+  UserPlus,
+  MoreVertical,
+  RefreshCw,
+  Ban,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Calendar,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import type { Organisation } from "@/types";
+import { apiClient } from "@/lib/api/client";
+import type { Organisation } from "@/lib/api/organisations";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import { RoleBadge } from "@/components/ui/role-badge";
+import { InviteModal } from "@/components/shared/invite/invite-modal";
+import { useOrganisationInvites, useRevokeInvite, useResendInvite } from "@/lib/hooks/useInvites";
+import type { InviteResponse } from "@/lib/api/invites";
 import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+import {
+  DashboardPage,
+  DashboardPageHeader,
+  DashboardPageContent,
+} from "@/components/layout/dashboard-page-header";
 
-type AccessRequest = {
-  id: string;
-  userName: string;
-  userEmail: string;
-  requestedAt: Date;
-  reason: string;
-};
+export default function OrganisationManagementPage() {
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
-type TeamMember = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  joinedAt: Date;
-};
+  const orgId = user?.organisationId;
+  const orgName = user?.organisationName;
 
-export default function MyOrganisationPage() {
-  const { user } = useAuth();
-
-  const [organisation] = useState<Organisation | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  // Mock data
-  const [accessRequests] = useState<AccessRequest[]>([
-    {
-      id: "1",
-      userName: "John Doe",
-      userEmail: "john.doe@example.com",
-      requestedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      reason: "Need access to health data for research project on malaria prevention",
+  // Fetch full organization details
+  const { data: organisation, isLoading: orgLoading } = useQuery({
+    queryKey: ['organisation', orgId],
+    queryFn: async () => {
+      if (!orgId) return null;
+      const response = await apiClient.get<{ data: Organisation }>(`/organisations/${orgId}`);
+      return response.data.data;
     },
-    {
-      id: "2",
-      userName: "Jane Smith",
-      userEmail: "jane.smith@example.com",
-      requestedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      reason: "Policy analysis for Niger State government planning department",
-    },
-    {
-      id: "3",
-      userName: "Ahmed Ibrahim",
-      userEmail: "ahmed.i@example.com",
-      requestedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      reason: "Academic research on healthcare infrastructure distribution",
-    },
-  ]);
+    enabled: !!orgId,
+  });
 
-  const [teamMembers] = useState<TeamMember[]>([
-    {
-      id: "1",
-      name: `${user?.firstName} ${user?.lastName}`,
-      email: user?.email || "",
-      role: "Administrator",
-      joinedAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000),
-    },
-    {
-      id: "2",
-      name: "Dr. Sarah Williams",
-      email: "sarah.w@health.ng.gov",
-      role: "Data Contributor",
-      joinedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-    },
-    {
-      id: "3",
-      name: "Michael Chen",
-      email: "m.chen@health.ng.gov",
-      role: "Data Contributor",
-      joinedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
-    },
-  ]);
+  // Fetch invites for this org - only if we have an orgId
+  const { data: invites, isLoading: invitesLoading, error } = useOrganisationInvites(orgId || "");
 
-  useEffect(() => {
-    // In a real app, we would fetch the organisation that the user belongs to
-    // For now, the user's organisation ID should come from the user profile
-    // This is a placeholder showing the pattern
-    const loadOrganisation = async () => {
-      setLoading(true);
-      // TODO: Replace with user.organisationId when available
-      // For now, showing message that this feature requires organisation assignment
-      setLoading(false);
-      toast.info("Organisation management requires user-org assignment");
-    };
+  const revokeMutation = useRevokeInvite();
+  const resendMutation = useResendInvite();
 
-    loadOrganisation();
-  }, []);
+  // Log error for debugging (but don't show toast)
+  if (error) {
+    console.error("Failed to fetch invites:", error);
+  }
 
-  const handleApprove = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    toast.success("Access request approved");
-  };
-
-  const handleDeny = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    toast.success("Access request denied");
-  };
-
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success("Organisation profile updated");
-    setSaving(false);
-  };
-
-  if (loading || !organisation) {
+  // Wait for auth to load
+  if (authLoading) {
     return (
-      <main className="flex-1 bg-muted/40">
-        <Container className="py-12">
-          <p className="text-center text-muted-foreground">Loading...</p>
-        </Container>
-      </main>
+      <DashboardPage>
+        <DashboardPageHeader
+          title="Organization Management"
+          description="Loading..."
+        />
+      </DashboardPage>
     );
   }
 
-  // Only org admins and super admins can access
-  if (user && user.role !== "admin" && user.role !== "super_admin") {
+  // Role guard - only org admins
+  if (!user || user.role !== "admin") {
+    router.replace("/dashboard");
+    return null;
+  }
+
+  // Check if user has an organisation
+  if (!orgId) {
     return (
-      <main className="flex-1 bg-muted/40">
-        <Container className="py-12">
-          <Card className="max-w-md mx-auto text-center p-8">
-            <p className="text-muted-foreground">
-              You don&apos;t have permission to access this page
-            </p>
-          </Card>
-        </Container>
-      </main>
+      <DashboardPage>
+        <DashboardPageHeader
+          title="Organization Management"
+          description="You must belong to an organization to access this page"
+        />
+      </DashboardPage>
     );
   }
+
+  const pendingInvites = invites?.filter((inv) => inv.status === "pending") || [];
+  const acceptedInvites = invites?.filter((inv) => inv.status === "accepted") || [];
+  const revokedInvites = invites?.filter((inv) => inv.status === "revoked") || [];
+
+  const handleRevokeInvite = (invite: InviteResponse) => {
+    if (!orgId) return;
+    
+    if (window.confirm(`Revoke invite for ${invite.invitedEmail}?`)) {
+      revokeMutation.mutate(
+        { organisationId: orgId, inviteId: invite.id },
+        {
+          onSuccess: () => {
+            toast.success("Invite revoked successfully");
+          },
+          onError: () => {
+            toast.error("Failed to revoke invite");
+          },
+        }
+      );
+    }
+  };
+
+  const handleResendInvite = (invite: InviteResponse) => {
+    if (!orgId) return;
+
+    resendMutation.mutate(
+      { organisationId: orgId, inviteId: invite.id },
+      {
+        onSuccess: () => {
+          toast.success("Invite resent successfully");
+        },
+        onError: () => {
+          toast.error("Failed to resend invite");
+        },
+      }
+    );
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return (
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Pending
+          </Badge>
+        );
+      case "accepted":
+        return (
+          <Badge variant="default" className="flex items-center gap-1 bg-green-600">
+            <CheckCircle2 className="h-3 w-3" />
+            Accepted
+          </Badge>
+        );
+      case "revoked":
+        return (
+          <Badge variant="destructive" className="flex items-center gap-1">
+            <XCircle className="h-3 w-3" />
+            Revoked
+          </Badge>
+        );
+      case "expired":
+        return (
+          <Badge variant="outline" className="flex items-center gap-1">
+            <XCircle className="h-3 w-3" />
+            Expired
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
 
   return (
-    <main className="flex-1 bg-muted/40">
-      <div className="border-b bg-background">
-        <Container size="wide" className="py-8">
-          <div className="flex items-start gap-4">
-            <div
-              className="size-16 rounded-lg flex items-center justify-center text-2xl font-bold text-white shrink-0"
-              style={{ backgroundColor: organisation.brandColor || "#3b82f6" }}
-            >
-              {organisation.acronym || organisation.name.slice(0, 2).toUpperCase()}
-            </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold">{organisation.name}</h1>
-              <p className="mt-1 text-muted-foreground">{organisation.sector}</p>
-            </div>
-          </div>
-        </Container>
-      </div>
+    <DashboardPage>
+      <DashboardPageHeader
+        title={orgName || "Organization Management"}
+        description="Manage your organization profile, team members, and invitations"
+        actions={
+          <Button onClick={() => setInviteModalOpen(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Invite Member
+          </Button>
+        }
+      />
 
-      <Container size="wide" className="py-8">
-        {/* Stats */}
-        <div className="grid gap-6 sm:grid-cols-3 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
-                  <Database className="size-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{organisation.datasetCount}</p>
-                  <p className="text-sm text-muted-foreground">Datasets</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950">
-                  <Users className="size-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{teamMembers.length}</p>
-                  <p className="text-sm text-muted-foreground">Team Members</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-950">
-                  <Clock className="size-6 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{accessRequests.length}</p>
-                  <p className="text-sm text-muted-foreground">Pending Requests</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="profile" className="space-y-6">
+      <DashboardPageContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
-            <TabsTrigger value="profile">Organisation Profile</TabsTrigger>
-            <TabsTrigger value="team">Team Members</TabsTrigger>
-            <TabsTrigger value="requests">
-              Access Requests
-              {accessRequests.length > 0 && (
-                <span className="ml-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-xs">
-                  {accessRequests.length}
-                </span>
-              )}
+            <TabsTrigger value="overview">
+              <Building2 className="h-4 w-4 mr-2" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="team">
+              <Users className="h-4 w-4 mr-2" />
+              Team Members
+            </TabsTrigger>
+            <TabsTrigger value="invites">
+              <Mail className="h-4 w-4 mr-2" />
+              Invitations ({pendingInvites.length})
             </TabsTrigger>
           </TabsList>
 
-          {/* Profile Tab */}
-          <TabsContent value="profile">
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Edit Organisation Profile</CardTitle>
+                <CardTitle>Organization Information</CardTitle>
+                <CardDescription>
+                  View and manage your organization&apos;s profile
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSaveProfile} className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-sm font-medium mb-1.5">
-                        Organisation Name
-                      </label>
-                      <Input defaultValue={organisation.name} />
+              <CardContent className="space-y-6">
+                {orgLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          Organization Name
+                        </label>
+                        <p className="text-lg font-semibold">{organisation?.name || orgName || "—"}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">
+                          Organization Type
+                        </label>
+                        <p className="text-lg capitalize">{organisation?.type || "—"}</p>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1.5">
-                        Acronym
-                      </label>
-                      <Input defaultValue={organisation.acronym} placeholder="e.g., MOH" />
-                    </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">
-                      Sector
-                    </label>
-                    <Input defaultValue={organisation.sector} />
-                  </div>
+                    {organisation?.description && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">
+                          Description
+                        </label>
+                        <p className="text-sm">{organisation.description}</p>
+                      </div>
+                    )}
 
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">
-                      Description
-                    </label>
-                    <Textarea
-                      defaultValue={organisation.description}
-                      rows={4}
-                      placeholder="Describe your organisation..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">
-                      Brand Color
-                    </label>
-                    <Input
-                      type="color"
-                      defaultValue={organisation.brandColor || "#3b82f6"}
-                      className="h-12"
-                    />
-                  </div>
-
-                  <Button type="submit" disabled={saving}>
-                    {saving ? "Saving..." : "Save Changes"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Team Tab */}
-          <TabsContent value="team">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Team Members</CardTitle>
-                <Button size="sm">
-                  <UserPlus className="size-4 mr-2" />
-                  Invite Member
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {teamMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center justify-between p-4 rounded-lg border"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
-                          {member.name.split(" ").map((n) => n[0]).join("")}
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {organisation?.email && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            Email
+                          </label>
+                          <p className="text-sm">{organisation.email}</p>
                         </div>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="size-3" />
-                            {member.email}
+                      )}
+                      {organisation?.phone && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            Phone
+                          </label>
+                          <p className="text-sm">{organisation.phone}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {organisation?.website && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <Globe className="h-4 w-4" />
+                            Website
+                          </label>
+                          <a 
+                            href={organisation.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline"
+                          >
+                            {organisation.website}
+                          </a>
+                        </div>
+                      )}
+                      {organisation?.address && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            Address
+                          </label>
+                          <p className="text-sm">{organisation.address}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        {organisation?.createdAt && (
+                          <div className="space-y-1">
+                            <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              Created
+                            </label>
+                            <p className="text-sm">
+                              {new Date(organisation.createdAt).toLocaleDateString('en-US', { 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                              })}
+                            </p>
                           </div>
+                        )}
+                        <div className="space-y-1">
+                          <label className="text-sm font-medium text-muted-foreground">
+                            Status
+                          </label>
+                          <Badge variant={organisation?.isActive ? "default" : "secondary"}>
+                            {organisation?.isActive ? "Active" : "Inactive"}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{member.role}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Joined {member.joinedAt.toLocaleDateString()}
-                        </p>
-                      </div>
                     </div>
-                  ))}
+                  </>
+                )}
+
+                <div className="pt-4 border-t">
+                  <h4 className="text-sm font-medium mb-3">Quick Stats</h4>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="text-2xl font-bold">{acceptedInvites.length}</div>
+                        <p className="text-sm text-muted-foreground">Active Members</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="text-2xl font-bold">{pendingInvites.length}</div>
+                        <p className="text-sm text-muted-foreground">Pending Invites</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="text-2xl font-bold">0</div>
+                        <p className="text-sm text-muted-foreground">Datasets</p>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Access Requests Tab */}
-          <TabsContent value="requests">
+          {/* Team Members Tab */}
+          <TabsContent value="team" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Access Requests</CardTitle>
+                <CardTitle>Active Team Members</CardTitle>
+                <CardDescription>
+                  Members who have accepted their invitations
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                {accessRequests.length === 0 ? (
+                {acceptedInvites.length === 0 ? (
                   <div className="text-center py-12">
-                    <Clock className="size-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No pending access requests</p>
+                    <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-lg font-medium">No active members yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Invite team members to get started
+                    </p>
+                    <Button
+                      onClick={() => setInviteModalOpen(true)}
+                      className="mt-4"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Invite Member
+                    </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {accessRequests.map((request) => (
-                      <div key={request.id} className="p-4 rounded-lg border">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <p className="font-medium">{request.userName}</p>
-                            <p className="text-sm text-muted-foreground">{request.userEmail}</p>
+                  <div className="space-y-3">
+                    {acceptedInvites.map((invite) => (
+                      <div
+                        key={invite.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
+                            {invite.invitedEmail.charAt(0).toUpperCase()}
                           </div>
-                          <span className="text-xs text-muted-foreground">
-                            {Math.floor(
-                              (Date.now() - request.requestedAt.getTime()) / (24 * 60 * 60 * 1000)
-                            )}{" "}
-                            days ago
-                          </span>
-                        </div>
-                        <p className="text-sm mb-4">{request.reason}</p>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={handleApprove}
-                          >
-                            <CheckCircle className="size-4 mr-2" />
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handleDeny}
-                          >
-                            <XCircle className="size-4 mr-2" />
-                            Deny
-                          </Button>
+                          <div>
+                            <p className="font-medium">{invite.invitedEmail}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <RoleBadge role={invite.role} />
+                              <span className="text-sm text-muted-foreground">
+                                Joined {formatDistanceToNow(new Date(invite.acceptedAt!), { addSuffix: true })}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -377,8 +410,121 @@ export default function MyOrganisationPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Invitations Tab */}
+          <TabsContent value="invites" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pending Invitations</CardTitle>
+                <CardDescription>
+                  Invitations awaiting acceptance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {invitesLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-20 w-full" />
+                    ))}
+                  </div>
+                ) : pendingInvites.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-lg font-medium">No pending invitations</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      All invitations have been accepted or revoked
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingInvites.map((invite) => (
+                      <div
+                        key={invite.id}
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <p className="font-medium">{invite.invitedEmail}</p>
+                            {getStatusBadge(invite.status)}
+                            <RoleBadge role={invite.role} />
+                          </div>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            <p>Invited by {invite.invitedByName}</p>
+                            <p>Sent {formatDistanceToNow(new Date(invite.createdAt), { addSuffix: true })}</p>
+                            <p>Expires {formatDistanceToNow(new Date(invite.expiresAt), { addSuffix: true })}</p>
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleResendInvite(invite)}
+                              disabled={resendMutation.isPending}
+                            >
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Resend Invite
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleRevokeInvite(invite)}
+                              disabled={revokeMutation.isPending}
+                              className="text-destructive"
+                            >
+                              <Ban className="h-4 w-4 mr-2" />
+                              Revoke Invite
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {revokedInvites.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Revoked Invitations</CardTitle>
+                  <CardDescription>
+                    Previously revoked invitations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {revokedInvites.map((invite) => (
+                      <div
+                        key={invite.id}
+                        className="flex items-center justify-between p-4 border rounded-lg opacity-60"
+                      >
+                        <div>
+                          <div className="flex items-center gap-3 mb-1">
+                            <p className="font-medium">{invite.invitedEmail}</p>
+                            {getStatusBadge(invite.status)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Invited {formatDistanceToNow(new Date(invite.createdAt), { addSuffix: true })}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
         </Tabs>
-      </Container>
-    </main>
+      </DashboardPageContent>
+
+      {/* Invite Modal */}
+      <InviteModal
+        open={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        organisationId={orgId}
+      />
+    </DashboardPage>
   );
 }

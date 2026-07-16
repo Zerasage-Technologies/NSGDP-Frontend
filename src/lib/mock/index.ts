@@ -317,7 +317,7 @@ export async function getStatistics() {
   await simulateDelay();
 
   return {
-    datasets: mockDatasets.filter((d) => d.status === "published").length,
+    datasets: mockDatasets.filter((d) => d.status === "approved").length,
     organisations: mockOrganisations.length,
     downloads: mockDatasets.reduce((sum, d) => sum + d.downloadCount, 0),
     lgasCovered: 25,
@@ -354,7 +354,7 @@ export async function getOverdueDatasets() {
     .map(withArchiveInfo)
     .filter(
       (d) =>
-        d.status === "published" &&
+        d.status === "approved" &&
         getFreshnessStatus(d.updatedAt, d.updateFrequency) === "overdue"
     );
 }

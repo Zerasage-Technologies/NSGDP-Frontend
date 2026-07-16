@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead } from "@/lib/hooks/useNotifications";
+import { getDisplayType } from "@/lib/api/notifications";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -130,9 +131,9 @@ export default function NotificationsPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <span className={cn(
                         "text-xs font-medium rounded-full px-2 py-0.5",
-                        TYPE_COLORS[n.type] || TYPE_COLORS.info
+                        TYPE_COLORS[getDisplayType(n.type)] || TYPE_COLORS.info
                       )}>
-                        {n.type.toUpperCase()}
+                        {n.type.toUpperCase().replace(/_/g, ' ')}
                       </span>
                       {!n.is_read && (
                         <span className="size-2 rounded-full bg-primary" aria-label="Unread" />

@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { getDatasets } from "@/lib/mock";
+import { useDataset, useUpdateDataset } from "@/lib/hooks/useDatasets";
 import { NIGER_STATE_LGAS } from "@/lib/constants/core";
 import { UPLOAD_FIELD_TOOLTIPS } from "@/lib/constants/upload-tooltips";
 import { useDraftAutoSave } from "@/lib/hooks/useDraftAutoSave";
@@ -22,7 +22,7 @@ import {
   uploadStep2Schema,
   uploadStep3Schema,
 } from "@/lib/schemas/auth";
-import type { Dataset, Visibility } from "@/types";
+import type { DatasetVisibility } from "@/lib/api/datasets";
 
 const steps = [
   { id: 1, name: "Basic Info", icon: FileText },
@@ -37,8 +37,11 @@ export default function EditDatasetPage({
 }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const [dataset, setDataset] = useState<Dataset | null>(null);
-  const [loading, setLoading] = useState(true);
+  
+  // Fetch dataset from API
+  const { data: dataset, isLoading: loading, error } = useDataset(resolvedParams.slug);
+  const updateMutation = useUpdateDataset();
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
@@ -48,7 +51,7 @@ export default function EditDatasetPage({
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [selectedLGAs, setSelectedLGAs] = useState<string[]>([]);
-  const [visibility, setVisibility] = useState<Visibility>("public");
+  const [visibility, setVisibility] = useState<DatasetVisibility>("public");
   const [existingFiles, setExistingFiles] = useState<Array<{ name: string; size: number }>>([]);
   const [newFiles, setNewFiles] = useState<UploadedFile[]>([]);
 
@@ -57,32 +60,26 @@ export default function EditDatasetPage({
     [title, description, newFiles.length, loading]
   );
 
+  // Populate form when dataset loads
   useEffect(() => {
-    const loadDataset = async () => {
-      setLoading(true);
-      const result = await getDatasets({ includePrivate: true });
-      const found = result.data.find((d) => d.slug === resolvedParams.slug);
+    if (dataset) {
+      setTitle(dataset.title);
+      setDescription(dataset.description || "");
+      setTags(dataset.tags || []);
+      setSelectedLGAs(dataset.geographic_coverage || []);
+      setVisibility(dataset.visibility);
+      // Note: file management would need separate endpoint
+      setExistingFiles([]);
+    }
+  }, [dataset]);
 
-      if (found) {
-        setDataset(found);
-        setTitle(found.title);
-        setDescription(found.description || "");
-        setTags(found.groups.map((g) => g.name));
-        setSelectedLGAs(found.lgaCoverage);
-        setVisibility(found.visibility);
-        setExistingFiles(
-          found.resources?.map((r) => ({ name: r.name, size: r.sizeBytes })) || []
-        );
-      } else {
-        toast.error("Dataset not found");
-        router.push("/dashboard/my-datasets");
-      }
-
-      setLoading(false);
-    };
-
-    loadDataset();
-  }, [resolvedParams.slug, router]);
+  // Handle not found
+  useEffect(() => {
+    if (error) {
+      toast.error("Dataset not found");
+      router.push("/my-datasets");
+    }
+  }, [error, router]);
 
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -142,10 +139,30 @@ export default function EditDatasetPage({
 
   const handleSave = async (isDraft: boolean) => {
     if (!validateStep1() || !validateStep2() || !validateStep3()) return;
+    
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    toast.success(isDraft ? "Changes saved as draft" : "Dataset updated successfully!");
-    router.push("/dashboard/my-datasets");
+    
+    try {
+      await updateMutation.mutateAsync({
+        slug: resolvedParams.slug,
+        data: {
+          title,
+          description,
+          tags,
+          geographic_coverage: selectedLGAs,
+          visibility,
+          status: isDraft ? 'draft' : undefined, // Keep current status if not draft
+        },
+      });
+      
+      toast.success(isDraft ? "Changes saved as draft" : "Dataset updated successfully!");
+      router.push("/my-datasets");
+    } catch (error) {
+      toast.error("Failed to update dataset");
+      console.error(error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -357,7 +374,7 @@ export default function EditDatasetPage({
                   tooltip={UPLOAD_FIELD_TOOLTIPS.visibility}
                 />
                 <div className="grid gap-3">
-                  {(["public", "restricted", "private"] as Visibility[]).map((vis) => (
+                  {(["public", "restricted", "private"] as DatasetVisibility[]).map((vis) => (
                     <button
                       key={vis}
                       type="button"

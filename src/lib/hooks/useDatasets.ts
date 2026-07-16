@@ -17,10 +17,11 @@ import {
 /**
  * Hook to fetch datasets with filters and pagination
  */
-export function useDatasets(params?: DatasetListParams) {
+export function useDatasets(params?: DatasetListParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['datasets', params],
     queryFn: () => getDatasets(params),
+    enabled: options?.enabled !== false, // Default to true, can be disabled
     staleTime: 2 * 60 * 1000, // 2 minutes - datasets change frequently
   });
 }

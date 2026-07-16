@@ -177,7 +177,16 @@ function ProfileForm({
   setSaving,
   saving,
 }: {
-  user: { firstName: string; lastName: string; email: string; role: string };
+  user: { 
+    firstName: string; 
+    lastName: string; 
+    email: string; 
+    role: string;
+    phoneNumber?: string;
+    organisationName?: string;
+    lga?: string;
+    ward?: string;
+  };
   setSaving: (v: boolean) => void;
   saving: boolean;
 }) {
@@ -209,8 +218,8 @@ function ProfileForm({
       fullName: `${currentUser.firstName} ${currentUser.lastName}`,
       email: currentUser.email,
       bio: "",
-      phone: "",
-      organization: "",
+      phone: currentUser.phoneNumber || "",
+      organization: currentUser.organisationName || "",
     },
   });
 
@@ -264,6 +273,27 @@ function ProfileForm({
           <p className="text-xs text-muted-foreground mt-1">Contact admin to change</p>
         </div>
       </div>
+
+      {(currentUser.lga || currentUser.ward) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {currentUser.lga && (
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                LGA (Local Government Area)
+              </label>
+              <Input value={currentUser.lga} disabled />
+            </div>
+          )}
+          {currentUser.ward && (
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Ward
+              </label>
+              <Input value={currentUser.ward} disabled />
+            </div>
+          )}
+        </div>
+      )}
 
       <div>
         <label htmlFor="bio" className="block text-sm font-medium mb-1.5">

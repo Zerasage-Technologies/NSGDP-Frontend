@@ -55,9 +55,11 @@ export function buildAdvancedFilterSections(
       id: "status",
       label: "Status",
       options: [
-        { value: "published", label: "Published" },
+        { value: "approved", label: "Approved" },
+        { value: "pending", label: "Pending Review" },
         { value: "under_review", label: "Under Review" },
-        { value: "submitted", label: "Submitted" },
+        { value: "draft", label: "Draft" },
+        { value: "rejected", label: "Rejected" },
         { value: "archived", label: "Archived" },
       ],
     },

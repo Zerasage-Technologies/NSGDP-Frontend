@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useCreateDataset } from "@/lib/hooks/useDatasets";
 import { NIGER_STATE_LGAS } from "@/lib/constants/core";
 import { UPLOAD_FIELD_TOOLTIPS } from "@/lib/constants/upload-tooltips";
 import { useDraftAutoSave } from "@/lib/hooks/useDraftAutoSave";
@@ -21,7 +22,7 @@ import {
   uploadStep2Schema,
   uploadStep3Schema,
 } from "@/lib/schemas/auth";
-import type { Visibility } from "@/types";
+import type { DatasetVisibility, DatasetFormat } from "@/lib/api/datasets";
 
 const steps = [
   { id: 1, name: "Basic Info", icon: FileText },
@@ -31,6 +32,7 @@ const steps = [
 
 export default function UploadDatasetPage() {
   const router = useRouter();
+  const createMutation = useCreateDataset();
   const [currentStep, setCurrentStep] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
@@ -40,7 +42,7 @@ export default function UploadDatasetPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [selectedLGAs, setSelectedLGAs] = useState<string[]>([]);
-  const [visibility, setVisibility] = useState<Visibility>("public");
+  const [visibility, setVisibility] = useState<DatasetVisibility>("public");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
   useDraftAutoSave(
@@ -102,10 +104,43 @@ export default function UploadDatasetPage() {
 
   const handleSubmit = async (isDraft: boolean) => {
     if (!validateStep1() || !validateStep2() || !validateStep3()) return;
+    
     setUploading(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    toast.success(isDraft ? "Dataset saved as draft" : "Dataset submitted for review!");
-    router.push("/dashboard/my-datasets");
+    
+    try {
+      // Determine format from uploaded file or default to csv
+      const fileFormat = uploadedFiles[0]?.name.split('.').pop()?.toLowerCase() || 'csv';
+      const formatMap: Record<string, DatasetFormat> = {
+        'csv': 'csv',
+        'xlsx': 'excel',
+        'xls': 'excel',
+        'json': 'json',
+        'geojson': 'geojson',
+        'shp': 'shapefile',
+        'kml': 'kml',
+        'pdf': 'pdf',
+      };
+      
+      const dataset = await createMutation.mutateAsync({
+        title,
+        description,
+        format: formatMap[fileFormat] || 'csv',
+        visibility,
+        tags,
+        geographic_coverage: selectedLGAs,
+        // Note: File upload would be a separate step after dataset creation
+        // The backend would need a separate endpoint for file uploads
+      });
+      
+      toast.success(isDraft ? "Dataset saved as draft" : "Dataset submitted for review!");
+      router.push("/my-datasets");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to create dataset";
+      toast.error(errorMessage);
+      console.error(error);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (

@@ -39,7 +39,7 @@ export default function ApiTestPage() {
             {organisations && (
               <div className="space-y-4">
                 <div className="text-sm text-muted-foreground">
-                  Total: {organisations.total} | Page: {organisations.page}/{organisations.totalPages}
+                  Total: {organisations.meta.total} | Page: {organisations.meta.page}/{organisations.meta.totalPages}
                 </div>
                 <div className="grid gap-3">
                   {organisations.data.map((org: Organisation) => (
@@ -80,7 +80,7 @@ export default function ApiTestPage() {
             {categories && (
               <div className="space-y-4">
                 <div className="text-sm text-muted-foreground">
-                  Total: {categories.total} | Page: {categories.page}/{categories.totalPages}
+                  Total: {categories.meta.total} | Page: {categories.meta.page}/{categories.meta.totalPages}
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {categories.data.map((cat: Category) => (

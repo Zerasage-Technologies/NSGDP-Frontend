@@ -43,6 +43,24 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("invite");
 
+  // All hooks must be at the top, before any conditional returns
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { terms: false as unknown as true, accessLevel: "public" },
+  });
+
+  const password = watch("password", "");
+
   // Redirect to invite page if token is present
   useEffect(() => {
     if (inviteToken) {
@@ -62,23 +80,6 @@ function RegisterForm() {
       </Container>
     );
   }
-
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    formState: { errors },
-  } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { terms: false as unknown as true, accessLevel: "public" },
-  });
-
-  const password = watch("password", "");
 
   const onSubmit = async (data: RegisterFormData) => {
     setLoading(true);

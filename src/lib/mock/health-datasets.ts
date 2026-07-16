@@ -40,7 +40,7 @@ function ds(
     groups: [CAT_GROUPS[category]],
     healthCategory: category,
     visibility: opts.visibility ?? "public",
-    status: opts.status ?? "published",
+    status: opts.status ?? "approved", // Backend uses "approved" not "published"
     formats: opts.formats,
     lgaCoverage: opts.lgaCoverage ?? [...NIGER_STATE_LGAS],
     downloadCount: opts.downloadCount ?? Math.floor(Math.random() * 400) + 50,
@@ -72,7 +72,7 @@ function ds(
     facilityScope: opts.facilityScope,
     linkedProgram: opts.linkedProgram,
     programId: opts.programId,
-    lifecycleStage: opts.lifecycleStage ?? (opts.status === "published" ? "published" : "submitted"),
+    lifecycleStage: opts.lifecycleStage ?? (opts.status === "approved" ? "published" : "submitted"),
   };
 }
 

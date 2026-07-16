@@ -1,24 +1,27 @@
 import { cn } from "@/lib/utils";
 import type { DatasetStatus } from "@/types";
 
-const CONFIG: Record<DatasetStatus, { label: string; className: string }> = {
-  draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
-  submitted: { label: "Submitted", className: "bg-info text-info-foreground" },
+// Backend status values: draft, pending, under_review, approved, rejected, archived
+const CONFIG: Record<string, { label: string; className: string }> = {
+  draft: { 
+    label: "Draft", 
+    className: "bg-muted text-muted-foreground" 
+  },
+  pending: { 
+    label: "Pending Review", 
+    className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" 
+  },
   under_review: {
     label: "Under Review",
-    className: "bg-info text-info-foreground",
+    className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   },
-  needs_revision: {
-    label: "Needs Revision",
-    className: "bg-warning text-warning-foreground",
-  },
-  published: {
-    label: "Published",
-    className: "bg-success text-success-foreground",
+  approved: {
+    label: "Approved",
+    className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
   },
   rejected: {
     label: "Rejected",
-    className: "bg-destructive text-white",
+    className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   },
   archived: {
     label: "Archived",
@@ -30,10 +33,12 @@ export function StatusBadge({
   status,
   className,
 }: {
-  status: DatasetStatus;
+  status: DatasetStatus | string;
   className?: string;
 }) {
-  const { label, className: tone } = CONFIG[status];
+  const config = CONFIG[status] || CONFIG.draft;
+  const { label, className: tone } = config;
+  
   return (
     <span
       className={cn(

@@ -114,8 +114,8 @@ function DataportalContent() {
     );
   }, [datasetsData, categoriesResponse, organisationsResponse]);
 
-  const total = datasetsData?.total || 0;
-  const totalPages = datasetsData?.totalPages || 1;
+  const total = datasetsData?.meta.total || 0;
+  const totalPages = datasetsData?.meta.totalPages || 1;
 
   // Build category options from real API data
   const categoryOptions = useMemo(() => {

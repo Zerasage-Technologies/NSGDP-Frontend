@@ -15,6 +15,7 @@ export function useOrganisationInvites(organisationId: string) {
     queryKey: ["invites", organisationId],
     queryFn: () => getOrganisationInvites(organisationId),
     enabled: !!organisationId,
+    retry: false, // Don't retry on error
   });
 }
 

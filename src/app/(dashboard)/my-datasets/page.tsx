@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Database, Upload, Edit, Trash2, Eye, Search } from "lucide-react";
@@ -10,74 +10,81 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/data/status-badge";
 import { VisibilityBadge } from "@/components/data/visibility-badge";
 import { EmptyState } from "@/components/feedback/empty-state";
-import { getDatasets } from "@/lib/mock";
-import type { Dataset, DatasetStatus } from "@/types";
+import { useDatasets, useDeleteDataset } from "@/lib/hooks/useDatasets";
+import { useAuth } from "@/lib/auth";
+import type { DatasetStatus } from "@/types";
+import { toast } from "sonner";
 
+// Backend status values: draft, pending, under_review, approved, rejected, archived
 const statusFilters: { value: DatasetStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
-  { value: "published", label: "Published" },
+  { value: "approved", label: "Approved" },
+  { value: "pending", label: "Pending Review" },
   { value: "under_review", label: "Under Review" },
   { value: "draft", label: "Drafts" },
-  { value: "needs_revision", label: "Needs Revision" },
   { value: "rejected", label: "Rejected" },
   { value: "archived", label: "Archived" },
 ];
 
 export default function MyDatasetsPage() {
   const searchParams = useSearchParams();
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const [filteredDatasets, setFilteredDatasets] = useState<Dataset[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<DatasetStatus | "all">(
     (searchParams?.get("status") as DatasetStatus) || "all"
   );
+  const limit = 50;
 
-  useEffect(() => {
-    const loadDatasets = async () => {
-      setLoading(true);
-      
-      // Mock user's datasets
-      const result = await getDatasets({ pageSize: 50, includePrivate: true });
-      setDatasets(result.data);
-      setFilteredDatasets(result.data);
-      
-      setLoading(false);
-    };
+  // Fetch datasets with filters - show only datasets from user's organization
+  // Don't fetch until we have the user's organisationId
+  const { data, isLoading, error } = useDatasets(
+    {
+      page: 1,
+      limit,
+      organisationId: user?.organisationId, // Filter by user's organization
+      status: statusFilter !== "all" ? statusFilter : undefined,
+      search: searchQuery || undefined,
+    },
+    { enabled: !!user?.organisationId } // Only fetch when we have user's org ID
+  );
 
-    loadDatasets();
-  }, []);
+  const deleteDatasetMutation = useDeleteDataset();
 
-  useEffect(() => {
-    let filtered = datasets;
+  const datasets = data?.data || [];
+  const meta = data?.meta;
 
-    // Apply status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((d) => d.status === statusFilter);
+  // Debug: Log the actual data being received
+  console.log('My Datasets - API Response:', { 
+    user: { id: user?.id, organisationId: user?.organisationId, organisationName: user?.organisationName },
+    data, 
+    datasets, 
+    meta, 
+    isLoading, 
+    error 
+  });
+
+  const handleDelete = (slug: string, title: string) => {
+    if (window.confirm(`Are you sure you want to archive "${title}"?`)) {
+      deleteDatasetMutation.mutate(slug, {
+        onSuccess: () => {
+          toast.success("Dataset archived successfully");
+        },
+        onError: () => {
+          toast.error("Failed to archive dataset");
+        },
+      });
     }
+  };
 
-    // Apply search
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (d) =>
-          d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          d.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    setFilteredDatasets(filtered);
-  }, [datasets, statusFilter, searchQuery]);
-
-  // Count by status
+  // Count by status from API data
   const statusCounts: Record<DatasetStatus | "all", number> = {
-    all: datasets.length,
-    published: datasets.filter((d) => d.status === "published").length,
+    all: meta?.total || 0,
+    approved: datasets.filter((d) => d.status === "approved").length,
+    pending: datasets.filter((d) => d.status === "pending").length,
     under_review: datasets.filter((d) => d.status === "under_review").length,
     draft: datasets.filter((d) => d.status === "draft").length,
-    needs_revision: datasets.filter((d) => d.status === "needs_revision").length,
     rejected: datasets.filter((d) => d.status === "rejected").length,
     archived: datasets.filter((d) => d.status === "archived").length,
-    submitted: datasets.filter((d) => d.status === "submitted").length,
   };
 
   return (
@@ -91,7 +98,7 @@ export default function MyDatasetsPage() {
                 Manage your uploaded datasets and track their status
               </p>
             </div>
-            <Link href="/dashboard/upload">
+            <Link href="/upload">
               <Button>
                 <Upload className="size-4 mr-2" />
                 Upload New Dataset
@@ -135,27 +142,34 @@ export default function MyDatasetsPage() {
           </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
             ))}
           </div>
-        ) : filteredDatasets.length === 0 ? (
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-destructive">Failed to load datasets</p>
+            <Button onClick={() => window.location.reload()} variant="outline" className="mt-4">
+              Retry
+            </Button>
+          </div>
+        ) : datasets.length === 0 ? (
           <EmptyState
             icon={Database}
             title={searchQuery ? "No datasets found" : "No datasets yet"}
             description={
               searchQuery
                 ? "Try adjusting your search or filters"
-                : "Upload your first dataset to get started"
+                : "Upload your first dataset to get started. Datasets will appear here once approved."
             }
             action={
               searchQuery
                 ? undefined
                 : {
                     label: "Upload Dataset",
-                    onClick: () => (window.location.href = "/dashboard/upload"),
+                    onClick: () => (window.location.href = "/upload"),
                   }
             }
           />
@@ -176,7 +190,7 @@ export default function MyDatasetsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {filteredDatasets.map((dataset) => (
+                    {datasets.map((dataset) => (
                       <tr
                         key={dataset.id}
                         className="hover:bg-muted/50 transition-colors"
@@ -205,12 +219,12 @@ export default function MyDatasetsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-sm text-muted-foreground">
-                            {dataset.downloadCount.toLocaleString()}
+                            {dataset.download_count?.toLocaleString() || 0}
                           </span>
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-sm text-muted-foreground">
-                            {new Date(dataset.updatedAt).toLocaleDateString("en-US", {
+                            {new Date(dataset.updated_at).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
                               year: "numeric",
@@ -224,12 +238,18 @@ export default function MyDatasetsPage() {
                                 <Eye className="size-4" />
                               </Button>
                             </Link>
-                            <Link href={`/dashboard/edit/${dataset.slug}`}>
+                            <Link href={`/edit/${dataset.slug}`}>
                               <Button size="sm" variant="ghost">
                                 <Edit className="size-4" />
                               </Button>
                             </Link>
-                            <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleDelete(dataset.slug, dataset.title)}
+                              disabled={deleteDatasetMutation.isPending}
+                            >
                               <Trash2 className="size-4" />
                             </Button>
                           </div>
@@ -243,7 +263,7 @@ export default function MyDatasetsPage() {
 
             {/* Results Count */}
             <p className="text-sm text-muted-foreground text-center mt-6">
-              Showing {filteredDatasets.length} of {datasets.length} datasets
+              Showing {datasets.length} of {meta?.total || 0} datasets
             </p>
           </>
         )}

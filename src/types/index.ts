@@ -9,12 +9,12 @@ export type UserRole =
 
 export type Visibility = "public" | "restricted" | "private";
 
+// Backend status values (from dataset.entity.ts)
 export type DatasetStatus =
   | "draft"
-  | "submitted"
+  | "pending"
   | "under_review"
-  | "needs_revision"
-  | "published"
+  | "approved"
   | "rejected"
   | "archived";
 

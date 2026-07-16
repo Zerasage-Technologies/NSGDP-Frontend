@@ -2,35 +2,36 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bell, CheckCheck, X } from "lucide-react";
-import { mockNotifications } from "@/lib/mock/notifications";
-import type { PortalNotification, NotificationType } from "@/types";
+import { Bell, CheckCheck } from "lucide-react";
+import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead } from "@/lib/hooks/useNotifications";
+import { getDisplayType } from "@/lib/api/notifications";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
-const TYPE_ICON_CLASS: Record<NotificationType, string> = {
-  dataset_published: "bg-emerald-500",
-  dataset_updated:   "bg-blue-500",
-  approval_request:  "bg-amber-500",
-  revision_request:  "bg-orange-500",
-  access_granted:    "bg-teal-500",
-  disease_alert:     "bg-destructive",
-  qa_flag:           "bg-yellow-500",
-  sop_updated:       "bg-purple-500",
+const TYPE_COLORS: Record<string, string> = {
+  info: "bg-blue-500",
+  success: "bg-emerald-500",
+  warning: "bg-amber-500",
+  error: "bg-destructive",
 };
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<PortalNotification[]>(mockNotifications);
+  
+  // Fetch latest 6 notifications
+  const { data, isLoading } = useNotifications(1, 6, false);
+  const markAsReadMutation = useMarkNotificationAsRead();
+  const markAllAsReadMutation = useMarkAllNotificationsAsRead();
 
-  const unreadCount = items.filter((n) => !n.read).length;
+  const notifications = data?.data || [];
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
-  const markAllRead = () => {
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+  const handleMarkAllRead = () => {
+    markAllAsReadMutation.mutate();
   };
 
-  const dismiss = (id: string) => {
-    setItems((prev) => prev.filter((n) => n.id !== id));
+  const handleMarkRead = (id: string) => {
+    markAsReadMutation.mutate(id);
   };
 
   return (
@@ -63,15 +64,16 @@ export function NotificationBell() {
                 {unreadCount > 0 && (
                   <button
                     type="button"
-                    onClick={markAllRead}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted"
+                    onClick={handleMarkAllRead}
+                    disabled={markAllAsReadMutation.isPending}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted disabled:opacity-50"
                   >
                     <CheckCheck className="size-3" />
-                    Mark all read
+                    {markAllAsReadMutation.isPending ? "Marking..." : "Mark all read"}
                   </button>
                 )}
                 <Link
-                  href="/dashboard/notifications"
+                  href="/notifications"
                   onClick={() => setOpen(false)}
                   className="text-xs text-primary hover:underline px-2 py-1"
                 >
@@ -81,52 +83,49 @@ export function NotificationBell() {
             </div>
 
             <ul className="divide-y max-h-80 overflow-y-auto">
-              {items.length === 0 ? (
+              {isLoading ? (
+                <li className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  Loading...
+                </li>
+              ) : notifications.length === 0 ? (
                 <li className="px-4 py-8 text-center text-sm text-muted-foreground">
                   No notifications
                 </li>
               ) : (
-                items.slice(0, 6).map((n) => (
+                notifications.map((n) => (
                   <li
                     key={n.id}
                     className={cn(
                       "flex items-start gap-3 px-4 py-3 hover:bg-muted/40 transition-colors",
-                      !n.read && "bg-primary/5"
+                      !n.is_read && "bg-primary/5"
                     )}
                   >
                     <span
                       className={cn(
                         "mt-1 size-2 rounded-full shrink-0",
-                        TYPE_ICON_CLASS[n.type]
+                        TYPE_COLORS[getDisplayType(n.type)] || TYPE_COLORS.info
                       )}
                       aria-hidden
                     />
                     <div className="flex-1 min-w-0">
-                      <Link
-                        href={n.link ?? "#"}
+                      <button
                         onClick={() => {
-                          setItems((prev) => prev.map((x) => x.id === n.id ? { ...x, read: true } : x));
+                          if (!n.is_read) {
+                            handleMarkRead(n.id);
+                          }
                           setOpen(false);
                         }}
-                        className="block"
+                        className="block text-left w-full"
                       >
-                        <p className={cn("text-sm leading-snug", !n.read && "font-medium")}>
+                        <p className={cn("text-sm leading-snug", !n.is_read && "font-medium")}>
                           {n.title}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
-                      </Link>
+                      </button>
                       <p className="text-xs text-muted-foreground/60 mt-1">
-                        {formatDistanceToNow(new Date(n.timestamp), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => dismiss(n.id)}
-                      className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground mt-0.5"
-                      aria-label="Dismiss"
-                    >
-                      <X className="size-3.5" />
-                    </button>
                   </li>
                 ))
               )}

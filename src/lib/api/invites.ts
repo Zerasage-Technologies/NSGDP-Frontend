@@ -73,11 +73,11 @@ export async function createInvite(
   organisationId: string,
   data: CreateInviteRequest
 ): Promise<InviteResponse> {
-  const response = await apiClient.post<InviteResponse>(
+  const response = await apiClient.post<{ data: InviteResponse }>(
     `/admin/organisations/${organisationId}/invites`,
     data
   );
-  return response.data;
+  return response.data.data;
 }
 
 /**
@@ -86,10 +86,10 @@ export async function createInvite(
 export async function getOrganisationInvites(
   organisationId: string
 ): Promise<InviteResponse[]> {
-  const response = await apiClient.get<InviteResponse[]>(
+  const response = await apiClient.get<{ data: InviteResponse[] }>(
     `/admin/organisations/${organisationId}/invites`
   );
-  return response.data;
+  return response.data.data;
 }
 
 /**
@@ -99,10 +99,10 @@ export async function revokeInvite(
   organisationId: string,
   inviteId: string
 ): Promise<{ message: string }> {
-  const response = await apiClient.delete<{ message: string }>(
+  const response = await apiClient.delete<{ data: { message: string } }>(
     `/admin/organisations/${organisationId}/invites/${inviteId}`
   );
-  return response.data;
+  return response.data.data;
 }
 
 /**
@@ -112,8 +112,8 @@ export async function resendInvite(
   organisationId: string,
   inviteId: string
 ): Promise<{ message: string }> {
-  const response = await apiClient.post<{ message: string }>(
+  const response = await apiClient.post<{ data: { message: string } }>(
     `/admin/organisations/${organisationId}/invites/${inviteId}/resend`
   );
-  return response.data;
+  return response.data.data;
 }
