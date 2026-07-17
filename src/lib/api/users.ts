@@ -39,6 +39,15 @@ export interface DashboardSummary {
   availableDatasets: number;
   memberSince: string;
   lastLoginAt: string | null;
+  // Role-specific stats (optional)
+  myDatasetsCount?: number;
+  pendingDatasetsCount?: number;
+  datasetDownloadsTotal?: number;
+  datasetDownloadsThisMonth?: number;
+  teamMembersCount?: number;
+  pendingInvitesCount?: number;
+  reviewQueueCount?: number;
+  agingReviewItemsCount?: number;
 }
 
 export interface UpdateProfileData {

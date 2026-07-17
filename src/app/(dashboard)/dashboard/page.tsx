@@ -138,16 +138,16 @@ export default function DashboardPage() {
               <StatsCard
                 icon={Database}
                 label="My Datasets"
-                value={myDatasets.length.toString()}
-                trend="2 pending review"
+                value={(summary?.myDatasetsCount ?? 0).toString()}
+                trend={`${summary?.pendingDatasetsCount ?? 0} pending review`}
                 iconColor="text-green-600"
                 bgColor="bg-green-50 dark:bg-green-950"
               />
               <StatsCard
                 icon={TrendingUp}
                 label="Total Downloads"
-                value="1,284"
-                trend="+124 this month"
+                value={(summary?.datasetDownloadsTotal ?? 0).toLocaleString()}
+                trend={`+${summary?.datasetDownloadsThisMonth ?? 0} this month`}
                 iconColor="text-purple-600"
                 bgColor="bg-purple-50 dark:bg-purple-950"
               />
@@ -159,8 +159,8 @@ export default function DashboardPage() {
             <StatsCard
               icon={Users}
               label="Team Members"
-              value="12"
-              trend="3 pending approvals"
+              value={(summary?.teamMembersCount ?? 0).toString()}
+              trend={`${summary?.pendingInvitesCount ?? 0} pending approvals`}
               iconColor="text-orange-600"
               bgColor="bg-orange-50 dark:bg-orange-950"
             />
@@ -171,8 +171,8 @@ export default function DashboardPage() {
             <StatsCard
               icon={FileText}
               label="Review Queue"
-              value="15"
-              trend="4 aging items"
+              value={(summary?.reviewQueueCount ?? 0).toString()}
+              trend={`${summary?.agingReviewItemsCount ?? 0} aging items`}
               iconColor="text-red-600"
               bgColor="bg-red-50 dark:bg-red-950"
             />
