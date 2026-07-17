@@ -29,7 +29,6 @@ import { OutbreakAlertBanner } from "@/components/home/outbreak-alert-banner";
 import { mockAlerts } from "@/lib/mock/alerts";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import type { Dataset } from "@/lib/api/datasets"; // Use backend Dataset type
 import {
   DashboardPage as DashboardPageLayout,
   DashboardPageHeader,

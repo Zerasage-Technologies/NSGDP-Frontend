@@ -121,7 +121,7 @@ export default function UploadDatasetPage() {
         'pdf': 'pdf',
       };
       
-      const dataset = await createMutation.mutateAsync({
+      await createMutation.mutateAsync({
         title,
         description,
         format: formatMap[fileFormat] || 'csv',
