@@ -48,12 +48,13 @@ export const API_ROUTES = {
   // Dataset endpoints
   datasets: {
     list: '/datasets',
-    myOrganization: '/datasets/my-organization', // Authenticated endpoint for org datasets
+    myOrganization: '/datasets/my-organization', // Authenticated endpoint for org datasets list
+    myOrganizationBySlug: (slug: string) => `/datasets/my-organization/${slug}`, // Authenticated endpoint for org dataset detail
     bySlug: (slug: string) => `/datasets/${slug}`,
     create: '/datasets',
     update: (slug: string) => `/datasets/${slug}`,
     delete: (slug: string) => `/datasets/${slug}`,
-    submit: (slug: string) => `/datasets/${slug}/submit`,
+    submit: (slug: string) => `/datasets/${slug}/submit-for-review`,
     download: (slug: string) => `/datasets/${slug}/download`,
     versions: (slug: string) => `/datasets/${slug}/versions`,
     preview: (slug: string) => `/datasets/${slug}/preview`,

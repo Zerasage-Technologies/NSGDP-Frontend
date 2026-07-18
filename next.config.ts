@@ -33,8 +33,6 @@ const nextConfig: NextConfig = {
   // Custom redirects (if needed)
   async redirects() {
     return [
-      { source: "/datasets", destination: "/dataportal", permanent: false },
-      { source: "/datasets/:slug", destination: "/dataportal/:slug", permanent: false },
       {
         source: '/dashboard',
         destination: '/login',

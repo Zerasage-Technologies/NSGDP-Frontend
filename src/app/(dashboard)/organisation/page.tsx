@@ -18,6 +18,7 @@ import {
   XCircle,
   Clock,
   Calendar,
+  Pencil,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api/client";
@@ -35,6 +36,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoleBadge } from "@/components/ui/role-badge";
 import { InviteModal } from "@/components/shared/invite/invite-modal";
+import { EditOrganisationModal } from "@/components/shared/organisation/edit-organisation-modal";
 import { useOrganisationInvites, useRevokeInvite, useResendInvite } from "@/lib/hooks/useInvites";
 import { useOrganisationMembers, useUpdateMemberRole, useRemoveMember } from "@/lib/hooks/useOrganisationMembers";
 import type { InviteResponse } from "@/lib/api/invites";
@@ -50,6 +52,7 @@ export default function OrganisationManagementPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
   const orgId = user?.organisationId;
@@ -234,10 +237,16 @@ export default function OrganisationManagementPage() {
         description="Manage your organization profile, team members, and invitations"
         actions={
           isAdmin ? (
-            <Button onClick={() => setInviteModalOpen(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Invite Member
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditModalOpen(true)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+              <Button onClick={() => setInviteModalOpen(true)}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Invite Member
+              </Button>
+            </div>
           ) : undefined
         }
       />
@@ -610,11 +619,20 @@ export default function OrganisationManagementPage() {
 
       {/* Invite Modal - only for admins */}
       {isAdmin && (
-        <InviteModal
-          open={inviteModalOpen}
-          onClose={() => setInviteModalOpen(false)}
-          organisationId={orgId}
-        />
+        <>
+          <InviteModal
+            open={inviteModalOpen}
+            onClose={() => setInviteModalOpen(false)}
+            organisationId={orgId}
+          />
+          {organisation && (
+            <EditOrganisationModal
+              open={editModalOpen}
+              onClose={() => setEditModalOpen(false)}
+              organisation={organisation}
+            />
+          )}
+        </>
       )}
     </DashboardPage>
   );

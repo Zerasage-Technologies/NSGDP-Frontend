@@ -34,6 +34,8 @@ export async function apiFetch<T>(
   options: RequestOptions = {},
 ): Promise<T> {
   const { body, headers, token, ...rest } = options;
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
 
   // Use provided token or get from localStorage
   const accessToken = token ?? getAccessToken();
@@ -42,11 +44,18 @@ export async function apiFetch<T>(
     ...rest,
     credentials: "include", // send httpOnly session cookie
     headers: {
-      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(body !== undefined && !isFormData
+        ? { "Content-Type": "application/json" }
+        : {}),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers,
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body:
+      body === undefined
+        ? undefined
+        : isFormData
+          ? body
+          : JSON.stringify(body),
   });
 
   if (!res.ok) {
@@ -67,8 +76,8 @@ export async function apiFetch<T>(
       localStorage.removeItem("refreshToken");
       
       // Show toast message (if sonner is available)
-      if (typeof window !== "undefined" && (window as any).toast) {
-        (window as any).toast.error("Session expired. Please log in again.");
+      if (typeof window !== "undefined" && typeof (window as unknown as { toast?: { error: (msg: string) => void } }).toast?.error === "function") {
+        (window as unknown as { toast: { error: (msg: string) => void } }).toast.error("Session expired. Please log in again.");
       }
       
       // Redirect to login with return URL

@@ -97,6 +97,7 @@ export interface CreateDatasetDto {
   categoryId?: string;
   format: DatasetFormat;
   visibility?: DatasetVisibility;
+  status?: DatasetStatus; // Add status to allow direct submission as PENDING
   tags?: string[];
   temporalCoverageStart?: string;
   temporalCoverageEnd?: string;
@@ -185,10 +186,19 @@ export async function getOrganizationDatasets(
 }
 
 /**
- * Get dataset by slug
+ * Get dataset by slug (public endpoint - only shows approved datasets)
  */
 export async function getDatasetBySlug(slug: string): Promise<Dataset> {
   const response = await apiClient.get<ApiResponse<Dataset>>(`/datasets/${slug}`);
+  return response.data.data;
+}
+
+/**
+ * Get organization dataset by slug (authenticated endpoint - shows all statuses)
+ * Use this when authenticated users view their own organization's datasets
+ */
+export async function getOrganizationDatasetBySlug(slug: string): Promise<Dataset> {
+  const response = await apiClient.get<ApiResponse<Dataset>>(API_ROUTES.datasets.myOrganizationBySlug(slug));
   return response.data.data;
 }
 

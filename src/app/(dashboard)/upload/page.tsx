@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useCreateDataset } from "@/lib/hooks/useDatasets";
+import { uploadFile } from "@/lib/api/uploads";
 import { NIGER_STATE_LGAS } from "@/lib/constants/core";
 import { UPLOAD_FIELD_TOOLTIPS } from "@/lib/constants/upload-tooltips";
 import { useDraftAutoSave } from "@/lib/hooks/useDraftAutoSave";
@@ -39,21 +40,6 @@ export default function UploadDatasetPage() {
   const [uploading, setUploading] = useState(false);
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
 
-  // Role guard - only contributor and admin can upload
-  if (!isLoading && user) {
-    if (user.role !== "contributor" && user.role !== "admin") {
-      router.replace("/dashboard");
-      return null;
-    }
-    
-    // Must have organisation
-    if (!user.organisationId) {
-      toast.error("You must be part of an organization to upload datasets");
-      router.replace("/dashboard");
-      return null;
-    }
-  }
-
   // PRE-FILLED TEST DATA - Change as needed
   const [title, setTitle] = useState("Test Health Dataset 2026");
   const [description, setDescription] = useState("This is a test dataset for Niger State health data. Contains sample information for testing the upload flow and data validation.");
@@ -67,6 +53,22 @@ export default function UploadDatasetPage() {
     Boolean(title || description || uploadedFiles.length > 0),
     [title, description, uploadedFiles.length]
   );
+
+  // Role guard - only contributor and admin can upload
+  // Must be after all hooks
+  if (!isLoading && user) {
+    if (user.role !== "contributor" && user.role !== "admin") {
+      router.replace("/dashboard");
+      return null;
+    }
+    
+    // Must have organisation
+    if (!user.organisationId) {
+      toast.error("You must be part of an organization to upload datasets");
+      router.replace("/dashboard");
+      return null;
+    }
+  }
 
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -123,6 +125,12 @@ export default function UploadDatasetPage() {
   const handleSubmit = async (isDraft: boolean) => {
     if (!validateStep1() || !validateStep2() || !validateStep3()) return;
     
+    // Require file for ALL dataset creation (draft or submission)
+    if (uploadedFiles.length === 0) {
+      toast.error("Please upload a file. Datasets require data files.");
+      return;
+    }
+    
     setUploading(true);
     
     try {
@@ -139,19 +147,26 @@ export default function UploadDatasetPage() {
         'pdf': 'pdf',
       };
       
-      await createMutation.mutateAsync({
+      // Step 1: Create dataset with appropriate status
+      // - Draft button: status = 'draft' (can be saved without file)
+      // - Submit for Review button: status = 'pending' (requires file)
+      const dataset = await createMutation.mutateAsync({
         title,
         description,
         format: formatMap[fileFormat] || 'csv',
         visibility,
+        status: isDraft ? 'draft' : 'pending',
         tags,
-        geographicCoverage: selectedLGAs.join(', '), // Convert array to comma-separated string
-        // Note: File upload would be a separate step after dataset creation
-        // The backend would need a separate endpoint for file uploads
+        geographicCoverage: selectedLGAs.join(', '),
       });
-      
+
+      // Step 2: Upload the file if present
+      if (uploadedFiles.length > 0 && uploadedFiles[0].file) {
+        await uploadFile(uploadedFiles[0].file, dataset.id);
+      }
+
       toast.success(isDraft ? "Dataset saved as draft" : "Dataset submitted for review!");
-      router.push("/my-datasets");
+      router.push("/datasets");
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to create dataset";
       toast.error(errorMessage);
@@ -376,11 +391,16 @@ export default function UploadDatasetPage() {
                   <Button
                     variant="outline"
                     onClick={() => handleSubmit(true)}
-                    disabled={uploading}
+                    disabled={uploading || uploadedFiles.length === 0}
+                    title={uploadedFiles.length === 0 ? "Please upload a file first" : ""}
                   >
                     Save as Draft
                   </Button>
-                  <Button onClick={() => handleSubmit(false)} disabled={uploading}>
+                  <Button 
+                    onClick={() => handleSubmit(false)} 
+                    disabled={uploading || uploadedFiles.length === 0}
+                    title={uploadedFiles.length === 0 ? "Please upload a file first" : ""}
+                  >
                     {uploading ? "Submitting..." : "Submit for Review"}
                   </Button>
                 </div>

@@ -23,8 +23,6 @@ import { useDashboardSummary } from "@/lib/hooks/useDashboardSummary";
 import { useDownloadHistory } from "@/lib/hooks/useDownloadHistory";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useOrganizationDatasets } from "@/lib/hooks/useDatasets";
-import { OutbreakAlertBanner } from "@/components/home/outbreak-alert-banner";
-import { mockAlerts } from "@/lib/mock/alerts";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -77,7 +75,8 @@ export default function DashboardPage() {
       />
 
       <DashboardPageContent className="space-y-6">
-        <OutbreakAlertBanner alerts={mockAlerts} />
+        {/* Outbreak alerts hidden until real API is available */}
+        {/* <OutbreakAlertBanner alerts={[]} /> */}
 
         {/* Stats Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -217,7 +216,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       ))}
-                      <Link href="/my-datasets">
+                      <Link href="/datasets">
                         <Button variant="outline" className="w-full">
                           View All Organization Datasets
                         </Button>
@@ -267,7 +266,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     ))}
-                    <Link href="/my-downloads">
+                    <Link href="/downloads">
                       <Button variant="outline" className="w-full">
                         View All Downloads
                       </Button>
@@ -305,7 +304,7 @@ export default function DashboardPage() {
                           icon={AlertCircle}
                           text={`${summary.pendingDatasetsCount} dataset${summary.pendingDatasetsCount !== 1 ? 's' : ''} awaiting review`}
                           color="text-orange-600"
-                          href="/my-datasets?status=pending"
+                          href="/datasets?status=pending"
                         />
                       )}
                       {user.role !== "contributor" && summary?.pendingInvitesCount !== undefined && summary.pendingInvitesCount > 0 && (

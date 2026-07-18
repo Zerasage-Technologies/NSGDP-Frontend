@@ -77,7 +77,7 @@ export default function EditDatasetPage({
   useEffect(() => {
     if (error) {
       toast.error("Dataset not found");
-      router.push("/my-datasets");
+      router.push("/datasets");
     }
   }, [error, router]);
 
@@ -149,14 +149,13 @@ export default function EditDatasetPage({
           title,
           description,
           tags,
-          geographic_coverage: selectedLGAs,
+          geographicCoverage: selectedLGAs.join(', '), // Convert array to comma-separated string
           visibility,
-          status: isDraft ? 'draft' : undefined, // Keep current status if not draft
         },
       });
       
       toast.success(isDraft ? "Changes saved as draft" : "Dataset updated successfully!");
-      router.push("/my-datasets");
+      router.push("/datasets");
     } catch (error) {
       toast.error("Failed to update dataset");
       console.error(error);

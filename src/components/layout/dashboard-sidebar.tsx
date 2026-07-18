@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Database,
@@ -10,6 +10,7 @@ import {
   Building2,
   User,
   X,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,33 +27,26 @@ interface NavLink {
 const NAV_LINKS: NavLink[] = [
   {
     href: "/dashboard",
-    label: "Overview",
+    label: "Dashboard",
     icon: LayoutDashboard,
   },
   {
-    href: "/dataportal",
-    label: "Browse Datasets",
-    icon: Database,
-  },
-  {
-    href: "/my-datasets",
-    label: "My Datasets",
+    href: "/datasets",
+    label: "Datasets",
     icon: Database,
     roles: ["contributor", "admin"],
   },
   {
-    href: "/my-downloads",
-    label: "My Downloads",
-    icon: Download,
-  },
-  // Org Admin Section (M2 Scope: Team Management + Organization Profile)
-  {
     href: "/organisation",
     label: "Organization",
     icon: Building2,
-    roles: ["contributor", "admin"], // Contributors can view, admins can manage
+    roles: ["contributor", "admin"],
   },
-  // Common Section
+  {
+    href: "/downloads",
+    label: "Downloads",
+    icon: Download,
+  },
   {
     href: "/notifications",
     label: "Notifications",
@@ -60,7 +54,7 @@ const NAV_LINKS: NavLink[] = [
   },
   {
     href: "/profile",
-    label: "Profile Settings",
+    label: "Profile",
     icon: User,
   },
 ];
@@ -71,12 +65,15 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ className }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useAuth();
 
   const visibleLinks = NAV_LINKS.filter((link) => {
     if (!link.roles) return true;
     return user && link.roles.includes(user.role);
   });
+
+  const canUpload = user && ["contributor", "admin"].includes(user.role);
 
   return (
     <aside className={cn("w-64 border-r bg-background flex flex-col", className)}>
@@ -112,6 +109,17 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
             </Link>
           );
         })}
+
+        {/* Quick Upload Button */}
+        {canUpload && (
+          <Button 
+            className="w-full gap-2 mt-2" 
+            onClick={() => router.push("/upload")}
+          >
+            <Upload className="size-4" />
+            Upload Dataset
+          </Button>
+        )}
       </nav>
       
       {/* User Info with Role Badge */}
@@ -144,12 +152,15 @@ export function DashboardMobileSidebar({
   onClose,
 }: DashboardMobileSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useAuth();
 
   const visibleLinks = NAV_LINKS.filter((link) => {
     if (!link.roles) return true;
     return user && link.roles.includes(user.role);
   });
+
+  const canUpload = user && ["contributor", "admin"].includes(user.role);
 
   if (!open) return null;
 
@@ -210,6 +221,20 @@ export function DashboardMobileSidebar({
               </Link>
             );
           })}
+
+          {/* Quick Upload Button */}
+          {canUpload && (
+            <Button 
+              className="w-full gap-2 mt-2" 
+              onClick={() => {
+                router.push("/upload");
+                onClose();
+              }}
+            >
+              <Upload className="size-4" />
+              Upload Dataset
+            </Button>
+          )}
         </div>
 
         {/* User Info with Role Badge */}

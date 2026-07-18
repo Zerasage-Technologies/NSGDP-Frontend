@@ -14,7 +14,7 @@ import {
   DashboardPageContent,
 } from "@/components/layout/dashboard-page-header";
 
-export default function MyDownloadsPage() {
+export default function DownloadsPage() {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const { data: downloadHistory, isLoading } = useDownloadHistory(page, 20);
@@ -35,7 +35,7 @@ export default function MyDownloadsPage() {
   return (
     <DashboardPage>
       <DashboardPageHeader
-        title="My Downloads"
+        title="Downloads"
         description="View and re-download your dataset history"
       />
 
@@ -110,59 +110,82 @@ export default function MyDownloadsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {filteredDownloads.map((item) => (
-                      <tr
-                        key={item.id}
-                        className="hover:bg-muted/50 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-3">
-                            <FileText className="size-5 text-muted-foreground shrink-0 mt-0.5" />
-                            <div>
-                              <Link
-                                href={`/dataportal/${item.dataset.slug}`}
-                                className="font-medium hover:text-primary transition-colors block mb-1"
-                              >
-                                {item.dataset.title}
-                              </Link>
-                              <p className="text-sm text-muted-foreground">
-                                Version {item.dataset.version}
-                              </p>
+                    {filteredDownloads.map((item) => {
+                      const isDeleted = (item.dataset as { isDeleted?: boolean }).isDeleted;
+                      
+                      return (
+                        <tr
+                          key={item.id}
+                          className={`hover:bg-muted/50 transition-colors ${isDeleted ? 'opacity-60' : ''}`}
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-start gap-3">
+                              <FileText className="size-5 text-muted-foreground shrink-0 mt-0.5" />
+                              <div>
+                                {isDeleted ? (
+                                  <div className="font-medium text-muted-foreground mb-1">
+                                    {item.dataset.title}
+                                    <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground border">
+                                      No Longer Available
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <Link
+                                    href={`/datasets/${item.dataset.slug}`}
+                                    className="font-medium hover:text-primary transition-colors block mb-1"
+                                  >
+                                    {item.dataset.title}
+                                  </Link>
+                                )}
+                                {!isDeleted && item.dataset.version && (
+                                  <p className="text-sm text-muted-foreground">
+                                    Version {item.dataset.version}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                            {item.dataset.format.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="size-4" />
-                            {new Date(item.downloadedAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Link href={`/dataportal/${item.dataset.slug}`}>
-                              <Button size="sm" variant="outline">
-                                <Download className="size-4 mr-2" />
-                                Re-download
-                              </Button>
-                            </Link>
-                            <Link href={`/dataportal/${item.dataset.slug}`}>
-                              <Button size="sm" variant="ghost">
-                                View Dataset
-                              </Button>
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-6 py-4">
+                            {!isDeleted && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                {item.dataset.format.toUpperCase()}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="size-4" />
+                              {new Date(item.downloadedAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            {isDeleted ? (
+                              <span className="text-sm text-muted-foreground italic">
+                                Dataset deleted
+                              </span>
+                            ) : (
+                              <div className="flex items-center justify-end gap-2">
+                                <Link href={`/datasets/${item.dataset.slug}`}>
+                                  <Button size="sm" variant="outline">
+                                    <Download className="size-4 mr-2" />
+                                    Re-download
+                                  </Button>
+                                </Link>
+                                <Link href={`/datasets/${item.dataset.slug}`}>
+                                  <Button size="sm" variant="ghost">
+                                    View Dataset
+                                  </Button>
+                                </Link>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -30,7 +30,7 @@ interface DatasetPageProps {
 export default function DatasetPage({ params }: DatasetPageProps) {
   const { slug } = use(params);
   
-  // Fetch dataset by slug
+  // Fetch dataset by slug (public endpoint - approved only)
   const { data: backendDataset, isLoading, error } = useDataset(slug);
   
   // Fetch reference data for transformation

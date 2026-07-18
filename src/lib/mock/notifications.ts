@@ -17,7 +17,7 @@ export const mockNotifications: PortalNotification[] = [
     message: "Malaria Burden LGA Report Q4 2025 has passed QA and needs Director Approval.",
     read: false,
     timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    link: "/dashboard/my-datasets",
+    link: "/dashboard/datasets",
   },
   {
     id: "pn-3",
@@ -35,7 +35,7 @@ export const mockNotifications: PortalNotification[] = [
     message: "Admin requested changes to 'LGA Population Estimates 2024'. Review the feedback.",
     read: true,
     timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    link: "/dashboard/my-datasets",
+    link: "/dashboard/datasets",
   },
   {
     id: "pn-5",

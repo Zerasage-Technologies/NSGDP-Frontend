@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export interface UploadedFile {
+  file: File; // Store the actual File object
   name: string;
   size: number;
   progress: number;
@@ -54,6 +55,7 @@ export function FileUploadArea({
           onFilesChange([
             ...files,
             {
+              file: file, // Store the actual File object
               name: file.name,
               size: file.size,
               progress: 0,
@@ -64,6 +66,7 @@ export function FileUploadArea({
         }
 
         const newFile: UploadedFile = {
+          file: file, // Store the actual File object
           name: file.name,
           size: file.size,
           progress: 0,

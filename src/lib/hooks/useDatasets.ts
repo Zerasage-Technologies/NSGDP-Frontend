@@ -3,6 +3,7 @@ import {
   getDatasets,
   getOrganizationDatasets,
   getDatasetBySlug,
+  getOrganizationDatasetBySlug,
   createDataset,
   updateDataset,
   deleteDataset,
@@ -41,7 +42,7 @@ export function useOrganizationDatasets(params?: Omit<DatasetListParams, 'organi
 }
 
 /**
- * Hook to fetch a single dataset by slug
+ * Hook to fetch a single dataset by slug (public endpoint)
  */
 export function useDataset(slug: string) {
   return useQuery({
@@ -49,6 +50,19 @@ export function useDataset(slug: string) {
     queryFn: () => getDatasetBySlug(slug),
     enabled: !!slug,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Hook to fetch a single organization dataset by slug (authenticated endpoint)
+ * Use this when authenticated users view their own organization's datasets
+ */
+export function useOrganizationDataset(slug: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ['organization-dataset', slug],
+    queryFn: () => getOrganizationDatasetBySlug(slug),
+    enabled: !!slug && enabled,
+    staleTime: 2 * 60 * 1000, // 2 minutes - org datasets change frequently
   });
 }
 

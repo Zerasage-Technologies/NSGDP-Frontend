@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/data/status-badge";
 import { VisibilityBadge } from "@/components/data/visibility-badge";
 import { EmptyState } from "@/components/feedback/empty-state";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useOrganizationDatasets, useDeleteDataset, useSubmitDatasetForReview } from "@/lib/hooks/useDatasets";
 import { useAuth } from "@/lib/auth";
 import type { DatasetStatus } from "@/types";
@@ -34,6 +35,11 @@ export default function MyDatasetsPage() {
     (searchParams?.get("status") as DatasetStatus) || "all"
   );
   const limit = 50;
+
+  // Dialog state
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedDataset, setSelectedDataset] = useState<{ slug: string; title: string } | null>(null);
 
   // Fetch datasets from authenticated organization endpoint
   // This endpoint shows ALL statuses (draft, pending, approved, etc.) for the user's org
@@ -89,29 +95,41 @@ export default function MyDatasetsPage() {
   };
 
   const handleDelete = (slug: string, title: string) => {
-    if (window.confirm(`Are you sure you want to archive "${title}"?`)) {
-      deleteDatasetMutation.mutate(slug, {
-        onSuccess: () => {
-          toast.success("Dataset archived successfully");
-        },
-        onError: () => {
-          toast.error("Failed to archive dataset");
-        },
-      });
-    }
+    setSelectedDataset({ slug, title });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!selectedDataset) return;
+    
+    deleteDatasetMutation.mutate(selectedDataset.slug, {
+      onSuccess: () => {
+        toast.success("Dataset archived successfully");
+        setSelectedDataset(null);
+      },
+      onError: () => {
+        toast.error("Failed to archive dataset");
+      },
+    });
   };
 
   const handleSubmitForReview = (slug: string, title: string) => {
-    if (window.confirm(`Submit "${title}" for review? It will be sent to administrators for approval.`)) {
-      submitDatasetMutation.mutate(slug, {
-        onSuccess: () => {
-          toast.success("Dataset submitted for review successfully");
-        },
-        onError: (error: Error) => {
-          toast.error((error as Error)?.message || "Failed to submit dataset for review");
-        },
-      });
-    }
+    setSelectedDataset({ slug, title });
+    setSubmitDialogOpen(true);
+  };
+
+  const confirmSubmit = () => {
+    if (!selectedDataset) return;
+    
+    submitDatasetMutation.mutate(selectedDataset.slug, {
+      onSuccess: () => {
+        toast.success("Dataset submitted for review successfully");
+        setSelectedDataset(null);
+      },
+      onError: (error: Error) => {
+        toast.error((error as Error)?.message || "Failed to submit dataset for review");
+      },
+    });
   };
 
   // Check if user can submit dataset for review
@@ -151,9 +169,9 @@ export default function MyDatasetsPage() {
         <Container size="wide" className="py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">My Datasets</h1>
+              <h1 className="text-3xl font-bold">Datasets</h1>
               <p className="mt-2 text-muted-foreground">
-                Manage your uploaded datasets and track their status
+                Manage your organization&apos;s datasets and track their status
               </p>
             </div>
             <Link href="/upload">
@@ -200,7 +218,7 @@ export default function MyDatasetsPage() {
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search my datasets..."
+              placeholder="Search datasets..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -266,7 +284,7 @@ export default function MyDatasetsPage() {
                             <Database className="size-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div className="min-w-0">
                               <Link
-                                href={`/dataportal/${dataset.slug}`}
+                                href={`/datasets/${dataset.slug}`}
                                 className="font-medium hover:text-primary transition-colors block mb-1"
                               >
                                 {dataset.title}
@@ -299,7 +317,7 @@ export default function MyDatasetsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2">
-                            <Link href={`/dataportal/${dataset.slug}`}>
+                            <Link href={`/datasets/${dataset.slug}`}>
                               <Button size="sm" variant="ghost">
                                 <Eye className="size-4" />
                               </Button>
@@ -350,6 +368,32 @@ export default function MyDatasetsPage() {
           </>
         )}
       </Container>
+
+      {/* Submit for Review Dialog */}
+      <ConfirmDialog
+        open={submitDialogOpen}
+        onOpenChange={setSubmitDialogOpen}
+        title="Submit for Review"
+        description={`Submit "${selectedDataset?.title}" for review? It will be sent to administrators for approval.`}
+        confirmLabel="Submit"
+        cancelLabel="Cancel"
+        onConfirm={confirmSubmit}
+        variant="default"
+        isLoading={submitDatasetMutation.isPending}
+      />
+
+      {/* Delete Dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Archive Dataset"
+        description={`Are you sure you want to archive "${selectedDataset?.title}"? This action can be reversed by administrators.`}
+        confirmLabel="Archive"
+        cancelLabel="Cancel"
+        onConfirm={confirmDelete}
+        variant="destructive"
+        isLoading={deleteDatasetMutation.isPending}
+      />
     </main>
   );
 }
