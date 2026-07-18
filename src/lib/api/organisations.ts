@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { API_ROUTES } from './routes';
 import type { PaginatedResponse } from '../types/common';
 
 interface ApiResponse<T> {
@@ -99,4 +100,51 @@ export async function createOrganisation(
     payload
   );
   return response.data.data;
+}
+
+/**
+ * Get organisation members
+ */
+export async function getOrganisationMembers(orgId: string): Promise<OrganisationMember[]> {
+  const response = await apiClient.get<ApiResponse<OrganisationMember[]>>(
+    API_ROUTES.organisations.members(orgId)
+  );
+  return response.data.data;
+}
+
+/**
+ * Update member role (promote/demote)
+ */
+export async function updateMemberRole(
+  orgId: string,
+  userId: string,
+  role: 'contributor' | 'admin'
+): Promise<{ message: string; user: OrganisationMember }> {
+  const response = await apiClient.patch<ApiResponse<{ message: string; user: OrganisationMember }>>(
+    API_ROUTES.organisations.updateMemberRole(orgId, userId),
+    { role }
+  );
+  return response.data.data;
+}
+
+/**
+ * Remove member from organisation
+ */
+export async function removeMember(
+  orgId: string,
+  userId: string
+): Promise<{ message: string }> {
+  const response = await apiClient.patch<ApiResponse<{ message: string }>>(
+    API_ROUTES.organisations.removeMember(orgId, userId)
+  );
+  return response.data.data;
+}
+
+export interface OrganisationMember {
+  id: string;
+  fullName: string;
+  email: string;
+  role: 'contributor' | 'admin';
+  createdAt: string;
+  isActive: boolean;
 }

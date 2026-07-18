@@ -90,12 +90,12 @@ export default function ProfilePage() {
                     <div>
                       <p className="font-medium mb-1">2FA Status</p>
                       <p className="text-sm text-muted-foreground">
-                        {user.role === "super_admin" || user.role === "admin"
+                        {user.role === "admin"
                           ? "Enabled (Required for your role)"
                           : "Not enabled"}
                       </p>
                     </div>
-                    {user.role !== "super_admin" && user.role !== "admin" && (
+                    {user.role !== "admin" && (
                       <Button variant="outline">Enable 2FA</Button>
                     )}
                   </div>

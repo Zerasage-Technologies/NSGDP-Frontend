@@ -64,7 +64,7 @@ export interface PermissionGrant {
   id: string;
   groupId: string;
   action: PermissionAction;
-  grantedBy: string;     // super_admin user ID
+  grantedBy: string;     // admin user ID
   grantedAt: string;     // ISO date
 }
 

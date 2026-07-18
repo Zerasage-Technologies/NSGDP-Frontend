@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getDatasets,
+  getOrganizationDatasets,
   getDatasetBySlug,
   createDataset,
   updateDataset,
   deleteDataset,
-  submitDataset,
+  submitDatasetForReview,
   downloadDataset,
   getDatasetVersions,
   getDatasetPreview,
@@ -23,6 +24,19 @@ export function useDatasets(params?: DatasetListParams, options?: { enabled?: bo
     queryFn: () => getDatasets(params),
     enabled: options?.enabled !== false, // Default to true, can be disabled
     staleTime: 2 * 60 * 1000, // 2 minutes - datasets change frequently
+  });
+}
+
+/**
+ * Hook to fetch organization datasets (authenticated, shows all statuses)
+ * Use this in "My Datasets" page to show org's drafts, pending, etc.
+ */
+export function useOrganizationDatasets(params?: Omit<DatasetListParams, 'organisationId'>, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['organization-datasets', params],
+    queryFn: () => getOrganizationDatasets(params),
+    enabled: options?.enabled !== false,
+    staleTime: 1 * 60 * 1000, // 1 minute - org datasets change frequently
   });
 }
 
@@ -47,8 +61,9 @@ export function useCreateDataset() {
   return useMutation({
     mutationFn: (data: CreateDatasetDto) => createDataset(data),
     onSuccess: () => {
-      // Invalidate datasets list to refetch
+      // Invalidate both datasets lists to refetch
       queryClient.invalidateQueries({ queryKey: ['datasets'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-datasets'] });
     },
   });
 }
@@ -63,9 +78,10 @@ export function useUpdateDataset() {
     mutationFn: ({ slug, data }: { slug: string; data: UpdateDatasetDto }) =>
       updateDataset(slug, data),
     onSuccess: (_, variables) => {
-      // Invalidate specific dataset and list
+      // Invalidate specific dataset and both lists
       queryClient.invalidateQueries({ queryKey: ['dataset', variables.slug] });
       queryClient.invalidateQueries({ queryKey: ['datasets'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-datasets'] });
     },
   });
 }
@@ -79,24 +95,26 @@ export function useDeleteDataset() {
   return useMutation({
     mutationFn: (slug: string) => deleteDataset(slug),
     onSuccess: () => {
-      // Invalidate datasets list
+      // Invalidate both datasets lists
       queryClient.invalidateQueries({ queryKey: ['datasets'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-datasets'] });
     },
   });
 }
 
 /**
- * Hook to submit a dataset for review
+ * Hook to submit a dataset for review (draft/rejected → pending)
  */
-export function useSubmitDataset() {
+export function useSubmitDatasetForReview() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (slug: string) => submitDataset(slug),
+    mutationFn: (slug: string) => submitDatasetForReview(slug),
     onSuccess: (_, slug) => {
       // Invalidate specific dataset to show updated status
       queryClient.invalidateQueries({ queryKey: ['dataset', slug] });
       queryClient.invalidateQueries({ queryKey: ['datasets'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-datasets'] });
     },
   });
 }

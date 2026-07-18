@@ -8,11 +8,9 @@ import {
   Upload,
   Users,
   Bell,
-  TrendingUp,
   Clock,
   CheckCircle2,
   AlertCircle,
-  FileText,
   Search,
   ArrowRight,
 } from "lucide-react";
@@ -24,7 +22,7 @@ import { useAuth } from "@/lib/auth";
 import { useDashboardSummary } from "@/lib/hooks/useDashboardSummary";
 import { useDownloadHistory } from "@/lib/hooks/useDownloadHistory";
 import { useNotifications } from "@/lib/hooks/useNotifications";
-import { useDatasets } from "@/lib/hooks/useDatasets";
+import { useOrganizationDatasets } from "@/lib/hooks/useDatasets";
 import { OutbreakAlertBanner } from "@/components/home/outbreak-alert-banner";
 import { mockAlerts } from "@/lib/mock/alerts";
 import { cn } from "@/lib/utils";
@@ -42,17 +40,25 @@ export default function DashboardPage() {
   const { data: downloadHistory, isLoading: downloadsLoading } = useDownloadHistory(1, 4);
   const { data: notifications, isLoading: notificationsLoading } = useNotifications(1, 3);
   
-  // Fetch user's organization datasets
-  const { data: datasetsData, isLoading: datasetsLoading } = useDatasets(
+  // Fetch user's organization datasets using authenticated endpoint
+  const { data: datasetsData, isLoading: datasetsLoading } = useOrganizationDatasets(
     {
       page: 1,
       limit: 6,
-      organisationId: user?.organisationId,
       sortBy: 'created_at',
       sortOrder: 'DESC',
     },
     { enabled: !!user?.organisationId }
   );
+
+  // Debug logging - remove after testing
+  console.log('=== DASHBOARD DEBUG ===');
+  console.log('User:', user);
+  console.log('User Org ID:', user?.organisationId);
+  console.log('Summary Data:', summary);
+  console.log('Datasets Data:', datasetsData);
+  console.log('Download History:', downloadHistory);
+  console.log('======================');
 
   const myDatasets = datasetsData?.data || [];
   const loading = summaryLoading || datasetsLoading;
@@ -66,8 +72,7 @@ export default function DashboardPage() {
         description={
           user?.role === "registered" ? "Browse datasets and track your downloads" :
           user?.role === "contributor" ? "Manage your datasets and contributions" :
-          user?.role === "admin" ? "Manage your organization and datasets" :
-          user?.role === "super_admin" ? "System overview and administration" : ""
+          user?.role === "admin" ? "Manage your organization and datasets" : ""
         }
       />
 
@@ -132,49 +137,36 @@ export default function DashboardPage() {
           )}
 
           {/* Contributors+ */}
-          {user && ["contributor", "admin", "super_admin"].includes(user.role) && (
+          {user && ["contributor", "admin"].includes(user.role) && (
             <>
               <StatsCard
                 icon={Database}
-                label="My Datasets"
+                label="Organization Datasets"
                 value={(summary?.myDatasetsCount ?? 0).toString()}
                 trend={`${summary?.pendingDatasetsCount ?? 0} pending review`}
                 iconColor="text-green-600"
                 bgColor="bg-green-50 dark:bg-green-950"
               />
+              {/* Team Members - both contributors and admins can see */}
               <StatsCard
-                icon={TrendingUp}
-                label="Total Downloads"
-                value={(summary?.datasetDownloadsTotal ?? 0).toLocaleString()}
-                trend={`+${summary?.datasetDownloadsThisMonth ?? 0} this month`}
+                icon={Users}
+                label="Team Members"
+                value={(summary?.teamMembersCount ?? 0).toString()}
+                trend={user.role === "admin" ? `${summary?.pendingInvitesCount ?? 0} pending approvals` : "View team"}
+                iconColor="text-orange-600"
+                bgColor="bg-orange-50 dark:bg-orange-950"
+                clickable
+                onClick={() => router.push('/organisation')}
+              />
+              <StatsCard
+                icon={Upload}
+                label="My Contributions"
+                value={(summary?.myContributedDatasetsCount ?? 0).toString()}
+                trend="Datasets I created"
                 iconColor="text-purple-600"
                 bgColor="bg-purple-50 dark:bg-purple-950"
               />
             </>
-          )}
-
-          {/* Org Admin+ */}
-          {user && ["admin", "super_admin"].includes(user.role) && (
-            <StatsCard
-              icon={Users}
-              label="Team Members"
-              value={(summary?.teamMembersCount ?? 0).toString()}
-              trend={`${summary?.pendingInvitesCount ?? 0} pending approvals`}
-              iconColor="text-orange-600"
-              bgColor="bg-orange-50 dark:bg-orange-950"
-            />
-          )}
-
-          {/* Super Admin */}
-          {user?.role === "super_admin" && (
-            <StatsCard
-              icon={FileText}
-              label="Review Queue"
-              value={(summary?.reviewQueueCount ?? 0).toString()}
-              trend={`${summary?.agingReviewItemsCount ?? 0} aging items`}
-              iconColor="text-red-600"
-              bgColor="bg-red-50 dark:bg-red-950"
-            />
           )}
             </>
           )}
@@ -184,10 +176,10 @@ export default function DashboardPage() {
           {/* Main Content - 2 columns */}
           <div className="lg:col-span-2 space-y-6">
             {/* My Datasets (Contributors+) */}
-            {user && ["contributor", "admin", "super_admin"].includes(user.role) && (
+            {user && ["contributor", "admin"].includes(user.role) && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>My Datasets</CardTitle>
+                  <CardTitle>Organization Datasets</CardTitle>
                   <Button size="sm">
                     <Upload className="size-4 mr-2" />
                     Upload New
@@ -227,7 +219,7 @@ export default function DashboardPage() {
                       ))}
                       <Link href="/my-datasets">
                         <Button variant="outline" className="w-full">
-                          View All My Datasets
+                          View All Organization Datasets
                         </Button>
                       </Link>
                     </div>
@@ -294,32 +286,44 @@ export default function DashboardPage() {
           {/* Sidebar - 1 column */}
           <div className="space-y-6">
             {/* Pending Actions */}
-            {user && ["contributor", "admin", "super_admin"].includes(user.role) && (
+            {user && ["contributor", "admin"].includes(user.role) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Pending Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <ActionItem
-                    icon={AlertCircle}
-                    text="2 datasets awaiting review"
-                    color="text-orange-600"
-                    href="/dashboard/my-datasets?status=pending"
-                  />
-                  {user.role !== "contributor" && (
-                    <ActionItem
-                      icon={Users}
-                      text="3 access requests pending"
-                      color="text-blue-600"
-                      href="/organisation"
-                    />
+                  {summaryLoading ? (
+                    <div className="space-y-3">
+                      {[...Array(2)].map((_, i) => (
+                        <div key={i} className="h-12 rounded-lg bg-muted animate-pulse" />
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      {summary && summary.pendingDatasetsCount !== undefined && summary.pendingDatasetsCount > 0 && (
+                        <ActionItem
+                          icon={AlertCircle}
+                          text={`${summary.pendingDatasetsCount} dataset${summary.pendingDatasetsCount !== 1 ? 's' : ''} awaiting review`}
+                          color="text-orange-600"
+                          href="/my-datasets?status=pending"
+                        />
+                      )}
+                      {user.role !== "contributor" && summary?.pendingInvitesCount !== undefined && summary.pendingInvitesCount > 0 && (
+                        <ActionItem
+                          icon={Users}
+                          text={`${summary.pendingInvitesCount} access request${summary.pendingInvitesCount !== 1 ? 's' : ''} pending`}
+                          color="text-blue-600"
+                          href="/organisation"
+                        />
+                      )}
+                      {(!summary?.pendingDatasetsCount && !summary?.pendingInvitesCount) && (
+                        <div className="text-center py-8">
+                          <CheckCircle2 className="size-10 text-green-600 mx-auto mb-3 opacity-50" />
+                          <p className="text-sm text-muted-foreground">No pending actions</p>
+                        </div>
+                      )}
+                    </>
                   )}
-                  <ActionItem
-                    icon={CheckCircle2}
-                    text="Complete your profile"
-                    color="text-green-600"
-                    href="/profile"
-                  />
                 </CardContent>
               </Card>
             )}
@@ -374,7 +378,7 @@ export default function DashboardPage() {
             </Card>
 
             {/* Portal Activity */}
-            {user && ["contributor", "admin", "super_admin"].includes(user.role) && (
+            {user && ["contributor", "admin"].includes(user.role) && (
               <DatasetActivityPanel />
             )}
 

@@ -17,20 +17,15 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Auth guard - redirect to login if not authenticated
-  // Block super_admin from accessing dashboard pages
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        router.push("/login?returnTo=/dashboard");
-      } else if (user?.role === "super_admin") {
-        router.push("/admin");
-      }
+    if (!isLoading && !isAuthenticated) {
+      router.push("/login?returnTo=/dashboard");
     }
-  }, [isAuthenticated, isLoading, user, router]);
+  }, [isAuthenticated, isLoading, router]);
 
   // Show loading state while checking auth
   if (isLoading) {
@@ -44,8 +39,8 @@ export default function DashboardLayout({
     );
   }
 
-  // Don't render dashboard if not authenticated or if super_admin
-  if (!isAuthenticated || user?.role === "super_admin") {
+  // Don't render dashboard if not authenticated
+  if (!isAuthenticated) {
     return null;
   }
 

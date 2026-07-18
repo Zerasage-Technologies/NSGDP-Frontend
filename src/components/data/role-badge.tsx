@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 
 // Map backend roles to frontend roles for display
-type BackendRole = 'viewer' | 'contributor' | 'data_manager' | 'admin' | 'super_admin';
+type BackendRole = 'viewer' | 'contributor' | 'data_manager' | 'admin';
 
 const CONFIG: Record<UserRole | BackendRole, { label: string; className: string }> = {
   public:      { label: "Public",           className: "bg-muted text-muted-foreground" },
@@ -11,7 +11,6 @@ const CONFIG: Record<UserRole | BackendRole, { label: string; className: string 
   contributor: { label: "Contributor",      className: "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300" },
   data_manager:{ label: "Data Manager",     className: "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300" },
   admin:       { label: "Administrator",    className: "bg-info-100 text-info-800 dark:bg-info-950 dark:text-info-300" },
-  super_admin: { label: "Super Admin",      className: "bg-primary text-primary-foreground" },
 };
 
 export function RoleBadge({

@@ -3,14 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Database, Upload, Edit, Trash2, Eye, Search } from "lucide-react";
+import { Database, Upload, Edit, Trash2, Eye, Search, Send } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/data/status-badge";
 import { VisibilityBadge } from "@/components/data/visibility-badge";
 import { EmptyState } from "@/components/feedback/empty-state";
-import { useDatasets, useDeleteDataset } from "@/lib/hooks/useDatasets";
+import { useOrganizationDatasets, useDeleteDataset, useSubmitDatasetForReview } from "@/lib/hooks/useDatasets";
 import { useAuth } from "@/lib/auth";
 import type { DatasetStatus } from "@/types";
 import { toast } from "sonner";
@@ -35,33 +35,58 @@ export default function MyDatasetsPage() {
   );
   const limit = 50;
 
-  // Fetch datasets with filters - show only datasets from user's organization
-  // Don't fetch until we have the user's organisationId
-  const { data, isLoading, error } = useDatasets(
+  // Fetch datasets from authenticated organization endpoint
+  // This endpoint shows ALL statuses (draft, pending, approved, etc.) for the user's org
+  const { data, isLoading, error } = useOrganizationDatasets(
     {
       page: 1,
       limit,
-      organisationId: user?.organisationId, // Filter by user's organization
       status: statusFilter !== "all" ? statusFilter : undefined,
       search: searchQuery || undefined,
     },
-    { enabled: !!user?.organisationId } // Only fetch when we have user's org ID
+    { enabled: !!user?.id } // Only fetch when user is authenticated
   );
 
   const deleteDatasetMutation = useDeleteDataset();
+  const submitDatasetMutation = useSubmitDatasetForReview();
 
   const datasets = data?.data || [];
   const meta = data?.meta;
 
-  // Debug: Log the actual data being received
-  console.log('My Datasets - API Response:', { 
-    user: { id: user?.id, organisationId: user?.organisationId, organisationName: user?.organisationName },
-    data, 
-    datasets, 
-    meta, 
-    isLoading, 
-    error 
-  });
+  // Permission helpers
+  const canEditDataset = (dataset: typeof datasets[0]) => {
+    if (!user) return false;
+    
+    // Admin can edit all org datasets (including approved - which triggers re-approval)
+    if (user.role === "admin") return true;
+    
+    // Approved datasets cannot be edited by contributors (even if they own it)
+    if (dataset.status === "approved") return false;
+    
+    // Contributor can only edit their own non-approved datasets
+    if (user.role === "contributor" && dataset.owner_id === user.id) return true;
+    
+    return false;
+  };
+
+  const canDeleteDataset = (dataset: typeof datasets[0]) => {
+    if (!user) return false;
+    
+    const deletableStatuses = ["draft", "rejected", "pending", "approved"];
+    
+    // Admin can delete draft, rejected, pending, and approved datasets
+    if (user.role === "admin" && deletableStatuses.includes(dataset.status)) {
+      return true;
+    }
+    
+    // Contributor can only delete their OWN draft or rejected datasets
+    // Once approved, only admin can delete (even if contributor owns it)
+    if (user.role === "contributor" && dataset.owner_id === user.id) {
+      return dataset.status === "draft" || dataset.status === "rejected";
+    }
+    
+    return false;
+  };
 
   const handleDelete = (slug: string, title: string) => {
     if (window.confirm(`Are you sure you want to archive "${title}"?`)) {
@@ -74,6 +99,39 @@ export default function MyDatasetsPage() {
         },
       });
     }
+  };
+
+  const handleSubmitForReview = (slug: string, title: string) => {
+    if (window.confirm(`Submit "${title}" for review? It will be sent to administrators for approval.`)) {
+      submitDatasetMutation.mutate(slug, {
+        onSuccess: () => {
+          toast.success("Dataset submitted for review successfully");
+        },
+        onError: (error: Error) => {
+          toast.error((error as Error)?.message || "Failed to submit dataset for review");
+        },
+      });
+    }
+  };
+
+  // Check if user can submit dataset for review
+  const canSubmitDataset = (dataset: typeof datasets[0]) => {
+    // Only draft or rejected datasets can be submitted
+    if (dataset.status !== "draft" && dataset.status !== "rejected") {
+      return false;
+    }
+    
+    // Admin can submit any org dataset
+    if (user?.role === "admin") {
+      return true;
+    }
+    
+    // Contributor can only submit their own datasets
+    if (user?.role === "contributor" && dataset.owner_id === user.id) {
+      return true;
+    }
+    
+    return false;
   };
 
   // Count by status from API data
@@ -127,6 +185,14 @@ export default function MyDatasetsPage() {
               )}
             </button>
           ))}
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+          >
+            Refresh
+          </Button>
         </div>
 
         {/* Search Bar */}
@@ -238,20 +304,36 @@ export default function MyDatasetsPage() {
                                 <Eye className="size-4" />
                               </Button>
                             </Link>
-                            <Link href={`/edit/${dataset.slug}`}>
-                              <Button size="sm" variant="ghost">
-                                <Edit className="size-4" />
+                            {canSubmitDataset(dataset) && (
+                              <Button 
+                                size="sm" 
+                                variant="default"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => handleSubmitForReview(dataset.slug, dataset.title)}
+                                disabled={submitDatasetMutation.isPending}
+                                title="Submit for review"
+                              >
+                                <Send className="size-4" />
                               </Button>
-                            </Link>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(dataset.slug, dataset.title)}
-                              disabled={deleteDatasetMutation.isPending}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
+                            )}
+                            {canEditDataset(dataset) && (
+                              <Link href={`/edit/${dataset.slug}`}>
+                                <Button size="sm" variant="ghost">
+                                  <Edit className="size-4" />
+                                </Button>
+                              </Link>
+                            )}
+                            {canDeleteDataset(dataset) && (
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleDelete(dataset.slug, dataset.title)}
+                                disabled={deleteDatasetMutation.isPending}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

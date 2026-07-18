@@ -34,6 +34,9 @@ export const API_ROUTES = {
   organisations: {
     list: '/organisations',
     bySlug: (slug: string) => `/organisations/${slug}`,
+    members: (orgId: string) => `/organisations/${orgId}/members`,
+    updateMemberRole: (orgId: string, userId: string) => `/organisations/${orgId}/members/${userId}/role`,
+    removeMember: (orgId: string, userId: string) => `/organisations/${orgId}/members/${userId}/remove`,
   },
 
   // Category endpoints
@@ -45,6 +48,7 @@ export const API_ROUTES = {
   // Dataset endpoints
   datasets: {
     list: '/datasets',
+    myOrganization: '/datasets/my-organization', // Authenticated endpoint for org datasets
     bySlug: (slug: string) => `/datasets/${slug}`,
     create: '/datasets',
     update: (slug: string) => `/datasets/${slug}`,

@@ -59,6 +59,26 @@ export async function apiFetch<T>(
     } catch {
       // non-JSON error body — keep statusText
     }
+
+    // Handle 401 - Redirect to login
+    if (res.status === 401 && typeof window !== "undefined") {
+      // Clear stored token
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      
+      // Show toast message (if sonner is available)
+      if (typeof window !== "undefined" && (window as any).toast) {
+        (window as any).toast.error("Session expired. Please log in again.");
+      }
+      
+      // Redirect to login with return URL
+      const currentPath = window.location.pathname;
+      window.location.href = `/login?returnUrl=${encodeURIComponent(currentPath)}`;
+      
+      // Throw error anyway for cleanup
+      throw new ApiError(res.status, message, details);
+    }
+
     throw new ApiError(res.status, message, details);
   }
 

@@ -1,13 +1,12 @@
 import { cn } from "@/lib/utils";
 
-type UserRole = 'viewer' | 'contributor' | 'data_manager' | 'admin' | 'super_admin';
+type UserRole = 'viewer' | 'contributor' | 'data_manager' | 'admin';
 
 const CONFIG: Record<UserRole, { label: string; className: string }> = {
   viewer:      { label: "Viewer",           className: "bg-secondary text-secondary-foreground" },
   contributor: { label: "Contributor",      className: "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300" },
   data_manager:{ label: "Data Manager",     className: "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300" },
   admin:       { label: "Administrator",    className: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" },
-  super_admin: { label: "Super Admin",      className: "bg-primary text-primary-foreground" },
 };
 
 export function RoleBadge({

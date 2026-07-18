@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { API_ROUTES } from './routes';
 import type { PaginatedResponse } from '../types/common';
 
 // Backend wraps all responses in this structure
@@ -93,44 +94,37 @@ export interface DatasetListParams {
 export interface CreateDatasetDto {
   title: string;
   description: string;
-  category_id?: string;
+  categoryId?: string;
   format: DatasetFormat;
   visibility?: DatasetVisibility;
   tags?: string[];
-  temporal_coverage_start?: string;
-  temporal_coverage_end?: string;
-  geographic_coverage?: string[];
-  disease_indicators?: string[];
+  temporalCoverageStart?: string;
+  temporalCoverageEnd?: string;
+  geographicCoverage?: string; // Backend expects a single string, not array
+  diseaseIndicators?: string[];
   license?: string;
   methodology?: string;
   limitations?: string;
-  metadata?: Record<string, unknown>;
-  key_attributes?: Record<string, unknown>[];
-  has_spatial_data?: boolean;
-  programme_id?: string;
-  campaign_id?: string;
+  programmeId?: string;
+  organisationId?: string; // For admins to create on behalf of org
 }
 
 export interface UpdateDatasetDto {
   title?: string;
   description?: string;
-  category_id?: string;
+  categoryId?: string;
   format?: DatasetFormat;
   visibility?: DatasetVisibility;
   status?: DatasetStatus;
   tags?: string[];
-  temporal_coverage_start?: string;
-  temporal_coverage_end?: string;
-  geographic_coverage?: string[];
-  disease_indicators?: string[];
+  temporalCoverageStart?: string;
+  temporalCoverageEnd?: string;
+  geographicCoverage?: string; // Backend expects a single string
+  diseaseIndicators?: string[];
   license?: string;
   methodology?: string;
   limitations?: string;
-  metadata?: Record<string, unknown>;
-  key_attributes?: Record<string, unknown>[];
-  has_spatial_data?: boolean;
-  programme_id?: string;
-  campaign_id?: string;
+  programmeId?: string;
 }
 
 export interface DatasetVersion {
@@ -178,6 +172,19 @@ export async function getDatasets(
 }
 
 /**
+ * Get organization datasets (authenticated, shows all statuses including drafts)
+ */
+export async function getOrganizationDatasets(
+  params?: Omit<DatasetListParams, 'organisationId'>
+): Promise<PaginatedResponse<Dataset>> {
+  const response = await apiClient.get<ApiResponse<PaginatedResponse<Dataset>>>(
+    API_ROUTES.datasets.myOrganization,
+    { params: params as Record<string, unknown> }
+  );
+  return response.data.data;
+}
+
+/**
  * Get dataset by slug
  */
 export async function getDatasetBySlug(slug: string): Promise<Dataset> {
@@ -217,11 +224,11 @@ export async function deleteDataset(slug: string): Promise<void> {
 }
 
 /**
- * Submit dataset for review
+ * Submit dataset for review (draft/rejected → pending)
  */
-export async function submitDataset(slug: string): Promise<SubmitResponse> {
+export async function submitDatasetForReview(slug: string): Promise<SubmitResponse> {
   const response = await apiClient.post<ApiResponse<SubmitResponse>>(
-    `/datasets/${slug}/submit`
+    `/datasets/${slug}/submit-for-review`
   );
   return response.data.data;
 }

@@ -27,7 +27,6 @@ const MockSessionContext = createContext<MockSessionContextType | undefined>(und
 function getUserForRole(role: UserRole): User {
   const map: Partial<Record<UserRole, User>> = {
     admin: mockUsers.admin,
-    super_admin: mockUsers.superAdmin,
   };
   return map[role] ?? mockUsers[role] ?? mockUsers.public;
 }

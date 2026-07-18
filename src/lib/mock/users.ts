@@ -57,11 +57,4 @@ export const mockUsers: Record<string, User> = {
     role: "admin",
     organisationIds: [],
   },
-  superAdmin: {
-    id: "user-004",
-    fullName: "Musa Abdullahi",
-    email: "musa.abdullahi@niger.gov.ng",
-    role: "super_admin",
-    organisationIds: [],
-  },
 };

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FileText, Settings, X } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { Container } from "@/components/layout/container";
 import { Stepper } from "@/components/forms/stepper";
 import { FileUploadArea, type UploadedFile } from "@/components/forms/file-upload-area";
@@ -32,16 +33,33 @@ const steps = [
 
 export default function UploadDatasetPage() {
   const router = useRouter();
+  const { user, isLoading } = useAuth();
   const createMutation = useCreateDataset();
   const [currentStep, setCurrentStep] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+  // Role guard - only contributor and admin can upload
+  if (!isLoading && user) {
+    if (user.role !== "contributor" && user.role !== "admin") {
+      router.replace("/dashboard");
+      return null;
+    }
+    
+    // Must have organisation
+    if (!user.organisationId) {
+      toast.error("You must be part of an organization to upload datasets");
+      router.replace("/dashboard");
+      return null;
+    }
+  }
+
+  // PRE-FILLED TEST DATA - Change as needed
+  const [title, setTitle] = useState("Test Health Dataset 2026");
+  const [description, setDescription] = useState("This is a test dataset for Niger State health data. Contains sample information for testing the upload flow and data validation.");
+  const [tags, setTags] = useState<string[]>(["health", "test", "2026"]);
   const [tagInput, setTagInput] = useState("");
-  const [selectedLGAs, setSelectedLGAs] = useState<string[]>([]);
+  const [selectedLGAs, setSelectedLGAs] = useState<string[]>(["Minna", "Suleja", "Bida"]);
   const [visibility, setVisibility] = useState<DatasetVisibility>("public");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
@@ -127,7 +145,7 @@ export default function UploadDatasetPage() {
         format: formatMap[fileFormat] || 'csv',
         visibility,
         tags,
-        geographic_coverage: selectedLGAs,
+        geographicCoverage: selectedLGAs.join(', '), // Convert array to comma-separated string
         // Note: File upload would be a separate step after dataset creation
         // The backend would need a separate endpoint for file uploads
       });
@@ -151,6 +169,12 @@ export default function UploadDatasetPage() {
           <p className="mt-2 text-muted-foreground">
             Share your data with the Niger State community
           </p>
+          {/* Pre-fill indicator */}
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              ℹ️ <strong>Form is pre-filled with test data.</strong> Just add your file in Step 2 and submit!
+            </p>
+          </div>
         </Container>
       </div>
 

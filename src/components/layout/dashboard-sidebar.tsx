@@ -38,7 +38,7 @@ const NAV_LINKS: NavLink[] = [
     href: "/my-datasets",
     label: "My Datasets",
     icon: Database,
-    roles: ["contributor", "admin", "super_admin"],
+    roles: ["contributor", "admin"],
   },
   {
     href: "/my-downloads",
@@ -50,7 +50,7 @@ const NAV_LINKS: NavLink[] = [
     href: "/organisation",
     label: "Organization",
     icon: Building2,
-    roles: ["admin"], // Only org admins (M2 scope)
+    roles: ["contributor", "admin"], // Contributors can view, admins can manage
   },
   // Common Section
   {

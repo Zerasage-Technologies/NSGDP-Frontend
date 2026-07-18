@@ -4,8 +4,7 @@ export type UserRole =
   | "public"        // Unauthenticated/guest user
   | "registered"    // Authenticated user (can browse/download)
   | "contributor"   // Can upload/submit datasets
-  | "admin"         // Organization/Repository administrator
-  | "super_admin";  // Full system access + delegation
+  | "admin";        // Organization/Repository administrator
 
 export type Visibility = "public" | "restricted" | "private";
 

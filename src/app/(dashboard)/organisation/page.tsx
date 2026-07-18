@@ -36,6 +36,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RoleBadge } from "@/components/ui/role-badge";
 import { InviteModal } from "@/components/shared/invite/invite-modal";
 import { useOrganisationInvites, useRevokeInvite, useResendInvite } from "@/lib/hooks/useInvites";
+import { useOrganisationMembers, useUpdateMemberRole, useRemoveMember } from "@/lib/hooks/useOrganisationMembers";
 import type { InviteResponse } from "@/lib/api/invites";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -53,6 +54,7 @@ export default function OrganisationManagementPage() {
 
   const orgId = user?.organisationId;
   const orgName = user?.organisationName;
+  const isAdmin = user?.role === "admin";
 
   // Fetch full organization details
   const { data: organisation, isLoading: orgLoading } = useQuery({
@@ -65,11 +67,18 @@ export default function OrganisationManagementPage() {
     enabled: !!orgId,
   });
 
-  // Fetch invites for this org - only if we have an orgId
-  const { data: invites, isLoading: invitesLoading, error } = useOrganisationInvites(orgId || "");
+  // Fetch invites for this org - only if admin and we have an orgId
+  const { data: invites, isLoading: invitesLoading, error } = useOrganisationInvites(
+    isAdmin && orgId ? orgId : ""
+  );
+  
+  // Fetch organisation members
+  const { data: members, isLoading: membersLoading } = useOrganisationMembers(orgId);
 
   const revokeMutation = useRevokeInvite();
   const resendMutation = useResendInvite();
+  const updateRoleMutation = useUpdateMemberRole();
+  const removeMemberMutation = useRemoveMember();
 
   // Log error for debugging (but don't show toast)
   if (error) {
@@ -88,8 +97,8 @@ export default function OrganisationManagementPage() {
     );
   }
 
-  // Role guard - only org admins
-  if (!user || user.role !== "admin") {
+  // Role guard - only contributor and admin can access
+  if (!user || (user.role !== "contributor" && user.role !== "admin")) {
     router.replace("/dashboard");
     return null;
   }
@@ -107,8 +116,8 @@ export default function OrganisationManagementPage() {
   }
 
   const pendingInvites = invites?.filter((inv) => inv.status === "pending") || [];
-  const acceptedInvites = invites?.filter((inv) => inv.status === "accepted") || [];
   const revokedInvites = invites?.filter((inv) => inv.status === "revoked") || [];
+  const activeMembers = members || [];
 
   const handleRevokeInvite = (invite: InviteResponse) => {
     if (!orgId) return;
@@ -142,6 +151,45 @@ export default function OrganisationManagementPage() {
         },
       }
     );
+  };
+
+  const handlePromoteDemote = (userId: string, currentRole: string, userName: string) => {
+    if (!orgId) return;
+    
+    const newRole = currentRole === 'admin' ? 'contributor' : 'admin';
+    const action = newRole === 'admin' ? 'promote' : 'demote';
+    
+    if (window.confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} ${userName} to ${newRole}?`)) {
+      updateRoleMutation.mutate(
+        { orgId, userId, role: newRole },
+        {
+          onSuccess: () => {
+            toast.success(`Member ${action}d successfully`);
+          },
+          onError: () => {
+            toast.error(`Failed to ${action} member`);
+          },
+        }
+      );
+    }
+  };
+
+  const handleRemoveMember = (userId: string, userName: string) => {
+    if (!orgId) return;
+    
+    if (window.confirm(`Remove ${userName} from the organisation? This action cannot be undone.`)) {
+      removeMemberMutation.mutate(
+        { orgId, userId },
+        {
+          onSuccess: () => {
+            toast.success("Member removed successfully");
+          },
+          onError: () => {
+            toast.error("Failed to remove member");
+          },
+        }
+      );
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -185,10 +233,12 @@ export default function OrganisationManagementPage() {
         title={orgName || "Organization Management"}
         description="Manage your organization profile, team members, and invitations"
         actions={
-          <Button onClick={() => setInviteModalOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Invite Member
-          </Button>
+          isAdmin ? (
+            <Button onClick={() => setInviteModalOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Invite Member
+            </Button>
+          ) : undefined
         }
       />
 
@@ -203,10 +253,12 @@ export default function OrganisationManagementPage() {
               <Users className="h-4 w-4 mr-2" />
               Team Members
             </TabsTrigger>
-            <TabsTrigger value="invites">
-              <Mail className="h-4 w-4 mr-2" />
-              Invitations ({pendingInvites.length})
-            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="invites">
+                <Mail className="h-4 w-4 mr-2" />
+                Invitations ({pendingInvites.length})
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Overview Tab */}
@@ -335,7 +387,7 @@ export default function OrganisationManagementPage() {
                   <div className="grid gap-4 md:grid-cols-3">
                     <Card>
                       <CardContent className="pt-6">
-                        <div className="text-2xl font-bold">{acceptedInvites.length}</div>
+                        <div className="text-2xl font-bold">{activeMembers.length}</div>
                         <p className="text-sm text-muted-foreground">Active Members</p>
                       </CardContent>
                     </Card>
@@ -367,42 +419,75 @@ export default function OrganisationManagementPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {acceptedInvites.length === 0 ? (
+                {membersLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-20 w-full" />
+                    ))}
+                  </div>
+                ) : activeMembers.length === 0 ? (
                   <div className="text-center py-12">
                     <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <p className="text-lg font-medium">No active members yet</p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Invite team members to get started
+                      {isAdmin ? "Invite team members to get started" : "No team members have joined yet"}
                     </p>
-                    <Button
-                      onClick={() => setInviteModalOpen(true)}
-                      className="mt-4"
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Invite Member
-                    </Button>
+                    {isAdmin && (
+                      <Button
+                        onClick={() => setInviteModalOpen(true)}
+                        className="mt-4"
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Invite Member
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {acceptedInvites.map((invite) => (
+                    {activeMembers.map((member) => (
                       <div
-                        key={invite.id}
+                        key={member.id}
                         className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition"
                       >
                         <div className="flex items-center gap-4">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
-                            {invite.invitedEmail.charAt(0).toUpperCase()}
+                            {member.email.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-medium">{invite.invitedEmail}</p>
+                            <p className="font-medium">{member.fullName || member.email}</p>
                             <div className="flex items-center gap-2 mt-1">
-                              <RoleBadge role={invite.role} />
+                              <RoleBadge role={member.role} />
                               <span className="text-sm text-muted-foreground">
-                                Joined {formatDistanceToNow(new Date(invite.acceptedAt!), { addSuffix: true })}
+                                Joined {formatDistanceToNow(new Date(member.createdAt), { addSuffix: true })}
                               </span>
                             </div>
                           </div>
                         </div>
+                        {isAdmin && member.id !== user.id && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger>
+                              <div className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted transition-colors cursor-pointer">
+                                <MoreVertical className="h-4 w-4" />
+                              </div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handlePromoteDemote(member.id, member.role, member.fullName || member.email)}
+                                disabled={updateRoleMutation.isPending}
+                              >
+                                {member.role === 'admin' ? 'Demote to Contributor' : 'Promote to Admin'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleRemoveMember(member.id, member.fullName || member.email)}
+                                disabled={removeMemberMutation.isPending}
+                                className="text-destructive"
+                              >
+                                <Ban className="h-4 w-4 mr-2" />
+                                Remove from Organisation
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -411,8 +496,9 @@ export default function OrganisationManagementPage() {
             </Card>
           </TabsContent>
 
-          {/* Invitations Tab */}
-          <TabsContent value="invites" className="space-y-6">
+          {/* Invitations Tab - Admin Only */}
+          {isAdmin && (
+            <TabsContent value="invites" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Pending Invitations</CardTitle>
@@ -454,30 +540,32 @@ export default function OrganisationManagementPage() {
                             <p>Expires {formatDistanceToNow(new Date(invite.expiresAt), { addSuffix: true })}</p>
                           </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleResendInvite(invite)}
-                              disabled={resendMutation.isPending}
-                            >
-                              <RefreshCw className="h-4 w-4 mr-2" />
-                              Resend Invite
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleRevokeInvite(invite)}
-                              disabled={revokeMutation.isPending}
-                              className="text-destructive"
-                            >
-                              <Ban className="h-4 w-4 mr-2" />
-                              Revoke Invite
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {isAdmin && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger>
+                              <div className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted transition-colors cursor-pointer">
+                                <MoreVertical className="h-4 w-4" />
+                              </div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleResendInvite(invite)}
+                                disabled={resendMutation.isPending}
+                              >
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Resend Invite
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleRevokeInvite(invite)}
+                                disabled={revokeMutation.isPending}
+                                className="text-destructive"
+                              >
+                                <Ban className="h-4 w-4 mr-2" />
+                                Revoke Invite
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -516,15 +604,18 @@ export default function OrganisationManagementPage() {
               </Card>
             )}
           </TabsContent>
+          )}
         </Tabs>
       </DashboardPageContent>
 
-      {/* Invite Modal */}
-      <InviteModal
-        open={inviteModalOpen}
-        onClose={() => setInviteModalOpen(false)}
-        organisationId={orgId}
-      />
+      {/* Invite Modal - only for admins */}
+      {isAdmin && (
+        <InviteModal
+          open={inviteModalOpen}
+          onClose={() => setInviteModalOpen(false)}
+          organisationId={orgId}
+        />
+      )}
     </DashboardPage>
   );
 }
