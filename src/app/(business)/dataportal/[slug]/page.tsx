@@ -15,6 +15,7 @@ import { DatasetActivityPanel } from "@/components/data/dataset-activity-panel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDataset, useDatasets } from "@/lib/hooks/useDatasets";
+import { usePublicDatasetPreview } from "@/lib/hooks/usePublicDatasetPreview";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { useOrganisations } from "@/lib/hooks/useOrganisations";
 import { transformDataset } from "@/lib/adapters/dataset-adapter";
@@ -32,6 +33,9 @@ export default function DatasetPage({ params }: DatasetPageProps) {
   
   // Fetch dataset by slug (public endpoint - approved only)
   const { data: backendDataset, isLoading, error } = useDataset(slug);
+  
+  // Fetch public preview
+  const { data: previewData, isLoading: isPreviewLoading } = usePublicDatasetPreview(slug);
   
   // Fetch reference data for transformation
   const { data: categoriesResponse } = useCategories() as { data?: PaginatedResponse<Category> };
@@ -166,6 +170,131 @@ export default function DatasetPage({ params }: DatasetPageProps) {
                 </p>
               </CardContent>
             </Card>
+
+            {/* Data Preview */}
+            {backendDataset?.file_path && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Data Preview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isPreviewLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="size-8 animate-spin rounded-full border-4 border-muted border-t-primary"></div>
+                      <span className="ml-3 text-sm text-muted-foreground">Loading preview...</span>
+                    </div>
+                  ) : previewData ? (
+                    <div className="space-y-4">
+                      {/* Tabular Preview (CSV/Excel) */}
+                      {(previewData.preview as { type?: string; columns?: string[] })?.type === 'tabular' && (previewData.preview as { columns?: string[] }).columns ? (
+                        <>
+                          <div className="rounded-lg border overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead className="bg-muted/50 border-b">
+                                <tr>
+                                  {((previewData.preview as { columns?: string[] }).columns || []).map((col: string, idx: number) => (
+                                    <th key={idx} className="px-4 py-2 text-left font-medium">
+                                      {col}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y">
+                                {((previewData.preview as { rows?: Record<string, unknown>[] }).rows || []).slice(0, 10).map((row: Record<string, unknown>, rowIdx: number) => (
+                                  <tr key={rowIdx} className="hover:bg-muted/30">
+                                    {((previewData.preview as { columns?: string[] }).columns || []).map((col: string, cellIdx: number) => (
+                                      <td key={cellIdx} className="px-4 py-2">
+                                        {row[col] !== null && row[col] !== undefined ? String(row[col]) : '-'}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          {(previewData.preview as { totalRows?: number | string }).totalRows && (
+                            <p className="text-xs text-muted-foreground text-center">
+                              Showing first 10 of {typeof (previewData.preview as { totalRows?: number | string }).totalRows === 'number' 
+                                ? (previewData.preview as { totalRows: number }).totalRows.toLocaleString() 
+                                : (previewData.preview as { totalRows: string }).totalRows} rows
+                              {(previewData.preview as { isPartialPreview?: boolean }).isPartialPreview && ' (preview only)'}
+                            </p>
+                          )}
+                        </>
+                      ) : null}
+
+                      {/* JSON Preview */}
+                      {(previewData.preview as { type?: string })?.type === 'json' && (
+                        <div className="space-y-3">
+                          {(previewData.preview as { message?: string }).message ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <FileText className="size-12 mx-auto mb-3 opacity-50" />
+                              <p className="text-sm">{(previewData.preview as { message: string }).message}</p>
+                              {(previewData.preview as { fileSizeMB?: number }).fileSizeMB && (
+                                <p className="text-xs mt-1">File size: {(previewData.preview as { fileSizeMB: number }).fileSizeMB} MB</p>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              <div className="rounded-lg border p-4 bg-muted/30">
+                                <pre className="text-xs overflow-x-auto max-h-96">
+                                  {JSON.stringify((previewData.preview as { records?: unknown[]; data?: unknown }).records?.slice(0, 5) || (previewData.preview as { data?: unknown }).data, null, 2)}
+                                </pre>
+                              </div>
+                              {(previewData.preview as { totalRecords?: number }).totalRecords && (
+                                <p className="text-xs text-muted-foreground text-center">
+                                  Showing first 5 of {(previewData.preview as { totalRecords: number }).totalRecords.toLocaleString()} records
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {/* GeoJSON Preview */}
+                      {(previewData.preview as { type?: string })?.type === 'geojson' && (
+                        <div className="space-y-3">
+                          <div className="rounded-lg border p-4 bg-muted/30">
+                            <div className="space-y-2 text-sm">
+                              <p><span className="font-medium">Format:</span> GeoJSON</p>
+                              <p><span className="font-medium">Features:</span> {(previewData.preview as { totalFeatures?: number }).totalFeatures?.toLocaleString()}</p>
+                              {(previewData.preview as { bbox?: unknown }).bbox ? (
+                                <p><span className="font-medium">Bounding Box:</span> {JSON.stringify((previewData.preview as { bbox: unknown }).bbox)}</p>
+                              ) : null}
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center">
+                            View on map below for spatial visualization
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Document Preview (PDF) */}
+                      {(previewData.preview as { type?: string })?.type === 'document' && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <FileText className="size-12 mx-auto mb-3 opacity-50" />
+                          <p className="text-sm">{(previewData.preview as { message?: string }).message}</p>
+                        </div>
+                      )}
+
+                      {/* Error or Unknown Format */}
+                      {((previewData.preview as { type?: string })?.type === 'error' || (previewData.preview as { type?: string })?.type === 'unknown') && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <FileText className="size-12 mx-auto mb-3 opacity-50" />
+                          <p className="text-sm">{(previewData.preview as { message?: string }).message}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="size-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">Preview not available</p>
+                      <p className="text-xs mt-1">The file may not be uploaded yet or format is not supported</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Resources / Files */}
             {dataset.resources && dataset.resources.length > 0 && (
