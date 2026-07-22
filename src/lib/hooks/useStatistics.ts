@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { getStatistics } from "@/lib/mock";
+import { getPlatformStatistics } from "@/lib/api/stats";
 
 export function useStatistics() {
   return useQuery({
     queryKey: ["statistics"],
-    queryFn: getStatistics,
+    queryFn: getPlatformStatistics,
+    staleTime: 60 * 1000,
   });
 }

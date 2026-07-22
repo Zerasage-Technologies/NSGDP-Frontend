@@ -101,6 +101,7 @@ export interface DatasetListParams {
   tags?: string; // comma-separated
   lga?: string;
   ward?: string;
+  diseaseIndicators?: string;
   dateFrom?: string; // ISO 8601
   dateTo?: string; // ISO 8601
   sortBy?: 'created_at' | 'title' | 'download_count' | 'view_count';

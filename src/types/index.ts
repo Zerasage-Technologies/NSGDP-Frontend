@@ -129,7 +129,7 @@ export interface DatasetResource {
 export interface DatasetVersion {
   version: string;        // e.g. "v1.0", "v1.1"
   publishedAt: string;
-  publishedBy: string;
+  publishedBy?: string;   // backend only stores a raw user UUID, no name resolution yet
   changeNote: string;
   resourceId?: string;    // links to specific DatasetResource
 }

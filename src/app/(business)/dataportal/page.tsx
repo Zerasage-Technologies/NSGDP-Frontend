@@ -98,6 +98,11 @@ function DataportalContent() {
       params.ward = filters.wards[0];
     }
 
+    // Map disease filter (backend accepts single disease indicator)
+    if (filters.diseases.length > 0) {
+      params.diseaseIndicators = filters.diseases[0];
+    }
+
     return params;
   }, [page, pageSize, sort, filters, categoriesResponse, organisationsResponse, searchQuery]);
 

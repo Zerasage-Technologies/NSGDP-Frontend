@@ -27,7 +27,7 @@ export function VersionHistoryPanel({ versions }: VersionHistoryPanelProps) {
             <div className="min-w-0 flex-1">
               <p className="text-sm">{v.changeNote}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {v.publishedBy} · {formatDate(v.publishedAt)}
+                {v.publishedBy ? `${v.publishedBy} · ` : ""}{formatDate(v.publishedAt)}
               </p>
             </div>
             {i === 0 && (

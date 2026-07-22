@@ -3,20 +3,20 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, Database, Building2, FolderOpen } from "lucide-react";
+import { Search, Database, Building2 } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { DatasetCard } from "@/components/data/dataset-card";
 import { OrgCard } from "@/components/data/org-card";
-import { GroupTile } from "@/components/data/group-tile";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { DatasetCardSkeleton, OrgCardSkeleton } from "@/components/feedback/skeletons";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { searchAll } from "@/lib/mock";
-import type { SearchResult } from "@/lib/mock";
-import type { Dataset, Organisation, Group } from "@/types";
+import { searchAll } from "@/lib/api/search";
+import { adaptSearchResultToDataset, adaptSearchResultToOrganisation } from "@/lib/adapters/search-adapter";
+import type { Dataset, Organisation } from "@/types";
 
-type Tab = "all" | "dataset" | "organisation" | "group";
+type Tab = "all" | "dataset" | "organisation";
+type SearchResult = { type: "dataset" | "organisation"; item: Dataset | Organisation };
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -33,7 +33,13 @@ function SearchContent() {
     }
     setLoading(true);
     searchAll(q).then((data) => {
-      setResults(data);
+      setResults(
+        data.results.map((r) =>
+          r.type === "organisation"
+            ? { type: "organisation" as const, item: adaptSearchResultToOrganisation(r) }
+            : { type: "dataset" as const, item: adaptSearchResultToDataset(r) }
+        )
+      );
       setLoading(false);
     });
   }, [q]);
@@ -42,19 +48,17 @@ function SearchContent() {
     all: results.length,
     dataset: results.filter((r) => r.type === "dataset").length,
     organisation: results.filter((r) => r.type === "organisation").length,
-    group: results.filter((r) => r.type === "group").length,
   };
 
   const tabs: Array<{ key: Tab; label: string; count: number }> = [
     { key: "all", label: "All", count: counts.all },
     { key: "dataset", label: "Datasets", count: counts.dataset },
     { key: "organisation", label: "Organisations", count: counts.organisation },
-    { key: "group", label: "Groups", count: counts.group },
   ];
 
   const displayResults = tab === "all"
     ? results
-    : results.filter((r) => r.type === (tab === "dataset" ? "dataset" : tab));
+    : results.filter((r) => r.type === tab);
 
   return (
     <main className="flex-1">
@@ -62,7 +66,7 @@ function SearchContent() {
         <Container size="wide" className="py-8">
           <h1 className="text-3xl font-bold">Search Results</h1>
           <p className="mt-2 text-muted-foreground">
-            {q ? `Results for "${q}"` : "Enter a search term to find datasets, organisations, and groups"}
+            {q ? `Results for "${q}"` : "Enter a search term to find datasets and organisations"}
           </p>
         </Container>
       </div>
@@ -147,21 +151,6 @@ function SearchContent() {
                   </section>
                 )}
 
-                {(tab === "all" || tab === "group") && counts.group > 0 && (
-                  <section>
-                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <FolderOpen className="size-5" />
-                      Groups ({counts.group})
-                    </h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      {results
-                        .filter((r) => r.type === "group")
-                        .map((r) => (
-                          <GroupTile key={(r.item as Group).id} group={r.item as Group} />
-                        ))}
-                    </div>
-                  </section>
-                )}
               </div>
             )}
 

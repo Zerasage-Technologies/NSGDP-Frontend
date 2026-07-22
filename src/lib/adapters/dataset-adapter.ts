@@ -106,7 +106,7 @@ export function transformDataset(
     
     // Lifecycle
     lifecycleStage: mapStatusToLifecycleStage(backendDataset.status),
-    versions: undefined, // Would need separate API call
+    versions: undefined, // DatasetDetailModal fetches real version history itself via useDatasetVersions(slug)
     archiveInfo: backendDataset.status === 'archived'
       ? {
           archivedAt: backendDataset.updated_at,

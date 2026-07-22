@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { LifecycleBadge } from "./lifecycle-badge";
 import { VersionHistoryPanel } from "./version-history-panel";
+import { useDatasetVersions } from "@/lib/hooks/useDatasets";
 import {
   Tooltip,
   TooltipContent,
@@ -54,9 +55,17 @@ interface DatasetDetailModalProps {
 }
 
 export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetailModalProps) {
+  const { data: versionHistory } = useDatasetVersions(open ? dataset?.slug ?? "" : "");
+
   if (!dataset) return null;
 
   const totalSize = dataset.resources?.reduce((s, r) => s + r.sizeBytes, 0) ?? 0;
+
+  const versions = versionHistory?.versions.map((v) => ({
+    version: `v${v.version}`,
+    changeNote: v.changes,
+    publishedAt: v.created_at,
+  })) ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -280,9 +289,7 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
           )}
 
           {/* ── 9. Version History ──────────────────────────────────────── */}
-          {dataset.versions && dataset.versions.length > 0 && (
-            <VersionHistoryPanel versions={dataset.versions} />
-          )}
+          {versions.length > 0 && <VersionHistoryPanel versions={versions} />}
         </div>
       </DialogContent>
     </Dialog>
