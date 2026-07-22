@@ -10,13 +10,15 @@ interface ApiResponse<T> {
   data: T;
 }
 
-export type OrganisationType = 
-  | 'government' 
-  | 'ngo' 
-  | 'private' 
-  | 'international' 
-  | 'academic' 
-  | 'community';
+export type OrganisationType =
+  | 'government'
+  | 'ngo'
+  | 'private'
+  | 'international'
+  | 'academic'
+  | 'community'
+  | 'healthcare'
+  | 'other';
 
 export interface Organisation {
   id: string;

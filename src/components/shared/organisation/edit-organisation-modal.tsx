@@ -31,7 +31,7 @@ import { toast } from "sonner";
 const updateOrganisationSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100, "Name must not exceed 100 characters").optional(),
   description: z.string().max(500, "Description must not exceed 500 characters").optional(),
-  type: z.enum(["government", "ngo", "private", "academic", "international", "community"]).optional(),
+  type: z.enum(["government", "ngo", "private", "academic", "international", "community", "healthcare", "other"]).optional(),
   website: z.string().url("Please provide a valid URL").optional().or(z.literal("")),
   email: z.string().email("Please provide a valid email").optional().or(z.literal("")),
   phone: z.string().regex(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/, "Please provide a valid phone number").optional().or(z.literal("")),
@@ -176,10 +176,13 @@ export function EditOrganisationModal({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="government">Government</SelectItem>
+                    <SelectItem value="healthcare">Healthcare Provider</SelectItem>
                     <SelectItem value="ngo">NGO</SelectItem>
                     <SelectItem value="private">Private</SelectItem>
                     <SelectItem value="academic">Academic</SelectItem>
                     <SelectItem value="international">International</SelectItem>
+                    <SelectItem value="community">Community Organisation</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               )}
