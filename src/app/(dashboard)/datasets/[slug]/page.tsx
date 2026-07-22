@@ -4,7 +4,7 @@ import { use } from "react";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { FileText, ChevronRight, Edit, Trash2, Send, ArrowLeft } from "lucide-react";
+import { FileText, ChevronRight, Edit, Trash2, Send, ArrowLeft, Eye, Download } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Container } from "@/components/layout/container";
 import { VisibilityBadge } from "@/components/data/visibility-badge";
@@ -15,12 +15,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useOrganizationDataset, useDeleteDataset, useSubmitDatasetForReview, useDatasetPreview } from "@/lib/hooks/useDatasets";
+import { useOrganizationDataset, useDeleteDataset, useSubmitDatasetForReview, useDatasetPreview, useDatasetFiles, useDownloadDataset } from "@/lib/hooks/useDatasets";
 import { useCategories } from "@/lib/hooks/useCategories";
 import { useOrganisations } from "@/lib/hooks/useOrganisations";
 import { useAuth } from "@/lib/auth";
 import { transformDataset } from "@/lib/adapters/dataset-adapter";
 import { DatasetCardSkeleton } from "@/components/feedback/skeletons";
+import { formatDate } from "@/lib/utils/date";
+import type { DatasetFile } from "@/lib/api/datasets";
 import type { PaginatedResponse } from "@/lib/types/common";
 import type { Category } from "@/lib/api/categories";
 import type { Organisation } from "@/lib/api/organisations";
@@ -49,6 +51,8 @@ export default function MyDatasetDetailPage({ params }: DatasetPageProps) {
   
   const deleteDatasetMutation = useDeleteDataset();
   const submitDatasetMutation = useSubmitDatasetForReview();
+  const { data: files } = useDatasetFiles(slug);
+  const downloadMutation = useDownloadDataset();
   
   // Fetch reference data for transformation
   const { data: categoriesResponse } = useCategories() as { data?: PaginatedResponse<Category> };
@@ -149,6 +153,29 @@ export default function MyDatasetDetailPage({ params }: DatasetPageProps) {
     });
   };
 
+  const handleFileView = (file: DatasetFile) => {
+    downloadMutation.mutate(
+      { slug, mode: "view", fileId: file.id },
+      {
+        onSuccess: (data) => window.open(data.downloadUrl, "_blank", "noopener,noreferrer"),
+        onError: (error: Error) => toast.error(error.message || "Failed to open file"),
+      }
+    );
+  };
+
+  const handleFileDownload = (file: DatasetFile) => {
+    downloadMutation.mutate(
+      { slug, mode: "download", fileId: file.id },
+      {
+        onSuccess: (data) => {
+          window.open(data.downloadUrl, "_blank", "noopener,noreferrer");
+          toast.success(`Downloading ${data.fileName}`);
+        },
+        onError: (error: Error) => toast.error(error.message || "Failed to generate download link"),
+      }
+    );
+  };
+
   // Format file size
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
@@ -220,7 +247,7 @@ export default function MyDatasetDetailPage({ params }: DatasetPageProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <VisibilityBadge visibility={dataset.visibility} />
-                  <StatusBadge status={dataset.status} />
+                  <StatusBadge status={dataset.status} publishedAt={backendDataset?.published_at} />
                 </div>
               </div>
 
@@ -424,40 +451,44 @@ export default function MyDatasetDetailPage({ params }: DatasetPageProps) {
               </Card>
             )}
 
-            {/* Resources / Files */}
-            {dataset.resources && dataset.resources.length > 0 && (
+            {/* Files — a dataset can have more than one file uploaded to it */}
+            {files && files.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Data Files & Resources</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Data Files
+                    {files.length > 1 && (
+                      <Badge variant="secondary" className="ml-1">{files.length}</Badge>
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="divide-y">
-                    {dataset.resources.map((resource) => (
+                    {files.map((file) => (
                       <div
-                        key={resource.id}
-                        className="flex items-center justify-between py-4 first:pt-0 last:pb-0"
+                        key={file.id}
+                        className="flex items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
                             <FileText className="size-5 text-muted-foreground" />
                           </div>
-                          <div>
-                            <p className="font-medium">{resource.name}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{file.file_name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {resource.format} • {formatBytes(resource.sizeBytes)} •
-                              Updated{" "}
-                              {formatDistanceToNow(new Date(resource.updatedAt), {
-                                addSuffix: true,
-                              })}
+                              {file.format.toUpperCase()} • {formatBytes(file.file_size ?? 0)} • Uploaded{" "}
+                              {formatDistanceToNow(new Date(file.created_at), { addSuffix: true })}
                             </p>
                           </div>
                         </div>
-                        <DatasetDownloadActions
-                          datasetId={dataset.id}
-                          datasetSlug={dataset.slug}
-                          datasetTitle={dataset.title}
-                          visibility={dataset.visibility}
-                        />
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button size="sm" variant="ghost" onClick={() => handleFileView(file)} disabled={downloadMutation.isPending}>
+                            <Eye className="size-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleFileDownload(file)} disabled={downloadMutation.isPending}>
+                            <Download className="size-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -513,11 +544,7 @@ export default function MyDatasetDetailPage({ params }: DatasetPageProps) {
                       Last Updated
                     </p>
                     <p className="mt-1 text-sm">
-                      {new Date(dataset.updatedAt).toLocaleDateString("en-US", {
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {formatDate(dataset.updatedAt)}
                     </p>
                   </div>
                 </div>
@@ -558,8 +585,22 @@ export default function MyDatasetDetailPage({ params }: DatasetPageProps) {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Status</p>
-                    <p className="font-medium capitalize">{dataset.status}</p>
+                    <p className="font-medium capitalize">
+                      {dataset.status === "approved" && backendDataset.published_at
+                        ? "Published"
+                        : dataset.status}
+                    </p>
                   </div>
+                  {dataset.status === "approved" && (
+                    <div>
+                      <p className="text-muted-foreground">Published</p>
+                      <p className="font-medium">
+                        {backendDataset.published_at
+                          ? formatDate(backendDataset.published_at)
+                          : "Not yet published"}
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-muted-foreground">Visibility</p>
                     <p className="font-medium capitalize">{dataset.visibility}</p>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { useDownloadHistory } from "@/lib/hooks/useDownloadHistory";
+import { formatDate } from "@/lib/utils/date";
 import {
   DashboardPage,
   DashboardPageHeader,
@@ -155,11 +156,7 @@ export default function DownloadsPage() {
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <Calendar className="size-4" />
-                              {new Date(item.downloadedAt).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
+                              {formatDate(item.downloadedAt)}
                             </div>
                           </td>
                           <td className="px-6 py-4 text-right">

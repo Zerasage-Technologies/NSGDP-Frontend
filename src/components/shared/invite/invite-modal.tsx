@@ -148,7 +148,7 @@ export function InviteModal({ open, onClose, organisationId }: InviteModalProps)
                 </SelectItem>
                 <SelectItem value="admin">
                   <div>
-                    <div className="font-medium">Organisation Administrator</div>
+                    <div className="font-medium">Org Admin</div>
                     <div className="text-xs text-muted-foreground">
                       Can manage team and approve datasets
                     </div>

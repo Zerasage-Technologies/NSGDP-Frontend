@@ -154,7 +154,7 @@ function InviteRegistrationForm() {
     );
   }
 
-  const roleLabel = inviteData.role === "admin" ? "Organisation Administrator" : "Data Contributor";
+  const roleLabel = inviteData.role === "admin" ? "Org Admin" : "Data Contributor";
   const expiresAt = new Date(inviteData.expiresAt);
   const daysUntilExpiry = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 

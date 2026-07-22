@@ -160,12 +160,19 @@ export default function UploadDatasetPage() {
         geographicCoverage: selectedLGAs.join(', '),
       });
 
-      // Step 2: Upload the file if present
-      if (uploadedFiles.length > 0 && uploadedFiles[0].file) {
-        await uploadFile(uploadedFiles[0].file, dataset.id);
+      // Step 2: Upload every selected file — a dataset can have more than
+      // one file attached to it, each tracked separately (not just the first)
+      for (const uploadedFile of uploadedFiles) {
+        if (uploadedFile.file) {
+          await uploadFile(uploadedFile.file, dataset.id);
+        }
       }
 
-      toast.success(isDraft ? "Dataset saved as draft" : "Dataset submitted for review!");
+      toast.success(
+        isDraft
+          ? "Dataset saved as draft"
+          : `Dataset submitted for review with ${uploadedFiles.length} file${uploadedFiles.length !== 1 ? "s" : ""}!`
+      );
       router.push("/datasets");
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to create dataset";

@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
+import { formatDate } from "@/lib/utils/date";
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -131,13 +132,13 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
                 label="Last Updated"
                 tip="The date this dataset was most recently revised on the portal."
               />
-              <dd>{new Date(dataset.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</dd>
+              <dd>{formatDate(dataset.updatedAt)}</dd>
 
               <FieldLabel
                 label="Date Published"
                 tip="The date this dataset was first made publicly available on this portal."
               />
-              <dd>{dataset.datePublished ? new Date(dataset.datePublished).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}</dd>
+              <dd>{dataset.datePublished ? formatDate(dataset.datePublished) : "—"}</dd>
             </dl>
           </section>
 

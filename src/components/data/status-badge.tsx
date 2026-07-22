@@ -15,8 +15,14 @@ const CONFIG: Record<string, { label: string; className: string }> = {
     label: "Under Review",
     className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   },
+  // Approval and publishing are separate — an approved dataset isn't
+  // necessarily visible to the public yet. See `publishedAt` below.
   approved: {
     label: "Approved",
+    className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  },
+  published: {
+    label: "Published",
     className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
   },
   rejected: {
@@ -31,12 +37,15 @@ const CONFIG: Record<string, { label: string; className: string }> = {
 
 export function StatusBadge({
   status,
+  publishedAt,
   className,
 }: {
   status: DatasetStatus | string;
+  publishedAt?: string | null;
   className?: string;
 }) {
-  const config = CONFIG[status] || CONFIG.draft;
+  const key = status === "approved" && publishedAt ? "published" : status;
+  const config = CONFIG[key] || CONFIG.draft;
   const { label, className: tone } = config;
   
   return (

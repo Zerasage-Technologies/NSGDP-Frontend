@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useDataset, useUpdateDataset } from "@/lib/hooks/useDatasets";
+import { useDataset, useUpdateDataset, useDatasetFiles } from "@/lib/hooks/useDatasets";
+import { uploadFile } from "@/lib/api/uploads";
 import { NIGER_STATE_LGAS } from "@/lib/constants/core";
 import { UPLOAD_FIELD_TOOLTIPS } from "@/lib/constants/upload-tooltips";
 import { useDraftAutoSave } from "@/lib/hooks/useDraftAutoSave";
@@ -40,6 +41,7 @@ export default function EditDatasetPage({
   
   // Fetch dataset from API
   const { data: dataset, isLoading: loading, error } = useDataset(resolvedParams.slug);
+  const { data: existingFiles } = useDatasetFiles(resolvedParams.slug);
   const updateMutation = useUpdateDataset();
   
   const [currentStep, setCurrentStep] = useState(1);
@@ -52,7 +54,6 @@ export default function EditDatasetPage({
   const [tagInput, setTagInput] = useState("");
   const [selectedLGAs, setSelectedLGAs] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<DatasetVisibility>("public");
-  const [existingFiles, setExistingFiles] = useState<Array<{ name: string; size: number }>>([]);
   const [newFiles, setNewFiles] = useState<UploadedFile[]>([]);
 
   useDraftAutoSave(
@@ -68,8 +69,6 @@ export default function EditDatasetPage({
       setTags(dataset.tags || []);
       setSelectedLGAs(dataset.geographic_coverage || []);
       setVisibility(dataset.visibility);
-      // Note: file management would need separate endpoint
-      setExistingFiles([]);
     }
   }, [dataset]);
 
@@ -92,10 +91,6 @@ export default function EditDatasetPage({
     setTags(tags.filter((t) => t !== tag));
   };
 
-  const removeFile = (fileName: string) => {
-    setExistingFiles((prev) => prev.filter((f) => f.name !== fileName));
-  };
-
   const validateStep1 = () => {
     const result = uploadStep1Schema.safeParse({ title, description, tags });
     const lgaResult = uploadStep2Schema.safeParse({ lgas: selectedLGAs });
@@ -115,7 +110,7 @@ export default function EditDatasetPage({
   };
 
   const validateStep2 = () => {
-    if (existingFiles.length === 0 && newFiles.length === 0) {
+    if ((existingFiles?.length ?? 0) === 0 && newFiles.length === 0) {
       setStepErrors({ files: "Keep at least one file or upload a replacement" });
       return false;
     }
@@ -143,7 +138,7 @@ export default function EditDatasetPage({
     setSaving(true);
     
     try {
-      await updateMutation.mutateAsync({
+      const updated = await updateMutation.mutateAsync({
         slug: resolvedParams.slug,
         data: {
           title,
@@ -153,7 +148,15 @@ export default function EditDatasetPage({
           visibility,
         },
       });
-      
+
+      // Upload any newly attached files — appended alongside existing ones,
+      // not a replacement (a dataset can have more than one file)
+      for (const uploadedFile of newFiles) {
+        if (uploadedFile.file) {
+          await uploadFile(uploadedFile.file, updated.id);
+        }
+      }
+
       toast.success(isDraft ? "Changes saved as draft" : "Dataset updated successfully!");
       router.push("/datasets");
     } catch (error) {
@@ -315,31 +318,26 @@ export default function EditDatasetPage({
                 <p className="text-muted-foreground">{UPLOAD_FIELD_TOOLTIPS.files}</p>
               </div>
 
-              {existingFiles.length > 0 && (
+              {existingFiles && existingFiles.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="font-medium">Current Files ({existingFiles.length})</h3>
                   {existingFiles.map((file) => (
                     <div
-                      key={file.name}
+                      key={file.id}
                       className="flex items-center gap-3 p-4 rounded-lg border"
                     >
                       <FileText className="size-5 text-muted-foreground shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{file.name}</p>
+                        <p className="font-medium truncate">{file.file_name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                          {file.format.toUpperCase()} • {((file.file_size ?? 0) / 1024 / 1024).toFixed(2)} MB
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(file.name)}
-                        className="text-destructive hover:text-destructive/80"
-                        aria-label={`Remove file ${file.name}`}
-                      >
-                        <X className="size-5" />
-                      </button>
                     </div>
                   ))}
+                  <p className="text-xs text-muted-foreground">
+                    Uploading a new file below adds to this dataset — it does not replace these.
+                  </p>
                 </div>
               )}
 

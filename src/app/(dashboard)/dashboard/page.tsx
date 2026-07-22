@@ -24,6 +24,7 @@ import { useDownloadHistory } from "@/lib/hooks/useDownloadHistory";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useOrganizationDatasets } from "@/lib/hooks/useDatasets";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils/date";
 import { formatDistanceToNow } from "date-fns";
 import {
   DashboardPage as DashboardPageLayout,
@@ -204,14 +205,14 @@ export default function DashboardPage() {
                               >
                                 {dataset.title}
                               </Link>
-                              <StatusBadge status={dataset.status} />
+                              <StatusBadge status={dataset.status} publishedAt={dataset.published_at} />
                             </div>
                             <p className="text-sm text-muted-foreground line-clamp-1">
                               {dataset.description}
                             </p>
                             <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                               <span>{dataset.download_count} downloads</span>
-                              <span>Updated {new Date(dataset.updated_at).toLocaleDateString()}</span>
+                              <span>Updated {formatDate(dataset.updated_at)}</span>
                             </div>
                           </div>
                         </div>
@@ -261,7 +262,7 @@ export default function DashboardPage() {
                             {download.dataset.title}
                           </Link>
                           <p className="text-sm text-muted-foreground">
-                            Downloaded {new Date(download.downloadedAt).toLocaleDateString()} • {download.dataset.format} file
+                            Downloaded {formatDate(download.downloadedAt)} • {download.dataset.format} file
                           </p>
                         </div>
                       </div>
@@ -390,12 +391,12 @@ export default function DashboardPage() {
                 <CardContent className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Member since</span>
-                    <span className="font-medium">{new Date(summary.memberSince).toLocaleDateString()}</span>
+                    <span className="font-medium">{formatDate(summary.memberSince)}</span>
                   </div>
                   {summary.lastLoginAt && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Last login</span>
-                      <span className="font-medium">{new Date(summary.lastLoginAt).toLocaleDateString()}</span>
+                      <span className="font-medium">{formatDate(summary.lastLoginAt)}</span>
                     </div>
                   )}
                 </CardContent>

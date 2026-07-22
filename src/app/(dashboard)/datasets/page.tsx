@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useOrganizationDatasets, useDeleteDataset, useSubmitDatasetForReview } from "@/lib/hooks/useDatasets";
 import { useAuth } from "@/lib/auth";
 import type { DatasetStatus } from "@/types";
+import { formatDate } from "@/lib/utils/date";
 import { toast } from "sonner";
 
 // Backend status values: draft, pending, under_review, approved, rejected, archived
@@ -296,7 +297,7 @@ export default function MyDatasetsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <StatusBadge status={dataset.status} />
+                          <StatusBadge status={dataset.status} publishedAt={dataset.published_at} />
                         </td>
                         <td className="px-6 py-4">
                           <VisibilityBadge visibility={dataset.visibility} />
@@ -308,11 +309,7 @@ export default function MyDatasetsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-sm text-muted-foreground">
-                            {new Date(dataset.updated_at).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
+                            {formatDate(dataset.updated_at)}
                           </span>
                         </td>
                         <td className="px-6 py-4">

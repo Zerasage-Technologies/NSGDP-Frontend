@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoleBadge } from "@/components/ui/role-badge";
+import { formatDate } from "@/lib/utils/date";
 import { InviteModal } from "@/components/shared/invite/invite-modal";
 import { EditOrganisationModal } from "@/components/shared/organisation/edit-organisation-modal";
 import { useOrganisationInvites, useRevokeInvite, useResendInvite } from "@/lib/hooks/useInvites";
@@ -370,11 +371,7 @@ export default function OrganisationManagementPage() {
                               Created
                             </label>
                             <p className="text-sm">
-                              {new Date(organisation.createdAt).toLocaleDateString('en-US', { 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                              })}
+                              {formatDate(organisation.createdAt)}
                             </p>
                           </div>
                         )}
