@@ -9,6 +9,7 @@ export const ROLE_PROGRAM_BASE: Record<UserRole, PermissionAction[]> = {
   registered: [],
   contributor: ["upload:programs"],
   admin: ["create:programs", "edit:programs", "upload:programs"],
+  super_admin: ["create:programs", "edit:programs", "delete:programs", "upload:programs"],
 };
 
 export function getDelegatedProgramPermissions(userId: string): PermissionAction[] {

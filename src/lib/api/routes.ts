@@ -60,6 +60,26 @@ export const API_ROUTES = {
     download: (slug: string) => `/datasets/${slug}/download`,
     versions: (slug: string) => `/datasets/${slug}/versions`,
     preview: (slug: string) => `/datasets/${slug}/preview`,
+    accessRequests: (slug: string) => `/datasets/${slug}/access-requests`,
+    myAccessRequests: '/datasets/me/access-requests',
+  },
+
+  // Review Queue endpoints — cross-org dataset review, reachable by
+  // super_admin/admin role OR a user with a delegated approve:datasets /
+  // publish:datasets permission (see nsgdp-backend AccessGuard).
+  review: {
+    queue: '/admin/review-queue',
+    underReviewQueue: '/admin/review-queue/under-review',
+    datasets: '/admin/datasets',
+    bySlug: (slug: string) => `/admin/datasets/${slug}`,
+    preview: (slug: string) => `/admin/datasets/${slug}/preview`,
+    approve: (slug: string) => `/admin/datasets/${slug}/approve`,
+    reject: (slug: string) => `/admin/datasets/${slug}/reject`,
+    requestRevision: (slug: string) => `/admin/datasets/${slug}/request-revision`,
+    markUnderReview: (slug: string) => `/admin/datasets/${slug}/mark-under-review`,
+    qaChecklist: (slug: string) => `/admin/datasets/${slug}/qa-checklist`,
+    publish: (slug: string) => `/admin/datasets/${slug}/publish`,
+    unpublish: (slug: string) => `/admin/datasets/${slug}/unpublish`,
   },
 
   // Upload endpoints

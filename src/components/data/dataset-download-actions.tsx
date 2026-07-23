@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoginPromptModal } from "@/components/feedback/login-prompt-modal";
 import { useAuth } from "@/lib/auth";
 import { useDownloadDataset } from "@/lib/hooks/useDatasets";
+import { useMyAccessRequests, useRequestDatasetAccess } from "@/lib/hooks/useAccessRequests";
 import { toast } from "sonner";
 import type { Visibility } from "@/types";
 import { cn } from "@/lib/utils";
@@ -51,16 +52,33 @@ function getInitialState(
 }
 
 export function DatasetDownloadActions({
+  datasetId,
   datasetSlug,
   datasetTitle,
   visibility,
   className,
 }: DatasetDownloadActionsProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const downloadMutation = useDownloadDataset();
+  const requestAccessMutation = useRequestDatasetAccess();
 
-  // Simplified: mock access methods removed for real auth migration
-  const accessState = "approved"; // Assume access is approved for now
+  // A delegated view:restricted/download:restricted grant skips the request
+  // flow entirely — same as how the backend already treats a permission
+  // holder as having access (see AccessRequestsService.hasAccess).
+  const hasPermissionGrant = (user?.permissions ?? []).some(
+    (p) => p === "view:restricted" || p === "download:restricted"
+  );
+  const { data: myRequests } = useMyAccessRequests(isAuthenticated && visibility === "restricted" && !hasPermissionGrant);
+  const matchingRequest = myRequests?.find((r) => r.dataset_id === datasetId);
+
+  const accessState: "none" | "pending" | "approved" = hasPermissionGrant
+    ? "approved"
+    : matchingRequest?.status === "approved"
+      ? "approved"
+      : matchingRequest?.status === "pending"
+        ? "pending"
+        : "none"; // covers "denied" and "never requested" — both show the Request Access button again
+
   const [state, setState] = useState<DownloadState>(() =>
     getInitialState(visibility, isAuthenticated, accessState)
   );
@@ -106,15 +124,19 @@ export function DatasetDownloadActions({
       toast.error("Please provide at least 20 characters explaining your need.");
       return;
     }
-    setRequestOpen(false);
-    setState("pending");
-    toast.success("Access request submitted. You will be notified when approved.");
-
-    // Mock admin approval after 8 seconds for demo
-    setTimeout(() => {
-      setState("approved");
-      toast.success("Access approved! You can now download this dataset.");
-    }, 8000);
+    requestAccessMutation.mutate(
+      { slug: datasetSlug, reason },
+      {
+        onSuccess: () => {
+          setRequestOpen(false);
+          setReason("");
+          toast.success("Access request submitted. You will be notified when approved.");
+        },
+        onError: (error: Error) => {
+          toast.error(error.message || "Failed to submit access request");
+        },
+      }
+    );
   };
 
   if (state === "hidden") return null;
@@ -179,8 +201,11 @@ export function DatasetDownloadActions({
             <Button variant="outline" onClick={() => setRequestOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={submitAccessRequest} disabled={reason.trim().length < 20}>
-              Submit Request
+            <Button
+              onClick={submitAccessRequest}
+              disabled={reason.trim().length < 20 || requestAccessMutation.isPending}
+            >
+              {requestAccessMutation.isPending ? "Submitting…" : "Submit Request"}
             </Button>
           </DialogFooter>
         </DialogContent>

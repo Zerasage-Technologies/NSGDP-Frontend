@@ -11,17 +11,20 @@ import {
   User,
   X,
   Upload,
+  ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { RoleBadge } from "@/components/ui/role-badge";
 import { useAuth } from "@/lib/auth";
+import type { PermissionActionKey, UserProfile } from "@/lib/types/auth";
 
 interface NavLink {
   href: string;
   label: string;
   icon: React.ElementType;
-  roles?: string[]; // If specified, only show for these roles
+  roles?: string[]; // If specified, show for these roles...
+  permissions?: PermissionActionKey[]; // ...OR for a user holding any of these delegated permissions
 }
 
 const NAV_LINKS: NavLink[] = [
@@ -35,6 +38,13 @@ const NAV_LINKS: NavLink[] = [
     label: "Datasets",
     icon: Database,
     roles: ["contributor", "admin"],
+  },
+  {
+    href: "/review-queue",
+    label: "Review Queue",
+    icon: ClipboardCheck,
+    roles: ["admin", "super_admin"],
+    permissions: ["approve:datasets", "publish:datasets"],
   },
   {
     href: "/organisation",
@@ -59,6 +69,16 @@ const NAV_LINKS: NavLink[] = [
   },
 ];
 
+function getVisibleNavLinks(links: NavLink[], user: UserProfile | null | undefined): NavLink[] {
+  return links.filter((link) => {
+    if (!link.roles && !link.permissions) return true;
+    if (!user) return false;
+    const roleMatch = link.roles?.includes(user.role) ?? false;
+    const permissionMatch = link.permissions?.some((p) => user.permissions?.includes(p)) ?? false;
+    return roleMatch || permissionMatch;
+  });
+}
+
 interface DashboardSidebarProps {
   className?: string;
 }
@@ -68,10 +88,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
   const router = useRouter();
   const { user } = useAuth();
 
-  const visibleLinks = NAV_LINKS.filter((link) => {
-    if (!link.roles) return true;
-    return user && link.roles.includes(user.role);
-  });
+  const visibleLinks = getVisibleNavLinks(NAV_LINKS, user);
 
   const canUpload = user && ["contributor", "admin"].includes(user.role);
 
@@ -155,10 +172,7 @@ export function DashboardMobileSidebar({
   const router = useRouter();
   const { user } = useAuth();
 
-  const visibleLinks = NAV_LINKS.filter((link) => {
-    if (!link.roles) return true;
-    return user && link.roles.includes(user.role);
-  });
+  const visibleLinks = getVisibleNavLinks(NAV_LINKS, user);
 
   const canUpload = user && ["contributor", "admin"].includes(user.role);
 
