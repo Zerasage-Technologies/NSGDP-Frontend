@@ -59,3 +59,11 @@ export interface ResetPasswordPayload {
 export interface RefreshTokenPayload {
   refreshToken: string;
 }
+
+export interface VerifyEmailPayload {
+  token: string;
+}
+
+export interface ResendVerificationPayload {
+  email: string;
+}

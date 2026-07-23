@@ -8,6 +8,10 @@ export interface ValidateInviteResponse {
   role: 'contributor' | 'admin';
   expiresAt: string;
   invitedByName: string;
+  /** True if this invite is for an existing registered user (upgrading
+   * their role/org) — they must log in as that account to accept it,
+   * instead of setting a new password. */
+  isExistingUser: boolean;
 }
 
 export interface AcceptInviteRequest {
@@ -43,6 +47,20 @@ export async function acceptInvite(
   data: AcceptInviteRequest
 ): Promise<AcceptInviteResponse> {
   const response = await apiClient.post<{ data: AcceptInviteResponse }>(`/invites/${token}/accept`, data);
+  return response.data.data;
+}
+
+/**
+ * Accept an invite as the currently logged-in existing user — upgrades
+ * their account's role/organisation instead of creating a new one.
+ * Requires the caller to already be authenticated as the invited email.
+ */
+export async function acceptInviteForExistingUser(
+  token: string
+): Promise<AcceptInviteResponse> {
+  const response = await apiClient.post<{ data: AcceptInviteResponse }>(
+    `/invites/${token}/accept-existing`
+  );
   return response.data.data;
 }
 

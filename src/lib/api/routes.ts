@@ -22,6 +22,8 @@ export const API_ROUTES = {
     changePassword: '/auth/change-password',
     forgotPassword: '/auth/forgot-password',
     resetPassword: '/auth/reset-password',
+    verifyEmail: '/auth/verify-email',
+    resendVerification: '/auth/resend-verification',
   },
 
   // User endpoints

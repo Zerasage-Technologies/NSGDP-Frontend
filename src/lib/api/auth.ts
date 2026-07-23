@@ -12,6 +12,8 @@ import type {
   ForgotPasswordPayload,
   ResetPasswordPayload,
   RefreshTokenPayload,
+  VerifyEmailPayload,
+  ResendVerificationPayload,
 } from "@/lib/types/auth";
 
 /**
@@ -78,6 +80,38 @@ export async function forgotPassword(payload: ForgotPasswordPayload): Promise<{ 
 export async function resetPassword(payload: ResetPasswordPayload): Promise<{ message: string }> {
   const response = await apiFetch<ApiResponse<{ message: string }>>(
     API_ROUTES.auth.resetPassword,
+    {
+      method: "POST",
+      body: payload,
+    }
+  );
+  return response.data;
+}
+
+/**
+ * Verify email using the token from the link sent at registration.
+ * Logs the user in immediately on success.
+ */
+export async function verifyEmail(payload: VerifyEmailPayload): Promise<AuthResponse> {
+  const response = await apiFetch<ApiResponse<AuthResponse>>(
+    API_ROUTES.auth.verifyEmail,
+    {
+      method: "POST",
+      body: payload,
+    }
+  );
+  return response.data;
+}
+
+/**
+ * Resend the email verification link
+ * Always returns success (security: prevents email enumeration)
+ */
+export async function resendVerification(
+  payload: ResendVerificationPayload
+): Promise<{ message: string }> {
+  const response = await apiFetch<ApiResponse<{ message: string }>>(
+    API_ROUTES.auth.resendVerification,
     {
       method: "POST",
       body: payload,

@@ -14,12 +14,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PasswordStrengthMeter } from "@/components/forms/password-strength-meter";
 import { FormError } from "@/components/forms/form-error";
 import { acceptInviteSchema, type AcceptInviteFormData } from "@/lib/schemas/invite";
-import { validateInvite, acceptInvite, type ValidateInviteResponse } from "@/lib/api";
+import { validateInvite, acceptInvite, acceptInviteForExistingUser, type ValidateInviteResponse } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
 function InviteRegistrationForm() {
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("token");
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(true);
@@ -104,8 +106,39 @@ function InviteRegistrationForm() {
     }
   };
 
+  const onAcceptExisting = async () => {
+    if (!inviteToken) {
+      toast.error("No invite token found");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await acceptInviteForExistingUser(inviteToken);
+
+      if (response.tokens) {
+        localStorage.setItem('accessToken', response.tokens.accessToken);
+        localStorage.setItem('refreshToken', response.tokens.refreshToken);
+        localStorage.setItem('tokenExpiry',
+          (Date.now() + response.tokens.expiresIn * 1000).toString()
+        );
+      }
+
+      toast.success("Invite accepted! Your account has been upgraded.");
+
+      // Force a page reload so auth context picks up the new role/tokens
+      window.location.href = "/dashboard";
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to accept invite";
+      toast.error(errorMessage);
+      setLoading(false);
+    }
+  };
+
   // Loading state
-  if (validating) {
+  if (validating || (inviteData?.isExistingUser && authLoading)) {
     return (
       <Container className="py-12">
         <Card className="max-w-md mx-auto">
@@ -157,6 +190,107 @@ function InviteRegistrationForm() {
   const roleLabel = inviteData.role === "admin" ? "Org Admin" : "Data Contributor";
   const expiresAt = new Date(inviteData.expiresAt);
   const daysUntilExpiry = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+  // This invite upgrades an existing registered user's role/org rather than
+  // creating a new account — they must accept it while logged in as the
+  // exact invited email, not by setting a new password.
+  if (inviteData.isExistingUser) {
+    const isCorrectAccount =
+      isAuthenticated && user?.email?.toLowerCase() === inviteData.invitedEmail.toLowerCase();
+    const returnTo = encodeURIComponent(`/register/invite?token=${inviteToken}`);
+
+    return (
+      <Container className="py-12">
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="size-6 text-emerald-600" />
+              <CardTitle className="text-2xl">You&apos;ve Been Invited!</CardTitle>
+            </div>
+            <CardDescription>
+              {inviteData.invitedByName} invited you to join {inviteData.organisationName} as {roleLabel}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <Building className="size-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Organisation</p>
+                  <p className="text-sm text-muted-foreground">{inviteData.organisationName}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Mail className="size-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Email Address</p>
+                  <p className="text-sm text-muted-foreground">{inviteData.invitedEmail}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Shield className="size-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Your New Role</p>
+                  <p className="text-sm text-muted-foreground">{roleLabel}</p>
+                </div>
+              </div>
+            </div>
+
+            {isCorrectAccount ? (
+              <>
+                <p className="text-sm text-muted-foreground text-center">
+                  You&apos;re logged in as {inviteData.invitedEmail}. Accept below to upgrade
+                  your account.
+                </p>
+                <Button className="w-full" onClick={onAcceptExisting} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="size-4 mr-2 animate-spin" />
+                      Accepting...
+                    </>
+                  ) : (
+                    "Accept Invite"
+                  )}
+                </Button>
+              </>
+            ) : isAuthenticated ? (
+              <>
+                <Alert variant="destructive">
+                  <AlertCircle className="size-4" />
+                  <AlertDescription>
+                    You&apos;re logged in as {user?.email}, but this invite was sent to{" "}
+                    {inviteData.invitedEmail}. Log out and log back in as that account to
+                    accept it.
+                  </AlertDescription>
+                </Alert>
+                <Link href={`/login?returnTo=${returnTo}`}>
+                  <Button variant="outline" className="w-full">
+                    Log In as a Different Account
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground text-center">
+                  An account already exists for this email. Log in to accept the invite.
+                </p>
+                <Link href={`/login?returnTo=${returnTo}`}>
+                  <Button className="w-full">Log In to Accept</Button>
+                </Link>
+              </>
+            )}
+
+            <p className="text-center text-sm text-muted-foreground">
+              Don&apos;t recognise this invite?{" "}
+              <Link href="/contact" className="text-primary hover:underline font-medium">
+                Contact support
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </Container>
+    );
+  }
 
   return (
     <Container className="py-12">

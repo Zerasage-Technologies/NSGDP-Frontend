@@ -11,6 +11,8 @@ export {
   logout,
   forgotPassword,
   resetPassword,
+  verifyEmail,
+  resendVerification,
   refreshAccessToken,
   getCurrentUser,
 } from "./auth";
@@ -19,6 +21,7 @@ export {
 export {
   validateInvite,
   acceptInvite,
+  acceptInviteForExistingUser,
   createInvite,
   getOrganisationInvites,
   revokeInvite,

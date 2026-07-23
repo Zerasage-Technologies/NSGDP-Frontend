@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: data.email,
         password: data.password,
         phoneNumber: data.phone,
-        accessLevel: data.accessLevel,
+        accessLevel: "public",
         reason: data.reason,
       });
 
